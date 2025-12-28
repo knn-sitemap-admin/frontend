@@ -248,7 +248,7 @@ export async function getCredentialDetail(
   }
 }
 
-// 계정 목록 조회 (admin only)
+// 계정 목록 조회 (admin only) - 구버전 API (deprecated)
 export type AccountListItem = {
   id: string;
   email: string;
@@ -267,6 +267,71 @@ export async function getAccountsList(): Promise<AccountListItem[]> {
     return response.data.data;
   } catch (error: any) {
     console.error("계정 목록 조회 실패:", error);
+    throw error;
+  }
+}
+
+// 새로운 계정/사원 리스트 조회 API
+export type PositionRank =
+  | "ASSISTANT_MANAGER"
+  | "MANAGER"
+  | "DEPUTY_GENERAL"
+  | "GENERAL_MANAGER"
+  | "TEAM_LEADER"
+  | "DIRECTOR";
+
+export type EmployeeListQuery = {
+  sort?: "name" | "rank";
+  name?: string;
+};
+
+export type EmployeeListItem = {
+  accountId: string;
+  profileUrl: string | null;
+  name: string | null;
+  positionRank: PositionRank | null;
+  teamName: string; // "미소속" 포함
+  phone: string | null;
+  reservedPinDrafts: Array<{
+    id: string;
+    name: string | null;
+    addressLine: string;
+    reservedDate: string; // YYYY-MM-DD
+  }>;
+  favoritePins: Array<{
+    id: string;
+    name: string | null;
+  }>;
+  ongoingContracts: Array<{
+    id: number;
+    contractNo: string;
+    customerName: string;
+    contractDate: string; // YYYY-MM-DD
+  }>;
+};
+
+export async function getEmployeesList(
+  query?: EmployeeListQuery
+): Promise<EmployeeListItem[]> {
+  try {
+    const params = new URLSearchParams();
+    if (query?.sort) {
+      params.append("sort", query.sort);
+    }
+    if (query?.name) {
+      params.append("name", query.name);
+    }
+
+    const queryString = params.toString();
+    const url = `/dashboard/accounts/employees${queryString ? `?${queryString}` : ""}`;
+
+    const response = await api.get<{
+      message: string;
+      data: EmployeeListItem[];
+    }>(url);
+    return response.data.data;
+  } catch (error: any) {
+    console.error("사원 리스트 조회 실패:", error);
     throw error;
   }
 }

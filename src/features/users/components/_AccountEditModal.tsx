@@ -81,8 +81,8 @@ function AccountEditModalBody({
   const [salary, setSalary] = useState<string>(
     (user as any).salary_account ?? ""
   );
-  const [email, setEmail] = useState<string>(user.email);
-  const [role, setRole] = useState<RoleKey>(user.role as RoleKey);
+  const [email, setEmail] = useState<string>(user.email ?? "");
+  const [role, setRole] = useState<RoleKey>(user.role ?? "staff");
   const [birthday, setBirthday] = useState<string>(
     (user as any).birthday ?? ""
   );
@@ -121,8 +121,8 @@ function AccountEditModalBody({
   // user 바뀌면 폼 리셋 (훅은 조건 없이 선언, 값만 갱신)
   useEffect(() => {
     setName(user.name);
-    setEmail(user.email);
-    setRole(user.role as RoleKey);
+    setEmail(user.email ?? "");
+    setRole(user.role ?? "staff");
     setPhone((user as any).phone ?? "");
     setEmergency((user as any).emergency_contact ?? "");
     setAddress(

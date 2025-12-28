@@ -1,6 +1,7 @@
 "use client";
 
-import { Trash2, Edit, List } from "lucide-react";
+import React from "react";
+import { Trash2, Edit, List, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Avatar,
   AvatarImage,
@@ -8,12 +9,18 @@ import {
 } from "@/components/atoms/Avatar/Avatar";
 import type { UserRow, RoleKey } from "@/features/users/types";
 
+type SortColumn = "name" | "rank" | null;
+type SortDirection = "asc" | "desc";
+
 type Props = {
   rows: UserRow[];
   onChangeRole?: (id: string, role: RoleKey) => void; // optional - 필요 시 사용
   onRemove: (id: string) => void;
   onEdit?: (credentialId: string) => void; // optional - 팀 관리에서는 수정 불필요
   onViewFavorites?: (accountId: string) => void; // 즐겨찾기 목록 보기
+  sortColumn?: SortColumn;
+  sortDirection?: SortDirection;
+  onSort?: (column: SortColumn, direction: SortDirection) => void;
 };
 
 export default function AccountsListPage({
@@ -22,9 +29,66 @@ export default function AccountsListPage({
   onRemove,
   onEdit,
   onViewFavorites,
+  sortColumn = null,
+  sortDirection = "asc",
+  onSort,
 }: Props) {
   const handleViewFavorites = (accountId: string) => {
     onViewFavorites?.(accountId);
+  };
+
+  const handleSortClick = (column: "name" | "rank") => {
+    if (!onSort) return;
+
+    if (sortColumn === column) {
+      // 같은 컬럼이면 방향 토글
+      onSort(column, sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      // 다른 컬럼이면 오름차순으로 설정
+      onSort(column, "asc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: "name" | "rank" }) => {
+    if (!onSort) {
+      return null;
+    }
+    
+    // 현재 정렬 컬럼인 경우 정렬 방향에 따라 아이콘 표시
+    if (sortColumn === column) {
+      return sortDirection === "asc" ? (
+        <ChevronUp className="h-4 w-4 ml-1" />
+      ) : (
+        <ChevronDown className="h-4 w-4 ml-1" />
+      );
+    }
+    
+    // 정렬되지 않은 컬럼은 기본적으로 오름차순 아이콘 표시
+    return <ChevronUp className="h-4 w-4 ml-1 opacity-40" />;
+  };
+
+  const SortableHeader = ({
+    column,
+    children,
+  }: {
+    column: "name" | "rank";
+    children: React.ReactNode;
+  }) => {
+    if (!onSort) {
+      return <th className="px-4 py-3 text-left font-medium">{children}</th>;
+    }
+
+    return (
+      <th
+        className="px-4 py-3 text-left font-medium cursor-pointer hover:bg-muted/50 select-none"
+        onClick={() => handleSortClick(column)}
+      >
+        <div className="flex items-center">
+          {children}
+          <SortIcon column={column} />
+        </div>
+      </th>
+    );
   };
 
   return (
@@ -38,9 +102,9 @@ export default function AccountsListPage({
           <thead className="bg-muted/70 text-xs uppercase text-muted-foreground">
             <tr>
               <th className="px-4 py-3 text-center font-medium">프로필 사진</th>
-              <th className="px-4 py-3 text-left font-medium">이름</th>
+              <SortableHeader column="name">이름</SortableHeader>
               <th className="px-4 py-3 text-left font-medium">연락처</th>
-              <th className="px-4 py-3 text-left font-medium">직급</th>
+              <SortableHeader column="rank">직급</SortableHeader>
               <th className="px-4 py-3 text-left font-medium">부서</th>
               <th className="px-4 py-3 text-center font-medium">
                 즐겨찾기 목록
