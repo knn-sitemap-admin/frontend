@@ -134,7 +134,7 @@ export function TeamDetailView({
                   align: "right",
                   render: (value) => (
                     <span className="font-bold text-gray-900">
-                      {(value / 10000).toLocaleString()}만원
+                      {(value / 10000).toFixed(1)}만원
                     </span>
                   ),
                 },

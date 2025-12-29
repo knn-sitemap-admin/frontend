@@ -4,6 +4,8 @@ export { COLORS } from "./types/PerformanceData";
 
 // Components
 export { Performance } from "./components/Performance";
+export * from "./api/performance";
+export * from "./api/types";
 export { StatsCards } from "./components/StatsCards";
 export { TeamStatsCards } from "./components/TeamStatsCards";
 export { TeamAllowanceBarChart } from "./components/TeamAllowanceBarChart";

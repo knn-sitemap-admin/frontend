@@ -99,7 +99,7 @@ export function EmployeeAllowanceChart({
               position="top"
               offset={8}
               formatter={(value: number) =>
-                `${(Number(value) / 10000).toLocaleString()}만원`
+                `${(Number(value) / 10000).toFixed(1)}만원`
               }
               style={{
                 fontSize: "10px",

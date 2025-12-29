@@ -110,7 +110,7 @@ export function TeamAllowancePieChart({
               <ChartTooltip
                 content={<ChartTooltipContent />}
                 formatter={(value: number, name: string, props: any) => [
-                  `${props.payload.percentage}% (${(value / 10000).toLocaleString()}만원)`,
+                  `${props.payload.percentage}% (${(value / 10000).toFixed(1)}만원)`,
                   "비율",
                 ]}
               />
