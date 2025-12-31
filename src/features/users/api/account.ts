@@ -108,7 +108,65 @@ export async function updateMyProfile(
   }
 }
 
-// 첫 번째 API: 계정 생성 (credentials)
+// 새로운 통합 API: 사원 계정 생성 (계정 + 직원 정보 한 번에)
+export type CreateTeamAssignRequest = {
+  teamId: string;
+  isPrimary?: boolean;
+  joinedAt?: string; // YYYY-MM-DD
+};
+
+export type UpsertEmployeeInfoRequest = {
+  name?: string | null;
+  phone?: string | null;
+  emergencyContact?: string | null;
+  addressLine?: string | null;
+  salaryBankName?: string | null;
+  salaryAccount?: string | null;
+  profileUrl?: string | null;
+  positionRank?:
+    | "ASSISTANT_MANAGER"
+    | "MANAGER"
+    | "DEPUTY_GENERAL"
+    | "GENERAL_MANAGER"
+    | "TEAM_LEADER"
+    | "DIRECTOR";
+  docUrlResidentRegistration?: string | null;
+  docUrlResidentAbstract?: string | null;
+  docUrlIdCard?: string | null;
+  docUrlFamilyRelation?: string | null;
+};
+
+export type CreateEmployeeRequest = {
+  email: string;
+  password: string;
+  isDisabled?: boolean;
+  team?: CreateTeamAssignRequest;
+  teamName?: string;
+  info?: UpsertEmployeeInfoRequest;
+};
+
+export type CreateEmployeeResponse = {
+  id: string; // credentialId
+  email: string;
+  role: "admin" | "manager" | "staff";
+  is_disabled: boolean;
+  accountId: string;
+  positionRank:
+    | "ASSISTANT_MANAGER"
+    | "MANAGER"
+    | "DEPUTY_GENERAL"
+    | "GENERAL_MANAGER"
+    | "TEAM_LEADER"
+    | "DIRECTOR"
+    | null;
+  team?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+};
+
+// 첫 번째 API: 계정 생성 (credentials) - Deprecated: createEmployee 사용 권장
 export type CreateAccountRequest = {
   email: string;
   password: string;
@@ -128,7 +186,7 @@ export type CreateAccountResponse = {
   isDisabled: boolean;
 };
 
-// 두 번째 API: 직원 정보 생성
+// 두 번째 API: 직원 정보 생성 - Deprecated: createEmployee 사용 권장
 export type CreateEmployeeInfoRequest = {
   name: string;
   phone: string;
@@ -137,7 +195,6 @@ export type CreateEmployeeInfoRequest = {
   salaryBankName: string;
   salaryAccount: string;
   positionRank?:
-    | "STAFF"
     | "ASSISTANT_MANAGER"
     | "MANAGER"
     | "DEPUTY_GENERAL"
@@ -163,7 +220,27 @@ export type CreateEmployeeInfoResponse = {
   isProfileCompleted: boolean;
 };
 
-// 첫 번째 API: 계정 생성
+// 새로운 통합 API: 사원 계정 생성 (계정 + 직원 정보 한 번에)
+export async function createEmployee(
+  data: CreateEmployeeRequest
+): Promise<CreateEmployeeResponse> {
+  try {
+    console.log("사원 계정 생성 API 호출:", data);
+    const response = await api.post<{
+      message: string;
+      data: CreateEmployeeResponse;
+    }>("/dashboard/accounts/credentials", data);
+    console.log("사원 계정 생성 API 응답:", response.data);
+    return response.data.data;
+  } catch (error: any) {
+    console.error("사원 계정 생성 API 호출 실패:", error);
+    console.error("에러 상세:", error?.response?.data);
+    console.error("에러 메시지:", error?.response?.data?.messages);
+    throw error;
+  }
+}
+
+// 첫 번째 API: 계정 생성 (Deprecated: createEmployee 사용 권장)
 export async function createAccount(
   data: CreateAccountRequest
 ): Promise<CreateAccountResponse> {
@@ -339,7 +416,6 @@ export async function getEmployeesList(
 // 직급 변경 API (팀장 직급일 때 팀 자동 생성)
 export type PatchPositionRankRequest = {
   positionRank:
-    | "STAFF"
     | "ASSISTANT_MANAGER"
     | "MANAGER"
     | "DEPUTY_GENERAL"

@@ -32,9 +32,7 @@ import { formatPhone } from "@/lib/formatPhone";
 import { useRouter } from "next/navigation";
 import { getTeams } from "@/features/teams";
 import {
-  createAccount,
-  createEmployeeInfo,
-  patchPositionRank,
+  createEmployee,
 } from "@/features/users/api/account";
 import { useToast } from "@/hooks/use-toast";
 import { uploadOnePhoto, UploadDomain } from "@/shared/api/photos/photoUpload";
@@ -54,7 +52,6 @@ export type CreateAccountPayload = {
   password: string;
   name: string;
   positionRank:
-    | "STAFF"
     | "ASSISTANT_MANAGER"
     | "MANAGER"
     | "DEPUTY_GENERAL"
@@ -103,7 +100,6 @@ const CreateUserSchema = z
     name: z.string().min(1, "이름을 입력하세요.").max(100),
     positionRank: z.enum(
       [
-        "STAFF",
         "ASSISTANT_MANAGER",
         "MANAGER",
         "DEPUTY_GENERAL",
@@ -225,7 +221,7 @@ export default function AccountCreatePage({
       password: "",
       password_confirm: "",
       name: "",
-      positionRank: "STAFF",
+      positionRank: "ASSISTANT_MANAGER",
       phone: "",
       birthday: "",
       emergency_contact: "",
@@ -297,10 +293,10 @@ export default function AccountCreatePage({
 
     try {
       const isTeamLeaderRank = v.positionRank === "TEAM_LEADER";
+
+      // 팀장/실장은 팀 배정 불가
       const isManagerRank =
         v.positionRank === "TEAM_LEADER" || v.positionRank === "DIRECTOR";
-
-      // manager/TEAM_LEADER는 팀 배정 불가
       if (isManagerRank && v.team?.teamId) {
         toast({
           title: "입력 오류",
@@ -322,90 +318,49 @@ export default function AccountCreatePage({
         return;
       }
 
-      // 권한 설정: 직급 기반으로 자동 결정
-      const role: "manager" | "staff" = isManagerRank ? "manager" : "staff";
-
-      // 1단계: 계정 생성 (credentials)
-      // manager/TEAM_LEADER는 팀 배정 불가
-      // staff는 팀 배정 선택사항 (팀이 있으면 포함, 없으면 제외)
-      const accountData: {
-        email: string;
-        password: string;
-        role: "manager" | "staff";
-        team?: {
-          teamId: string;
-          isPrimary?: boolean;
-          joinedAt?: string;
-        };
-        isDisabled: boolean;
-      } = {
+      // 새로운 통합 API 호출 (계정 + 직원 정보 한 번에)
+      const createData = {
         email: v.email,
         password: v.password,
-        role,
         isDisabled: false,
-      };
-
-      // staff이고 팀이 선택된 경우에만 team 포함
-      if (role === "staff" && v.team?.teamId) {
-        accountData.team = {
-          teamId: v.team.teamId,
-          isPrimary: v.team.isPrimary ?? true,
-          // joinedAt이 빈 문자열이면 undefined로 처리
-          ...(v.team.joinedAt && v.team.joinedAt !== ""
-            ? { joinedAt: v.team.joinedAt }
-            : {}),
-        };
-      }
-
-      console.log("1단계: 계정 생성 시작", accountData);
-      const accountResult = await createAccount(accountData);
-      console.log("1단계: 계정 생성 완료", accountResult);
-
-      // 2단계: 직원 정보 생성
-      // 팀장 직급은 직원 정보 생성 시 positionRank를 설정하지 않음
-      // (직급 변경 API를 통해 설정해야 팀이 자동 생성됨)
-      const employeeData = {
-        name: v.name,
-        phone: v.phone,
-        emergencyContact: v.emergency_contact,
-        addressLine: v.address,
-        salaryBankName: v.salary_bank_name,
-        salaryAccount: v.salary_account,
-        // 팀장이 아닐 때만 positionRank 설정
+        // 팀장이 아닌 경우에만 team 포함
         ...(isTeamLeaderRank
           ? {}
-          : { positionRank: v.positionRank }),
-        profileUrl: v.photo_url,
-        docUrlIdCard: v.id_photo_url,
-        docUrlResidentRegistration: v.resident_register_url,
-        docUrlResidentAbstract: v.resident_extract_url,
-        docUrlFamilyRelation: v.family_relation_url,
+          : v.team?.teamId
+          ? {
+              team: {
+                teamId: v.team.teamId,
+                isPrimary: v.team.isPrimary ?? true,
+                ...(v.team.joinedAt && v.team.joinedAt !== ""
+                  ? { joinedAt: v.team.joinedAt }
+                  : {}),
+              },
+            }
+          : {}),
+        // 팀장인 경우 teamName 포함
+        ...(isTeamLeaderRank && v.teamName?.trim()
+          ? { teamName: v.teamName.trim() }
+          : {}),
+        // 직원 정보
+        info: {
+          name: v.name || null,
+          phone: v.phone || null,
+          emergencyContact: v.emergency_contact || null,
+          addressLine: v.address || null,
+          salaryBankName: v.salary_bank_name || null,
+          salaryAccount: v.salary_account || null,
+          profileUrl: v.photo_url || null,
+          positionRank: v.positionRank,
+          docUrlResidentRegistration: v.resident_register_url || null,
+          docUrlResidentAbstract: v.resident_extract_url || null,
+          docUrlIdCard: v.id_photo_url || null,
+          docUrlFamilyRelation: v.family_relation_url || null,
+        },
       };
 
-      console.log("2단계: 직원 정보 생성 시작", {
-        credentialId: accountResult.id,
-        employeeData,
-        isTeamLeaderRank,
-      });
-      const employeeResult = await createEmployeeInfo(
-        accountResult.id.toString(),
-        employeeData
-      );
-      console.log("2단계: 직원 정보 생성 완료", employeeResult);
-
-      // 3단계: 팀장 직급이면 직급 변경 API 호출하여 팀 자동 생성
-      // (positionRank를 null에서 TEAM_LEADER로 변경하여 becameTeamLeader가 true가 되도록 함)
-      if (isTeamLeaderRank) {
-        console.log("3단계: 팀장 직급 - 팀 자동 생성 시작", {
-          credentialId: accountResult.id,
-          teamName: v.teamName,
-        });
-        await patchPositionRank(accountResult.id.toString(), {
-          positionRank: "TEAM_LEADER",
-          teamName: v.teamName?.trim() || undefined,
-        });
-        console.log("3단계: 팀 자동 생성 완료");
-      }
+      console.log("사원 계정 생성 API 호출", createData);
+      const result = await createEmployee(createData);
+      console.log("사원 계정 생성 완료", result);
 
       await onCreate({
         email: v.email,
@@ -958,7 +913,7 @@ export default function AccountCreatePage({
                     email: "",
                     password: "",
                     name: "",
-                    positionRank: "STAFF",
+                    positionRank: "ASSISTANT_MANAGER",
                     phone: "",
                     birthday: "",
                     emergency_contact: "",

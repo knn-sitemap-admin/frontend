@@ -45,7 +45,6 @@ const UpdateUserSchema = z
     name: z.string().min(1, "이름을 입력하세요.").max(100),
     positionRank: z.enum(
       [
-        "STAFF",
         "ASSISTANT_MANAGER",
         "MANAGER",
         "DEPUTY_GENERAL",
@@ -162,7 +161,7 @@ function AccountEditFormModalBody({
     resolver: zodResolver(UpdateUserSchema),
     defaultValues: {
       name: "",
-      positionRank: "STAFF",
+      positionRank: "ASSISTANT_MANAGER",
       phone: "",
       birthday: "",
       emergency_contact: "",
@@ -202,7 +201,7 @@ function AccountEditFormModalBody({
         if (account) {
           form.reset({
             name: account.name || "",
-            positionRank: (account as any).positionRank || "STAFF",
+            positionRank: (account as any).positionRank || "ASSISTANT_MANAGER",
             phone: account.phone || "",
             birthday: (account as any).birthday || "",
             emergency_contact: account.emergencyContact || "",
