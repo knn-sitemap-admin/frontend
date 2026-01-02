@@ -67,6 +67,10 @@ export type ContextMenuPanelProps = {
   isDraftPin?: boolean;
   isPlanPin?: boolean;
   isVisitReservedPin?: boolean;
+  /** 이미 예약된 핀인지 여부 (planned 상태일 때 버튼 비활성화용) */
+  isAlreadyReserved?: boolean;
+  /** 다른 계정에서 예약한 핀인지 여부 (reserved 상태일 때 매물 정보 입력 버튼 비활성화용) */
+  isReservedByOtherAccount?: boolean;
 
   /** 즐겨찾기 UI */
   showFav?: boolean;
@@ -78,7 +82,7 @@ export type ContextMenuPanelProps = {
   onView: (id: string) => void;
 
   /**
-   * ✅ 신규 등록/정보 입력 트리거
+   * 신규 등록/정보 입력 트리거
    * - 전역 타입(CreateFromPinArgs)으로 통일
    * - 패널에서 좌표/드래프트 id/주소 힌트를 채워 전달
    */
@@ -91,7 +95,7 @@ export type ContextMenuPanelProps = {
   onReserve?: (payload?: ReserveRequestPayload) => void | Promise<void>;
 
   /**
-   * ✅ 패널 내부에서 좌표가 필요하므로 컨테이너에서 내려준다
+   * 패널 내부에서 좌표가 필요하므로 컨테이너에서 내려준다
    * - kakao.maps.LatLng 인터페이스 + POJO 모두 지원
    */
   position: LatLngLike;
@@ -125,7 +129,7 @@ type BasePanelProps = {
   onPlan?: (opts?: Partial<PlanRequestPayload>) => void | Promise<void>;
   onReserve?: (payload?: ReserveRequestPayload) => void | Promise<void>;
 
-  /** ✅ strict 모드에도 동일하게 position 필요 */
+  /** strict 모드에도 동일하게 position 필요 */
   position: LatLngLike;
 
   mapContainer?: HTMLElement | null;

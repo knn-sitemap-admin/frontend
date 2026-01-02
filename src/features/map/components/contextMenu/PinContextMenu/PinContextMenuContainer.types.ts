@@ -45,7 +45,7 @@ export type CreateMode =
   | "FULL_PROPERTY_FROM_RESERVED" // 답사지 예약핀 → 매물 정보 입력
   | "NORMAL"; // 그 외 일반 케이스
 
-/** ✅ 신규 등록(onCreate) 시 컨텍스트 메뉴에서 폼으로 전달할 페이로드 */
+/** 신규 등록(onCreate) 시 컨텍스트 메뉴에서 폼으로 전달할 페이로드 */
 export type CreateFromPinArgs = {
   /** 클릭 지점(또는 선택 핀)의 좌표 */
   latFromPin: number;
@@ -89,7 +89,7 @@ export type PinContextMenuProps = {
   /** 매물명(선택) — 있으면 헤더에 표시 */
   propertyTitle?: string | null;
 
-  /** ✅ 업그레이드: 최소 타입 → PinItem */
+  /** 업그레이드: 최소 타입 → PinItem */
   pin?: PinItem;
 
   /** 즐겨찾기 */
@@ -99,17 +99,17 @@ export type PinContextMenuProps = {
   onClose: () => void;
   onView: (id: string) => void;
 
-  /** ✅ 신규 등록: 좌표/드래프트/주소 힌트를 함께 전달 */
+  /** 신규 등록: 좌표/드래프트/주소 힌트를 함께 전달 */
   onCreate?: (args: CreateFromPinArgs) => void;
 
   /**
-   * ✅ '답사예약지 등록' 액션
+   * '답사예약지 등록' 액션
    * - 좌표만이 아니라 주소/메타까지 함께 전달
    */
   onPlan?: (payload: PlanRequestPayload) => void | Promise<void>;
 
   /**
-   * ✅ '답사지예약' 액션 (사이드바 예약 목록에 추가)
+   * '답사지예약' 액션 (사이드바 예약 목록에 추가)
    * - (visit | coords) 중 하나로 명확히 구분됨
    */
   onReserve?: (payload?: ReserveRequestPayload) => void | Promise<void>;

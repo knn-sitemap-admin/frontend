@@ -35,6 +35,8 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
     draftState,
     isPlanPin,
     isVisitReservedPin,
+    isAlreadyReserved,
+    isReservedByOtherAccount,
     onClose,
     onView,
     onCreate,
@@ -168,7 +170,7 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
     };
   }, [displayTitle, canView, propertyId, qc]);
 
-  /** ✅ 답사예정/답사지예약(임시핀)일 때 pin-drafts 기반으로 제목 채우기 */
+  /** 답사예정/답사지예약(임시핀)일 때 pin-drafts 기반으로 제목 채우기 */
   useEffect(() => {
     const idStr = String(propertyId ?? "").trim();
     if (!idStr) return;
@@ -352,6 +354,8 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
     planned,
     reserved,
     canView,
+    isAlreadyReserved,
+    isReservedByOtherAccount,
 
     // 핸들러
     stopAll,

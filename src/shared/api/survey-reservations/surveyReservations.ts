@@ -26,6 +26,9 @@ export type MyReservation = {
   posKey?: string;
   sortOrder?: number; // 0-based
   isActive?: boolean; // 서버가 주면 매핑
+  isMine?: boolean; // 내 예약 여부
+  assigneeId?: string | null; // 예약자 accountId
+  assigneeName?: string | null; // 예약자 이름
 };
 
 export type BeforeDraft = {
@@ -121,6 +124,9 @@ const normalizeReservation = (raw: any): MyReservation => {
     posKey: makePosKey(lat ?? undefined, lng ?? undefined),
     sortOrder: typeof raw?.sortOrder === "number" ? raw.sortOrder : undefined,
     isActive: typeof raw?.isActive === "boolean" ? raw.isActive : undefined,
+    isMine: typeof raw?.isMine === "boolean" ? raw.isMine : undefined,
+    assigneeId: toStrOrNull(raw?.assigneeId),
+    assigneeName: toStrOrNull(raw?.assigneeName),
   };
 };
 

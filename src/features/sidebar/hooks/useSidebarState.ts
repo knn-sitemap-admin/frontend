@@ -197,10 +197,11 @@ export function useSidebarState() {
     ListItem[]
   >([]);
 
-  // 서버→UI 매핑(예약 목록)
+  // 서버→UI 매핑(예약 목록) - 내 예약만 필터링
   useEffect(() => {
     if (scheduledError) return;
-    const mapped = scheduledItems.map(mapReservationToListItem);
+    const myReservations = scheduledItems.filter((r: any) => r.isMine === true);
+    const mapped = myReservations.map(mapReservationToListItem);
     setScheduledReservations(mapped);
   }, [scheduledItems, scheduledError]);
 

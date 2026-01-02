@@ -38,6 +38,8 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     planned,
     reserved,
     canView,
+    isAlreadyReserved,
+    isReservedByOtherAccount,
 
     // 핸들러
     stopAll,
@@ -167,9 +169,10 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
           variant="default"
           size="lg"
           onClick={handleCreateClick}
+          disabled={isReservedByOtherAccount}
           className="w-full"
         >
-          매물 정보 입력
+          {isReservedByOtherAccount ? "이미 예약됨" : "매물 정보 입력"}
         </Button>
       ) : planned ? (
         <Button
@@ -177,9 +180,10 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
           variant="default"
           size="lg"
           onClick={handleReserveClick}
+          disabled={isAlreadyReserved}
           className="w-full"
         >
-          답사지 예약
+          {isAlreadyReserved ? "이미 예약된 핀" : "답사지 예약"}
         </Button>
       ) : draft ? (
         <Button

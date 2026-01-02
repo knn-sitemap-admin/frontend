@@ -52,7 +52,7 @@ export function findDraftIdByHeuristics(args: {
   return undefined;
 }
 
-// ✅ 예약(scheduled) 목록에서 draftId 찾기
+// 예약(scheduled) 목록에서 draftId 찾기
 export function findDraftIdFromScheduled(args: {
   scheduled: any[];
   lat: number;

@@ -69,17 +69,19 @@ export function Sidebar({
     staleTime: 10 * 60 * 1000, // 10분
   });
 
-  // 2) 파생 리스트
+  // 2) 파생 리스트 - 내 예약만 필터링
   const listItems: ListItem[] = useMemo(
     () =>
-      (items ?? []).map((r) => ({
-        id: String(r.id),
-        title: r.addressLine ?? (r.posKey ? `좌표 ${r.posKey}` : "주소 미확인"),
-        dateISO: r.reservedDate ?? "",
-        // ✅ 있다면 lat/lng도 함께 내려서 지도 이동에 활용
-        lat: (r as any).lat,
-        lng: (r as any).lng,
-      })),
+      (items ?? [])
+        .filter((r) => r.isMine === true)
+        .map((r) => ({
+          id: String(r.id),
+          title: r.addressLine ?? (r.posKey ? `좌표 ${r.posKey}` : "주소 미확인"),
+          dateISO: r.reservedDate ?? "",
+          // ✅ 있다면 lat/lng도 함께 내려서 지도 이동에 활용
+          lat: (r as any).lat,
+          lng: (r as any).lng,
+        })),
     [items]
   );
 

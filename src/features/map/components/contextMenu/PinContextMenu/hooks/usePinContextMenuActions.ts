@@ -14,7 +14,7 @@ import {
   findDraftIdFromScheduled,
   optimisticPlannedPosSet,
 } from "../lib/draftMatching";
-import { useToast } from "@/hooks/use-toast"; // ✅ 토스트 추가
+import { useToast } from "@/hooks/use-toast";
 import { CreateFromPinArgs } from "../PinContextMenuContainer.types";
 
 type BoundsBox =
@@ -169,13 +169,13 @@ export function usePinContextMenuActions({
         return;
       }
 
-      // ✅ 1) 예약 생성
+      // 1) 예약 생성
       await createSurveyReservation({
         pinDraftId: draftId,
         reservedDate: todayYmdKST(),
       });
 
-      // ✅ 2) 예약 리스트 동기화
+      // 2) 예약 리스트 동기화
       try {
         await refetchScheduledReservations();
       } catch (e) {
@@ -183,13 +183,13 @@ export function usePinContextMenuActions({
         console.warn("[reserve] refetchScheduledReservations 실패:", e);
       }
 
-      // ✅ 3) 성공 토스트
+      // 3) 성공 토스트
       toast({
         title: "답사지 예약 완료",
         description: "답사지 예약을 완료했습니다.",
       });
 
-      // ✅ 4) 컨텍스트메뉴 닫기
+      // 4) 컨텍스트메뉴 닫기
       onClose?.();
     } catch (e: any) {
       // eslint-disable-next-line no-console
@@ -259,7 +259,7 @@ export function usePinContextMenuActions({
       const addressFinal =
         address ?? roadAddressFinal ?? jibunAddressFinal ?? null;
 
-      // ✅ 2차: draftId 없으면 reserved 여부에 따라 분기
+      // 2차: draftId 없으면 reserved 여부에 따라 분기
       if (effectiveDraftId == null) {
         if (reserved) {
           // 이미 "답사지예약된 핀"에서 매물등록 → scheduled 리스트에서 찾기

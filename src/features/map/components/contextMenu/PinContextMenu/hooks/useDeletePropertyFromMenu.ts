@@ -21,7 +21,7 @@ export function useDeletePropertyFromMenu({
 }: Args) {
   const { data: me } = useMe();
 
-  /** ✅ 매물 삭제 여부 상태 */
+  /** 매물 삭제 여부 상태 */
   const [deleting, setDeleting] = React.useState(false);
 
   // 🔐 삭제 권한: admin / manager(팀장)만
@@ -39,7 +39,7 @@ export function useDeletePropertyFromMenu({
 
     try {
       setDeleting(true);
-      // ✅ PropertyViewModal에서 쓰는 것과 동일한 요청
+      // PropertyViewModal에서 쓰는 것과 동일한 요청
       await togglePinDisabled(String(propertyIdClean), true);
 
       // 부모 쪽에서 리스트/지도 갱신이 필요하면

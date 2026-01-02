@@ -16,6 +16,7 @@ import { usePinContextMenuActions } from "./hooks/usePinContextMenuActions";
 import { useToast } from "@/hooks/use-toast";
 import { deletePinDraft } from "@/shared/api/pins";
 import { useCallback, useEffect, useMemo } from "react";
+import { extractDraftIdFromPropertyId } from "../ContextMenuPanel/panel.utils";
 
 type Props = PinContextMenuProps & {
   mergedMeta?: MergedMarker[];
@@ -29,9 +30,9 @@ type Props = PinContextMenuProps & {
     lng: number;
     address?: string | null;
   }) => void;
-  /** ✅ 매물 삭제 후 부모에서 리스트/지도 갱신이 필요하면 사용 */
+  /** 매물 삭제 후 부모에서 리스트/지도 갱신이 필요하면 사용 */
   onDeleteProperty?: (id: string | null) => void | Promise<void>;
-  /** ✅ 메뉴가 떠 있는 동안 숨길 라벨 id 제어 */
+  /** 메뉴가 떠 있는 동안 숨길 라벨 id 제어 */
   onChangeHideLabelForId?: (id?: string) => void;
 };
 
@@ -129,15 +130,17 @@ export default function PinContextMenuContainer(props: Props) {
     [position]
   );
 
-  /** 예약 리스트 기준 "현재 위치에 예약이 존재하는지" */
-  const hasReservationAtPos = useMemo(() => {
-    if (!scheduledReservations?.length) return false;
+  /** 예약 리스트 기준 "현재 위치에 예약이 존재하는지" 및 "내 예약인지" */
+  const reservationAtPos = useMemo(() => {
+    if (!scheduledReservations?.length) return { exists: false, isMine: false };
     const key = posK;
 
     const byPosKey = scheduledReservations.find(
       (r: any) => r.posKey && r.posKey === key
     );
-    if (byPosKey) return true;
+    if (byPosKey) {
+      return { exists: true, isMine: byPosKey.isMine === true };
+    }
 
     const lat = position.getLat();
     const lng = position.getLng();
@@ -151,8 +154,15 @@ export default function PinContextMenuContainer(props: Props) {
         Math.abs(r.lng - lng) < EPS
     );
 
-    return !!byLatLng;
+    if (byLatLng) {
+      return { exists: true, isMine: byLatLng.isMine === true };
+    }
+
+    return { exists: false, isMine: false };
   }, [scheduledReservations, posK, position]);
+
+  const hasReservationAtPos = reservationAtPos.exists;
+  const isMyReservationAtPos = reservationAtPos.isMine;
 
   /** 이 위치가 낙관적으로 "답사예정" 처리된 상태인지 */
   const optimisticPlannedHere =
@@ -160,7 +170,7 @@ export default function PinContextMenuContainer(props: Props) {
       ? (globalThis as any).optimisticPlannedPosSet.has(posK)
       : false;
 
-  /** 🔥 최종 reserved/planned 판정 */
+  /**  최종 reserved/planned 판정 */
   let reserved = false;
   let planned = false;
 
@@ -186,6 +196,9 @@ export default function PinContextMenuContainer(props: Props) {
       }
     }
   }
+
+  /** reserved 상태일 때 다른 계정에서 예약한 핀인지 (매물 정보 입력 버튼 비활성화용) */
+  const isReservedByOtherAccountAtPos = reserved && !isMyReservationAtPos;
 
   /** 패널에 넘길 draftState: reserved/planned 에 맞춰 단순화 */
   let draftStateForPanel: string | undefined;
@@ -269,7 +282,7 @@ export default function PinContextMenuContainer(props: Props) {
   const offsetPx = isSearchDraft ? 56 : 56;
   const MENU_Z = Math.max(zIndex ?? 0, 1_000_000);
 
-  /** ✅ 컨텍스트 메뉴 패널에 넘길 propertyId */
+  /** 컨텍스트 메뉴 패널에 넘길 propertyId */
   const propertyIdClean = useMemo(() => {
     if (metaAtPos?.source === "draft") {
       const n = Number((metaAtPos as any)?.id);
@@ -282,7 +295,31 @@ export default function PinContextMenuContainer(props: Props) {
     return (m?.[1] ?? raw) || null;
   }, [propertyId, metaAtPos]);
 
-  /** ✅ draft 메타일 때만 제목으로 사용 */
+  /** 현재 핀의 pinDraftId 추출 */
+  const currentPinDraftId = useMemo(() => {
+    return extractDraftIdFromPropertyId(propertyIdClean);
+  }, [propertyIdClean]);
+
+  /** 현재 핀이 이미 예약되어 있는지 확인 (다른 계정의 예약 포함) */
+  const reservationForThisDraft = useMemo(() => {
+    if (currentPinDraftId == null || !scheduledReservations?.length)
+      return null;
+    const draftIdStr = String(currentPinDraftId);
+    return (
+      scheduledReservations.find((r: any) => {
+        const rDraftId = r.pinDraftId != null ? String(r.pinDraftId) : null;
+        return rDraftId === draftIdStr;
+      }) || null
+    );
+  }, [currentPinDraftId, scheduledReservations]);
+
+  const isAlreadyReserved = reservationForThisDraft != null;
+  const isMyReservation = reservationForThisDraft?.isMine === true;
+
+  /** 다른 계정에서 예약한 핀인지 (답사지 등록 버튼 비활성화용) */
+  const isReservedByOtherAccount = isAlreadyReserved && !isMyReservation;
+
+  /** draft 메타일 때만 제목으로 사용 */
   const metaTitle = useMemo(() => {
     if (!metaAtPos) return undefined;
 
@@ -314,7 +351,7 @@ export default function PinContextMenuContainer(props: Props) {
     );
   }, [propertyTitle, pin, metaTitle]);
 
-  /** ✅ 매물 삭제용 훅 (기존) */
+  /** 매물 삭제용 훅 (기존) */
   const { canDelete: canDeleteProperty, handleDelete: handleDeleteProperty } =
     useDeletePropertyFromMenu({
       propertyIdClean,
@@ -324,7 +361,7 @@ export default function PinContextMenuContainer(props: Props) {
       onClose,
     });
 
-  /** ✅ 답사예정지(draft) id 추출 */
+  /** 답사예정지(draft) id 추출 */
   const draftIdFromPin = useMemo(() => {
     const raw = String((pin as any)?.id ?? "");
     if (raw.startsWith("__visit__")) {
@@ -346,10 +383,10 @@ export default function PinContextMenuContainer(props: Props) {
 
   const draftId = draftIdFromMeta ?? draftIdFromPin;
 
-  /** ✅ 답사예정지 삭제 가능 여부 (예약 전 PLANNED 핀) */
+  /** 답사예정지 삭제 가능 여부 (예약 전 PLANNED 핀) */
   const canDeleteDraft = planned && draftId != null;
 
-  /** ✅ 최종 삭제 가능 여부: 매물 삭제 || 답사예정지 삭제 */
+  /** 최종 삭제 가능 여부: 매물 삭제 || 답사예정지 삭제 */
   const canDelete = canDeleteProperty || canDeleteDraft;
 
   /** 🔥 메뉴가 떠 있는 동안 라벨 숨기기: 여기서 id를 강제로 세팅 */
@@ -460,6 +497,8 @@ export default function PinContextMenuContainer(props: Props) {
               onReserve={reserving ? () => {} : handleReserveWithToast}
               isPlanPin={planned}
               isVisitReservedPin={reserved}
+              isAlreadyReserved={isReservedByOtherAccount}
+              isReservedByOtherAccount={isReservedByOtherAccountAtPos}
               showFav={listed}
               onAddFav={onAddFav}
               favActive={favActive}
