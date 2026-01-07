@@ -17,6 +17,25 @@ const toNum = (v: unknown): number | undefined => {
   return undefined;
 };
 
+/** any → 금액 문자열 ("1234만원" | "1.2억" | "-") */
+const toPriceText = (v: unknown): string => {
+  const n = toNum(v);
+  if (typeof n !== "number") return "-";
+
+  // n은 "만원" 단위라고 가정
+  if (Math.abs(n) >= 10000) {
+    const eok = n / 10000;
+    // 소수점 한 자리까지만 (정수면 소수 제거)
+    const text = Number.isInteger(eok)
+      ? String(eok)
+      : (Math.floor(eok * 10) / 10).toFixed(1);
+
+    return `${text}억`;
+  }
+
+  return `${Math.trunc(n)}만원`;
+};
+
 /** any → 정수 문자열 | "-" */
 const toNumText = (v: unknown): string => {
   const n = toNum(v);
@@ -74,10 +93,10 @@ export default function StructureLinesList({
               .join(", ") || "-";
 
           // 최소/최대는 숫자만 추려서 노출 (문자면 숫자 부분만 파싱)
-          const minText = toNumText(
+          const minText = toPriceText(
             (l as any)?.primary ?? (l as any)?.minPrice
           );
-          const maxText = toNumText(
+          const maxText = toPriceText(
             (l as any)?.secondary ?? (l as any)?.maxPrice
           );
 
