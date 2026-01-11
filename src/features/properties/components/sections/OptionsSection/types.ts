@@ -1,3 +1,10 @@
+import type {
+  KitchenLayout,
+  FridgeSlot,
+  SofaSize,
+  LivingRoomView,
+} from "@/features/properties/types/property-dto";
+
 export interface OptionsSectionProps {
   PRESET_OPTIONS: readonly string[];
 
@@ -12,4 +19,24 @@ export interface OptionsSectionProps {
   /** ✅ 기타 옵션(자유 텍스트) 문자열 */
   optionEtc?: string;
   setOptionEtc?: (v: string) => void;
+
+  // Nullable Enum 필드
+  kitchenLayout?: KitchenLayout | null;
+  setKitchenLayout?: (v: KitchenLayout | null) => void;
+  fridgeSlot?: FridgeSlot | null;
+  setFridgeSlot?: (v: FridgeSlot | null) => void;
+  sofaSize?: SofaSize | null;
+  setSofaSize?: (v: SofaSize | null) => void;
+  livingRoomView?: LivingRoomView | null;
+  setLivingRoomView?: (v: LivingRoomView | null) => void;
+
+  // Boolean 필드
+  hasIslandTable?: boolean;
+  setHasIslandTable?: (v: boolean) => void;
+  hasKitchenWindow?: boolean;
+  setHasKitchenWindow?: (v: boolean) => void;
+  hasCityGas?: boolean;
+  setHasCityGas?: (v: boolean) => void;
+  hasInduction?: boolean;
+  setHasInduction?: (v: boolean) => void;
 }

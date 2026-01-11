@@ -193,7 +193,9 @@ export function buildCreatePayload(args: BuildArgs) {
 
   // ✅ 옵션: 배열만 받아서 서버 DTO(CreatePinOptionsDto)에 맞게 변환
   //    - buildOptionsForServer 내부에서 extraOptionsText까지 구성
-  const optionsForServer = buildOptionsForServer(options ?? []);
+  const optionsForServerBase = buildOptionsForServer(options ?? []);
+  
+  const optionsForServer = optionsForServerBase;
 
   /* 6) 최종 payload 조립 */
   const payload: CreatePayload & {

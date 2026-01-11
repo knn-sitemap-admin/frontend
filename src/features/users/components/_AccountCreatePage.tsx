@@ -31,9 +31,7 @@ import { useState, useEffect } from "react";
 import { formatPhone } from "@/lib/formatPhone";
 import { useRouter } from "next/navigation";
 import { getTeams } from "@/features/teams";
-import {
-  createEmployee,
-} from "@/features/users/api/account";
+import { createEmployee } from "@/features/users/api/account";
 import { useToast } from "@/hooks/use-toast";
 import { uploadOnePhoto, UploadDomain } from "@/shared/api/photos/photoUpload";
 import {
@@ -57,7 +55,8 @@ export type CreateAccountPayload = {
     | "DEPUTY_GENERAL"
     | "GENERAL_MANAGER"
     | "TEAM_LEADER"
-    | "DIRECTOR";
+    | "DIRECTOR"
+    | "CEO";
   phone: string;
   birthday: string; // YYYY-MM-DD (빈값 허용 시 "")
   emergency_contact: string;
@@ -106,6 +105,7 @@ const CreateUserSchema = z
         "GENERAL_MANAGER",
         "TEAM_LEADER",
         "DIRECTOR",
+        "CEO",
       ],
       {
         required_error: "직급을 선택하세요.",
@@ -172,23 +172,29 @@ const CreateUserSchema = z
   })
   .refine(
     (data) => {
-      // manager/TEAM_LEADER는 팀 배정 불가
-      const isManagerOrTeamLeader =
-        data.positionRank === "TEAM_LEADER" || data.positionRank === "DIRECTOR";
-      if (isManagerOrTeamLeader && data.team) {
-        return false; // manager/TEAM_LEADER는 팀 배정 불가
+      // 팀장/실장/대표이사는 팀 배정 불가
+      const isManagerRank =
+        data.positionRank === "TEAM_LEADER" ||
+        data.positionRank === "DIRECTOR" ||
+        data.positionRank === "CEO";
+      if (isManagerRank && data.team) {
+        return false; // 팀장/실장/대표이사는 팀 배정 불가
       }
       return true;
     },
     {
-      message: "팀장/실장 직급은 팀 배정이 불가능합니다.",
+      message: "팀장/실장/대표이사 직급은 팀 배정이 불가능합니다.",
       path: ["team"],
     }
   )
   .refine(
     (data) => {
-      // 팀장 직급이면 팀 이름 필수
-      if (data.positionRank === "TEAM_LEADER") {
+      // 팀장/실장/대표이사 직급이면 팀 이름 필수
+      const isManagerRank =
+        data.positionRank === "TEAM_LEADER" ||
+        data.positionRank === "DIRECTOR" ||
+        data.positionRank === "CEO";
+      if (isManagerRank) {
         return !!data.teamName?.trim();
       }
       return true;
@@ -282,7 +288,7 @@ export default function AccountCreatePage({
   /** 제출 */
   const handleSubmit = async (v: CreateUserValues) => {
     console.log("handleSubmit 호출됨", { v, uploading, isSubmitting });
-    
+
     if (uploading || isSubmitting) {
       console.log("제출 차단: uploading 또는 isSubmitting이 true");
       return;
@@ -292,23 +298,24 @@ export default function AccountCreatePage({
     console.log("계정 생성 시작");
 
     try {
-      const isTeamLeaderRank = v.positionRank === "TEAM_LEADER";
-
-      // 팀장/실장은 팀 배정 불가
       const isManagerRank =
-        v.positionRank === "TEAM_LEADER" || v.positionRank === "DIRECTOR";
+        v.positionRank === "TEAM_LEADER" ||
+        v.positionRank === "DIRECTOR" ||
+        v.positionRank === "CEO";
+
+      // 팀장/실장/대표이사는 팀 배정 불가
       if (isManagerRank && v.team?.teamId) {
         toast({
           title: "입력 오류",
-          description: "팀장/실장 직급은 팀 배정이 불가능합니다.",
+          description: "팀장/실장/대표이사 직급은 팀 배정이 불가능합니다.",
           variant: "destructive",
         });
         setIsSubmitting(false);
         return;
       }
 
-      // 팀장 직급일 때는 팀 이름이 필수
-      if (isTeamLeaderRank && !v.teamName?.trim()) {
+      // 팀장/실장/대표이사 직급일 때는 팀 이름이 필수
+      if (isManagerRank && !v.teamName?.trim()) {
         toast({
           title: "입력 오류",
           description: "팀 이름을 입력하세요.",
@@ -323,8 +330,8 @@ export default function AccountCreatePage({
         email: v.email,
         password: v.password,
         isDisabled: false,
-        // 팀장이 아닌 경우에만 team 포함
-        ...(isTeamLeaderRank
+        // 팀장/실장/대표이사가 아닌 경우에만 team 포함
+        ...(isManagerRank
           ? {}
           : v.team?.teamId
           ? {
@@ -337,8 +344,8 @@ export default function AccountCreatePage({
               },
             }
           : {}),
-        // 팀장인 경우 teamName 포함
-        ...(isTeamLeaderRank && v.teamName?.trim()
+        // 팀장/실장/대표이사인 경우 teamName 포함
+        ...(isManagerRank && v.teamName?.trim()
           ? { teamName: v.teamName.trim() }
           : {}),
         // 직원 정보
@@ -519,7 +526,10 @@ export default function AccountCreatePage({
                   `[name="${firstErrorField}"]`
                 );
                 if (element) {
-                  element.scrollIntoView({ behavior: "smooth", block: "center" });
+                  element.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
                 }
               }
             })}
@@ -561,6 +571,7 @@ export default function AccountCreatePage({
                         <option value="GENERAL_MANAGER">부장</option>
                         <option value="TEAM_LEADER">팀장</option>
                         <option value="DIRECTOR">실장</option>
+                        <option value="CEO">대표이사</option>
                       </select>
                     </FormControl>
                     <FormMessage />
@@ -616,7 +627,10 @@ export default function AccountCreatePage({
                             <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent
+                          className="w-auto p-0 z-[2200]"
+                          align="start"
+                        >
                           <Calendar
                             mode="single"
                             selected={selectedDate}
@@ -767,7 +781,8 @@ export default function AccountCreatePage({
               />
               {/* staff 직급일 때만 팀 선택 표시 (선택사항) */}
               {form.watch("positionRank") !== "TEAM_LEADER" &&
-                form.watch("positionRank") !== "DIRECTOR" && (
+                form.watch("positionRank") !== "DIRECTOR" &&
+                form.watch("positionRank") !== "CEO" && (
                   <>
                     <FormField
                       control={form.control}
@@ -800,7 +815,10 @@ export default function AccountCreatePage({
                                   : "팀을 선택하세요 (선택사항)"}
                               </option>
                               {teams.map((team) => (
-                                <option key={team.id} value={team.id.toString()}>
+                                <option
+                                  key={team.id}
+                                  value={team.id.toString()}
+                                >
                                   {team.name}
                                 </option>
                               ))}
@@ -808,15 +826,17 @@ export default function AccountCreatePage({
                           </FormControl>
                           <FormMessage />
                           <p className="text-xs text-muted-foreground">
-                            팀장/실장 직급은 팀 배정이 불가능합니다.
+                            팀장/실장/대표이사 직급은 팀 배정이 불가능합니다.
                           </p>
                         </FormItem>
                       )}
                     />
                   </>
                 )}
-              {/* 팀장 직급일 때 팀 이름 입력 필드 표시 */}
-              {form.watch("positionRank") === "TEAM_LEADER" && (
+              {/* 팀장/실장/대표이사 직급일 때 팀 이름 입력 필드 표시 */}
+              {(form.watch("positionRank") === "TEAM_LEADER" ||
+                form.watch("positionRank") === "DIRECTOR" ||
+                form.watch("positionRank") === "CEO") && (
                 <FormField
                   control={form.control}
                   name="teamName"
@@ -832,7 +852,8 @@ export default function AccountCreatePage({
                       </FormControl>
                       <FormMessage />
                       <p className="text-xs text-muted-foreground">
-                        팀장 직급으로 설정하면 자동으로 팀이 생성됩니다.
+                        팀장/실장/대표이사 직급으로 설정하면 자동으로 팀이
+                        생성됩니다.
                       </p>
                     </FormItem>
                   )}

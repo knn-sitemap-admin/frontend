@@ -241,6 +241,28 @@ export function useInjectInitialData({
       )
     );
 
+    // 새로운 옵션 필드들
+    const optionsData = (sourceData as any)?.options ?? null;
+    if (optionsData && typeof optionsData === "object") {
+      api.setKitchenLayout?.(optionsData.kitchenLayout ?? null);
+      api.setFridgeSlot?.(optionsData.fridgeSlot ?? null);
+      api.setSofaSize?.(optionsData.sofaSize ?? null);
+      api.setLivingRoomView?.(optionsData.livingRoomView ?? null);
+      api.setHasIslandTable?.(Boolean(optionsData.hasIslandTable));
+      api.setHasKitchenWindow?.(Boolean(optionsData.hasKitchenWindow));
+      api.setHasCityGas?.(Boolean(optionsData.hasCityGas));
+      api.setHasInduction?.(Boolean(optionsData.hasInduction));
+    } else {
+      api.setKitchenLayout?.(null);
+      api.setFridgeSlot?.(null);
+      api.setSofaSize?.(null);
+      api.setLivingRoomView?.(null);
+      api.setHasIslandTable?.(false);
+      api.setHasKitchenWindow?.(false);
+      api.setHasCityGas?.(false);
+      api.setHasInduction?.(false);
+    }
+
     api.setPublicMemo(normalized.publicMemo);
     api.setSecretMemo(normalized.secretMemo);
     api.setUnitLines(normalized.unitLines);

@@ -53,7 +53,20 @@ export type ApiPin = {
     hasDryer?: boolean | null;
     hasBidet?: boolean | null;
     hasAirPurifier?: boolean | null;
+    isDirectLease?: boolean | null;
     extraOptionsText?: string | null;
+
+    // Nullable Enum 필드
+    kitchenLayout?: "G" | "D" | "LINE" | null;
+    fridgeSlot?: "1" | "2" | "3" | null;
+    sofaSize?: "SEAT_2" | "SEAT_3" | "SEAT_4" | null;
+    livingRoomView?: "OPEN" | "NORMAL" | "BLOCKED" | null;
+
+    // Boolean 필드
+    hasIslandTable?: boolean | null;
+    hasKitchenWindow?: boolean | null;
+    hasCityGas?: boolean | null;
+    hasInduction?: boolean | null;
   } | null;
 
   /** 서버 directions 그대로 수용 */

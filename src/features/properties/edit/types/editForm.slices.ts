@@ -5,6 +5,12 @@ import {
   OrientationRow, // ✅ buildOrientation 반환에 필요
 } from "../../types/property-domain";
 import type { AreaSet } from "../../components/sections/AreaSetsSection/types";
+import type {
+  KitchenLayout,
+  FridgeSlot,
+  SofaSize,
+  LivingRoomView,
+} from "../../types/property-dto";
 
 /* ───────── 슬라이스 타입들 ───────── */
 export type AreaSetsFormSlice = {
@@ -148,6 +154,31 @@ export type OptionsFormSlice = {
   /** ✅ 옵션 직접입력 텍스트 (콤마 구분) */
   optionEtc: string;
   setOptionEtc: (v: string) => void;
+
+  /** ✅ 새로운 옵션 필드들 */
+  kitchenLayout: KitchenLayout | null;
+  setKitchenLayout: (v: KitchenLayout | null) => void;
+
+  fridgeSlot: FridgeSlot | null;
+  setFridgeSlot: (v: FridgeSlot | null) => void;
+
+  sofaSize: SofaSize | null;
+  setSofaSize: (v: SofaSize | null) => void;
+
+  livingRoomView: LivingRoomView | null;
+  setLivingRoomView: (v: LivingRoomView | null) => void;
+
+  hasIslandTable: boolean;
+  setHasIslandTable: (v: boolean) => void;
+
+  hasKitchenWindow: boolean;
+  setHasKitchenWindow: (v: boolean) => void;
+
+  hasCityGas: boolean;
+  setHasCityGas: (v: boolean) => void;
+
+  hasInduction: boolean;
+  setHasInduction: (v: boolean) => void;
 };
 
 export type StructureLinesFormSlice = {

@@ -124,6 +124,7 @@ export function isEmpty(obj: object | null | undefined) {
 /* 옵션 sanitize: boolean은 !!로, extraOptionsText는 255자로 제한
    - extraOptionsText 가 null 로 넘어오면 null 을 그대로 유지해서
      DB 기존 값을 삭제할 수 있게 함
+   - nullable enum 필드는 그대로 전달 (null 허용)
 */
 export function sanitizeOptions(
   o?: CreatePinOptionsDto | null
@@ -138,6 +139,7 @@ export function sanitizeOptions(
     hasDryer: !!o.hasDryer,
     hasBidet: !!o.hasBidet,
     hasAirPurifier: !!o.hasAirPurifier,
+    isDirectLease: !!o.isDirectLease,
   };
 
   // extraOptionsText 키가 실제로 들어왔는지 여부

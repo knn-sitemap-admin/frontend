@@ -129,7 +129,8 @@ export type UpsertEmployeeInfoRequest = {
     | "DEPUTY_GENERAL"
     | "GENERAL_MANAGER"
     | "TEAM_LEADER"
-    | "DIRECTOR";
+    | "DIRECTOR"
+    | "CEO";
   docUrlResidentRegistration?: string | null;
   docUrlResidentAbstract?: string | null;
   docUrlIdCard?: string | null;
@@ -200,7 +201,8 @@ export type CreateEmployeeInfoRequest = {
     | "DEPUTY_GENERAL"
     | "GENERAL_MANAGER"
     | "TEAM_LEADER"
-    | "DIRECTOR";
+    | "DIRECTOR"
+    | "CEO";
   profileUrl?: string;
   docUrlIdCard?: string;
   docUrlResidentRegistration?: string;
@@ -355,7 +357,8 @@ export type PositionRank =
   | "DEPUTY_GENERAL"
   | "GENERAL_MANAGER"
   | "TEAM_LEADER"
-  | "DIRECTOR";
+  | "DIRECTOR"
+  | "CEO";
 
 export type EmployeeListQuery = {
   sort?: "name" | "rank";
@@ -421,7 +424,8 @@ export type PatchPositionRankRequest = {
     | "DEPUTY_GENERAL"
     | "GENERAL_MANAGER"
     | "TEAM_LEADER"
-    | "DIRECTOR";
+    | "DIRECTOR"
+    | "CEO";
   teamName?: string; // TEAM_LEADER일 때만 사용
 };
 

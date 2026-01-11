@@ -18,9 +18,15 @@ type Props = {
   onRemove: (id: string) => void;
   onEdit?: (credentialId: string) => void; // optional - 팀 관리에서는 수정 불필요
   onViewFavorites?: (accountId: string) => void; // 즐겨찾기 목록 보기
+  onViewReservedPins?: (accountId: string) => void; // 예약한 핀 목록 보기
   sortColumn?: SortColumn;
   sortDirection?: SortDirection;
   onSort?: (column: SortColumn, direction: SortDirection) => void;
+  hideDepartment?: boolean; // 부서 컬럼 숨기기 (팀 관리용)
+  hideEdit?: boolean; // 계정 수정 컬럼 숨기기 (팀 관리용)
+  hideFavorites?: boolean; // 즐겨찾기 목록 컬럼 숨기기 (팀 관리용)
+  hideReservedPins?: boolean; // 예약한 매물 목록 컬럼 숨기기 (팀 관리용)
+  removeLabel?: string; // 삭제 버튼 라벨 (기본값: "삭제", 팀 관리용: "팀 제외")
 };
 
 export default function AccountsListPage({
@@ -29,12 +35,22 @@ export default function AccountsListPage({
   onRemove,
   onEdit,
   onViewFavorites,
+  onViewReservedPins,
   sortColumn = null,
   sortDirection = "asc",
   onSort,
+  hideDepartment = false,
+  hideEdit = false,
+  hideFavorites = false,
+  hideReservedPins = false,
+  removeLabel = "삭제",
 }: Props) {
   const handleViewFavorites = (accountId: string) => {
     onViewFavorites?.(accountId);
+  };
+
+  const handleViewReservedPins = (accountId: string) => {
+    onViewReservedPins?.(accountId);
   };
 
   const handleSortClick = (column: "name" | "rank") => {
@@ -105,12 +121,23 @@ export default function AccountsListPage({
               <SortableHeader column="name">이름</SortableHeader>
               <th className="px-4 py-3 text-left font-medium">연락처</th>
               <SortableHeader column="rank">직급</SortableHeader>
-              <th className="px-4 py-3 text-left font-medium">부서</th>
-              <th className="px-4 py-3 text-center font-medium">
-                즐겨찾기 목록
-              </th>
-              <th className="px-4 py-3 text-center font-medium">계정 수정</th>
-              <th className="px-4 py-3 text-center font-medium">계정 삭제</th>
+              {!hideDepartment && (
+                <th className="px-4 py-3 text-left font-medium">부서</th>
+              )}
+              {!hideReservedPins && (
+                <th className="px-4 py-3 text-center font-medium">
+                  예약한 매물 목록
+                </th>
+              )}
+              {!hideFavorites && (
+                <th className="px-4 py-3 text-center font-medium">
+                  즐겨찾기 목록
+                </th>
+              )}
+              {!hideEdit && (
+                <th className="px-4 py-3 text-center font-medium">계정 수정</th>
+              )}
+              <th className="px-4 py-3 text-center font-medium">{removeLabel}</th>
             </tr>
           </thead>
           <tbody>
@@ -157,45 +184,63 @@ export default function AccountsListPage({
                   <td className="px-4 py-3">
                     {positionRankLabel(u.positionRank)}
                   </td>
-                  <td className="px-4 py-3">{u.teamName || "-"}</td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
-                      onClick={() => handleViewFavorites(u.id)}
-                      title="즐겨찾기 목록"
-                    >
-                      <List className="h-4 w-4" />
-                      목록
-                    </button>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {onEdit ? (
+                  {!hideDepartment && (
+                    <td className="px-4 py-3">{u.teamName || "-"}</td>
+                  )}
+                  {!hideReservedPins && (
+                    <td className="px-4 py-3 text-center">
                       <button
-                        className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50"
-                        onClick={() => onEdit(u.id)}
-                        title="수정"
+                        className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+                        onClick={() => handleViewReservedPins(u.id)}
+                        title="예약한 매물 목록"
                       >
-                        <Edit className="h-4 w-4" />
-                        수정
+                        <List className="h-4 w-4" />
+                        목록
                       </button>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
+                    </td>
+                  )}
+                  {!hideFavorites && (
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+                        onClick={() => handleViewFavorites(u.id)}
+                        title="즐겨찾기 목록"
+                      >
+                        <List className="h-4 w-4" />
+                        목록
+                      </button>
+                    </td>
+                  )}
+                  {!hideEdit && (
+                    <td className="px-4 py-3 text-center">
+                      {onEdit ? (
+                        <button
+                          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50"
+                          onClick={() => onEdit(u.id)}
+                          title="수정"
+                        >
+                          <Edit className="h-4 w-4" />
+                          수정
+                        </button>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-center">
-                    {u.role === "admin" ? (
+                    {u.role === "admin" || u.role === "team_leader" ? (
                       <span className="text-muted-foreground text-xs">-</span>
                     ) : (
                       <button
                         className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
                         onClick={() => {
-                          if (confirm("해당 계정을 삭제하시겠습니까?"))
+                          if (confirm(removeLabel === "팀 제외" ? "해당 직원을 팀에서 제외하시겠습니까?" : "해당 계정을 삭제하시겠습니까?"))
                             onRemove(u.id);
                         }}
-                        title="삭제"
+                        title={removeLabel}
                       >
                         <Trash2 className="h-4 w-4" />
-                        삭제
+                        {removeLabel}
                       </button>
                     )}
                   </td>

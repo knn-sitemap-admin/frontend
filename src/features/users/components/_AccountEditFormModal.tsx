@@ -20,6 +20,7 @@ import { getTeams } from "@/features/teams";
 import {
   getCredentialDetail,
   createEmployeeInfo,
+  patchPositionRank,
 } from "@/features/users/api/account";
 import { useToast } from "@/hooks/use-toast";
 import { uploadOnePhoto, UploadDomain } from "@/shared/api/photos/photoUpload";
@@ -51,6 +52,7 @@ const UpdateUserSchema = z
         "GENERAL_MANAGER",
         "TEAM_LEADER",
         "DIRECTOR",
+        "CEO",
       ],
       {
         required_error: "직급을 선택하세요.",
@@ -76,6 +78,21 @@ const UpdateUserSchema = z
       .optional()
       .or(z.literal("")),
     password_confirm: z.string().optional(),
+    team: z
+      .object({
+        teamId: z.string(),
+        isPrimary: z.boolean().optional(),
+        joinedAt: z.string().optional(),
+      })
+      .optional()
+      .transform((val) => {
+        // teamId가 빈 문자열이거나 없으면 undefined로 변환
+        if (!val || !val.teamId || val.teamId.trim() === "") {
+          return undefined;
+        }
+        return val;
+      }),
+    teamName: z.string().optional(),
     photo_url: z
       .string()
       .url("URL 형식이 올바르지 않습니다.")
@@ -112,6 +129,40 @@ const UpdateUserSchema = z
     {
       message: "비밀번호가 일치하지 않습니다.",
       path: ["password_confirm"],
+    }
+  )
+  .refine(
+    (data) => {
+      // 팀장/실장/대표이사는 팀 배정 불가
+      const isManagerRank =
+        data.positionRank === "TEAM_LEADER" ||
+        data.positionRank === "DIRECTOR" ||
+        data.positionRank === "CEO";
+      if (isManagerRank && data.team) {
+        return false; // 팀장/실장/대표이사는 팀 배정 불가
+      }
+      return true;
+    },
+    {
+      message: "팀장/실장/대표이사 직급은 팀 배정이 불가능합니다.",
+      path: ["team"],
+    }
+  )
+  .refine(
+    (data) => {
+      // 팀장/실장/대표이사 직급이면 팀 이름 필수
+      const isManagerRank =
+        data.positionRank === "TEAM_LEADER" ||
+        data.positionRank === "DIRECTOR" ||
+        data.positionRank === "CEO";
+      if (isManagerRank) {
+        return !!data.teamName?.trim();
+      }
+      return true;
+    },
+    {
+      message: "팀 이름을 입력하세요.",
+      path: ["teamName"],
     }
   );
 
@@ -170,6 +221,8 @@ function AccountEditFormModalBody({
       salary_account: "",
       password: "",
       password_confirm: "",
+      team: undefined,
+      teamName: "",
       photo_url: "",
       id_photo_url: "",
       resident_register_url: "",
@@ -188,6 +241,34 @@ function AccountEditFormModalBody({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  /** 팀 목록 관리 */
+  const [teams, setTeams] = useState<
+    Array<{ id: number | string; name: string; teamLeaderName: string | null }>
+  >([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+
+  // 팀 목록 로드
+  useEffect(() => {
+    const loadTeams = async () => {
+      try {
+        const teamData = await getTeams();
+        setTeams(
+          teamData.map((team) => ({
+            id: team.id,
+            name: team.name,
+            teamLeaderName: team.teamLeaderName || null,
+          }))
+        );
+      } catch (error: any) {
+        console.error("팀 목록 로드 실패:", error);
+        setTeams([]);
+      } finally {
+        setTeamsLoading(false);
+      }
+    };
+    loadTeams();
+  }, []);
+
   // 계정 상세 정보 로드
   useEffect(() => {
     if (!credentialId) return;
@@ -197,8 +278,14 @@ function AccountEditFormModalBody({
       try {
         const detail = await getCredentialDetail(credentialId);
         const account = detail.account;
+        const team = detail.team;
 
         if (account) {
+          const isManagerRank =
+            (account as any).positionRank === "TEAM_LEADER" ||
+            (account as any).positionRank === "DIRECTOR" ||
+            (account as any).positionRank === "CEO";
+
           form.reset({
             name: account.name || "",
             positionRank: (account as any).positionRank || "ASSISTANT_MANAGER",
@@ -210,6 +297,15 @@ function AccountEditFormModalBody({
             salary_account: account.salaryAccount || "",
             password: "",
             password_confirm: "",
+            team:
+              team && !isManagerRank
+                ? {
+                    teamId: team.id,
+                    isPrimary: team.isPrimary,
+                    joinedAt: team.joinedAt || undefined,
+                  }
+                : undefined,
+            teamName: isManagerRank && team ? team.name : "",
             photo_url: account.profileUrl || "",
             id_photo_url: (account as any).docUrlIdCard || "",
             resident_register_url:
@@ -430,6 +526,7 @@ function AccountEditFormModalBody({
                           <option value="GENERAL_MANAGER">부장</option>
                           <option value="TEAM_LEADER">팀장</option>
                           <option value="DIRECTOR">실장</option>
+                          <option value="CEO">대표이사</option>
                         </select>
                       </FormControl>
                       <FormMessage />
@@ -466,7 +563,10 @@ function AccountEditFormModalBody({
                               <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
+                          <PopoverContent
+                            className="w-auto p-0 z-[2200]"
+                            align="start"
+                          >
                             <Calendar
                               mode="single"
                               selected={selectedDate}
@@ -617,6 +717,86 @@ function AccountEditFormModalBody({
                     </FormItem>
                   )}
                 />
+                {/* staff 직급일 때만 팀 선택 표시 (선택사항) */}
+                {form.watch("positionRank") !== "TEAM_LEADER" &&
+                  form.watch("positionRank") !== "DIRECTOR" &&
+                  form.watch("positionRank") !== "CEO" && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="team"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>팀 (선택사항)</FormLabel>
+                            <FormControl>
+                              <select
+                                value={field.value?.teamId || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === "") {
+                                    // 빈 문자열이면 team을 undefined로 설정
+                                    field.onChange(undefined);
+                                  } else {
+                                    // 값이 있으면 team 객체 설정
+                                    field.onChange({
+                                      teamId: value,
+                                      isPrimary: true,
+                                    });
+                                  }
+                                }}
+                                disabled={teamsLoading}
+                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                <option value="">
+                                  {teamsLoading
+                                    ? "팀 목록 로딩 중..."
+                                    : "팀을 선택하세요 (선택사항)"}
+                                </option>
+                                {teams.map((team) => (
+                                  <option
+                                    key={team.id}
+                                    value={team.id.toString()}
+                                  >
+                                    {team.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-muted-foreground">
+                              팀장/실장/대표이사 직급은 팀 배정이 불가능합니다.
+                            </p>
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
+                {/* 팀장/실장/대표이사 직급일 때 팀 이름 입력 필드 표시 */}
+                {(form.watch("positionRank") === "TEAM_LEADER" ||
+                  form.watch("positionRank") === "DIRECTOR" ||
+                  form.watch("positionRank") === "CEO") && (
+                  <FormField
+                    control={form.control}
+                    name="teamName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>팀 이름 *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="팀 이름을 입력하세요"
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-xs text-muted-foreground">
+                          팀장/실장/대표이사 직급으로 설정하면 자동으로 팀이
+                          생성됩니다.
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
 
               {/* 추가 정보 (파일 업로드) */}

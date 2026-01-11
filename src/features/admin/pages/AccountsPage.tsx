@@ -8,7 +8,10 @@ import {
 } from "@/features/users/api/account";
 import AccountsListPage from "@/features/users/components/_AccountsListPage";
 import AccountEditFormModal from "@/features/users/components/_AccountEditFormModal";
-import { AccountFavoritesModal } from "@/features/account-favorites";
+import {
+  AccountFavoritesModal,
+  AccountReservedPinsModal,
+} from "@/features/account-favorites";
 import type { UserRow, RoleKey } from "@/features/users/types";
 import { api } from "@/shared/api/api";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +28,10 @@ export default function AccountsPage() {
     string | null
   >(null);
   const [viewingFavoritesAccountName, setViewingFavoritesAccountName] =
+    useState<string>("");
+  const [viewingReservedPinsAccountId, setViewingReservedPinsAccountId] =
+    useState<string | null>(null);
+  const [viewingReservedPinsAccountName, setViewingReservedPinsAccountName] =
     useState<string>("");
 
   // 검색 및 정렬 상태
@@ -112,6 +119,7 @@ export default function AccountsPage() {
         photo_url: employee.profileUrl || undefined,
         teamName: employee.teamName || undefined,
         favoritePins: employee.favoritePins || [], // 계정별 즐겨찾기 핀 목록 포함
+        reservedPinDrafts: employee.reservedPinDrafts || [], // 계정별 예약한 핀 목록 포함
         role: role, // role 정보 포함
       };
     });
@@ -276,6 +284,13 @@ export default function AccountsPage() {
     setViewingFavoritesAccountName(account?.name || "");
   };
 
+  // 예약한 핀 목록 보기 핸들러
+  const handleViewReservedPins = (accountId: string) => {
+    const account = userRows.find((row) => row.id === accountId);
+    setViewingReservedPinsAccountId(accountId);
+    setViewingReservedPinsAccountName(account?.name || "");
+  };
+
   // 현재 보고 있는 계정의 favoritePins 가져오기
   const viewingAccountFavorites = useMemo(() => {
     if (!viewingFavoritesAccountId) return null;
@@ -283,10 +298,23 @@ export default function AccountsPage() {
     return account?.favoritePins || [];
   }, [viewingFavoritesAccountId, userRows]);
 
+  // 현재 보고 있는 계정의 reservedPinDrafts 가져오기
+  const viewingAccountReservedPins = useMemo(() => {
+    if (!viewingReservedPinsAccountId) return null;
+    const account = userRows.find((row) => row.id === viewingReservedPinsAccountId);
+    return account?.reservedPinDrafts || [];
+  }, [viewingReservedPinsAccountId, userRows]);
+
   // 즐겨찾기 모달 닫기
   const handleCloseFavoritesModal = () => {
     setViewingFavoritesAccountId(null);
     setViewingFavoritesAccountName("");
+  };
+
+  // 예약한 핀 모달 닫기
+  const handleCloseReservedPinsModal = () => {
+    setViewingReservedPinsAccountId(null);
+    setViewingReservedPinsAccountName("");
   };
 
   return (
@@ -327,6 +355,7 @@ export default function AccountsPage() {
             onRemove={handleRemove}
             onEdit={handleEdit}
             onViewFavorites={handleViewFavorites}
+            onViewReservedPins={handleViewReservedPins}
             sortColumn={sortColumn}
             sortDirection={sortDirection}
             onSort={handleSort}
@@ -351,6 +380,15 @@ export default function AccountsPage() {
         accountName={viewingFavoritesAccountName}
         favoritePins={viewingAccountFavorites || []}
         onClose={handleCloseFavoritesModal}
+      />
+
+      {/* 예약한 핀 목록 모달 */}
+      <AccountReservedPinsModal
+        open={!!viewingReservedPinsAccountId}
+        accountId={viewingReservedPinsAccountId}
+        accountName={viewingReservedPinsAccountName}
+        reservedPinDrafts={viewingAccountReservedPins || []}
+        onClose={handleCloseReservedPinsModal}
       />
     </div>
   );

@@ -13,6 +13,7 @@ import { Plus } from "lucide-react";
 import { OptionsSectionProps } from "./types";
 import OptionCell from "./OptionCell";
 import { Button } from "@/components/atoms/Button/Button";
+import SafeSelect from "@/shared/components/safe/SafeSelect";
 
 const normalize = (s: string) => s.trim().toLowerCase();
 const isEtcLabel = (s: string) =>
@@ -43,6 +44,22 @@ export default function OptionsSection({
   setEtcChecked,
   optionEtc,
   setOptionEtc,
+  kitchenLayout,
+  setKitchenLayout,
+  fridgeSlot,
+  setFridgeSlot,
+  sofaSize,
+  setSofaSize,
+  livingRoomView,
+  setLivingRoomView,
+  hasIslandTable,
+  setHasIslandTable,
+  hasKitchenWindow,
+  setHasKitchenWindow,
+  hasCityGas,
+  setHasCityGas,
+  hasInduction,
+  setHasInduction,
 }: OptionsSectionProps) {
   const safeOptions = Array.isArray(options) ? options.map(String) : [];
   const safeSetOptions =
@@ -86,7 +103,7 @@ export default function OptionsSection({
     return Boolean(etcChecked || hasCustom);
   });
 
-  // 🔥 부모(useEditForm)에서 옵션 초기값을 나중에 채워줬을 때 한 번 더 동기화
+  // 부모(useEditForm)에서 옵션 초기값을 나중에 채워줬을 때 한 번 더 동기화
   const hydratedRef = useRef(false);
   useEffect(() => {
     if (hydratedRef.current) return;
@@ -309,7 +326,7 @@ export default function OptionsSection({
     <div className="space-y-3">
       <div className="text-sm font-medium">옵션</div>
 
-      {/* 프리셋 옵션 체크박스 */}
+      {/* 프리셋 옵션 + Boolean 옵션 체크박스 (구분선 없이 연결) */}
       <div className="grid grid-cols-3 gap-2 items-center">
         {PRESETS_NO_ETC.map((op) => (
           <label key={op} className="inline-flex items-center gap-2 text-sm">
@@ -320,6 +337,70 @@ export default function OptionsSection({
             <span className="text-sm">{op}</span>
           </label>
         ))}
+      </div>
+
+      {/* Enum 선택 필드 4개 */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-xs text-gray-600">주방구조</label>
+          <SafeSelect
+            value={kitchenLayout ?? null}
+            onChange={(v) => setKitchenLayout?.(v as any)}
+            items={[
+              { value: "G", label: "ㄱ" },
+              { value: "D", label: "ㄷ" },
+              { value: "LINE", label: "일자" },
+            ]}
+            placeholder="선택"
+            className="h-9 text-sm"
+            contentClassName="z-[1200]"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-gray-600">냉장고자리</label>
+          <SafeSelect
+            value={fridgeSlot ?? null}
+            onChange={(v) => setFridgeSlot?.(v as any)}
+            items={[
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+              { value: "3", label: "3" },
+            ]}
+            placeholder="선택"
+            className="h-9 text-sm"
+            contentClassName="z-[1200]"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-gray-600">쇼파자리</label>
+          <SafeSelect
+            value={sofaSize ?? null}
+            onChange={(v) => setSofaSize?.(v as any)}
+            items={[
+              { value: "SEAT_2", label: "2인" },
+              { value: "SEAT_3", label: "3인" },
+              { value: "SEAT_4", label: "4인" },
+            ]}
+            placeholder="선택"
+            className="h-9 text-sm"
+            contentClassName="z-[1200]"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-gray-600">거실뷰</label>
+          <SafeSelect
+            value={livingRoomView ?? null}
+            onChange={(v) => setLivingRoomView?.(v as any)}
+            items={[
+              { value: "OPEN", label: "뻥뷰" },
+              { value: "NORMAL", label: "평범" },
+              { value: "BLOCKED", label: "막힘" },
+            ]}
+            placeholder="선택"
+            className="h-9 text-sm"
+            contentClassName="z-[1200]"
+          />
+        </div>
       </div>
 
       {/* 직접입력 영역 */}

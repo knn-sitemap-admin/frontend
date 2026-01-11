@@ -24,4 +24,10 @@ export type UserRow = {
     id: string;
     name: string | null;
   }>; // 계정별 즐겨찾기 핀 목록
+  reservedPinDrafts?: Array<{
+    id: string;
+    name: string | null;
+    addressLine: string;
+    reservedDate: string; // YYYY-MM-DD
+  }>; // 계정별 예약한 핀 목록
 };

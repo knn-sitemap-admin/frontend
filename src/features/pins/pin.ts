@@ -1,3 +1,8 @@
+export type KitchenLayout = "G" | "D" | "LINE";
+export type FridgeSlot = "1" | "2" | "3";
+export type SofaSize = "SEAT_2" | "SEAT_3" | "SEAT_4";
+export type LivingRoomView = "OPEN" | "NORMAL" | "BLOCKED";
+
 export type PinOption = {
   hasAircon?: boolean;
   hasFridge?: boolean;
@@ -5,7 +10,20 @@ export type PinOption = {
   hasDryer?: boolean;
   hasBidet?: boolean;
   hasAirPurifier?: boolean;
+  isDirectLease?: boolean;
   extraOptionsText?: string | null;
+
+  // Nullable Enum 필드
+  kitchenLayout?: KitchenLayout | null;
+  fridgeSlot?: FridgeSlot | null;
+  sofaSize?: SofaSize | null;
+  livingRoomView?: LivingRoomView | null;
+
+  // Boolean 필드
+  hasIslandTable?: boolean;
+  hasKitchenWindow?: boolean;
+  hasCityGas?: boolean;
+  hasInduction?: boolean;
 };
 
 export type PinDirection = {

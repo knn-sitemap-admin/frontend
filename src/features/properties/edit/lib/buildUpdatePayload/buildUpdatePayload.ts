@@ -23,6 +23,9 @@ import { unitLinesChanged } from "./unit";
 import { createPatchHelpers } from "./patchHelpers";
 import { AreaSet } from "../../types/editForm.types";
 import { PRESET_OPTIONS } from "@/features/properties/components/constants";
+import { sanitizeOptions } from "@/shared/api/pins/utils";
+import { buildOptionsForServer } from "@/features/properties/create/lib/buildCreatePayload/options";
+import type { CreatePinOptionsDto } from "@/features/properties/types/property-dto";
 
 /* ───────── UI 등기(용도) 타입 ───────── */
 export type RegistryUi = "주택" | "APT" | "OP" | "도/생" | "근/생";
@@ -372,10 +375,7 @@ export function buildUpdatePayload(
 
   /* ===== 옵션/메모 ===== */
 
-  // 1) 프리셋 + 커스텀 옵션 문자열 배열 그대로 PATCH (서버 toPinPatch 에서 해석)
-  putKeepEmptyArray("options", a.options, initial?.options);
-
-  // 2) 옵션 배열에서 "에어컨/냉장고/..." 를 제외한 **커스텀 라벨만 모아서**
+  // 옵션 배열에서 "에어컨/냉장고/..." 를 제외한 **커스텀 라벨만 모아서**
   //    options.extraOptionsText 로 보낼 문자열 생성
   const customLabels = extractCustomOptionLabels(a.options);
 
@@ -396,6 +396,22 @@ export function buildUpdatePayload(
 
   const prevExtraText = (initial as any)?.extraOptionsText ?? null;
   putAllowNull("extraOptionsText", nextExtraFromOptions, prevExtraText);
+
+  // 옵션 객체 생성 (CreatePinOptionsDto)
+  // 필드 단위 patch: 변경된 필드만 포함
+  const prevOptions = (initial as any)?.options ?? null;
+  const optionsForServerBase = buildOptionsForServer(a.options ?? []);
+
+  // 변경된 필드만 포함하는 options 객체 생성
+  const optionsForServer: any = {
+    ...optionsForServerBase,
+    extraOptionsText: nextExtraFromOptions,
+  };
+
+  const sanitizedOptions = sanitizeOptions(optionsForServer);
+  if (sanitizedOptions != null && Object.keys(sanitizedOptions).length > 0) {
+    putAllowNull("options", sanitizedOptions, prevOptions);
+  }
 
   // 기존 optionEtc 필드도 그대로 유지(혹시 다른 곳에서 쓰고 있을 수 있으므로)
   if (defined(a.optionEtc)) {

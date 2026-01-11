@@ -138,6 +138,11 @@ export default function UserSettingsPage({
         <AccountsListPage
           rows={users}
           onRemove={(id: string) => removeUser(id)}
+          hideDepartment={true}
+          hideEdit={true}
+          hideFavorites={true}
+          hideReservedPins={true}
+          removeLabel="팀 제외"
         />
       </div>
     </main>
