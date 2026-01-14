@@ -27,14 +27,6 @@ export default function OptionsContainer({
     setSofaSize?: (v: SofaSize | null) => void;
     livingRoomView?: LivingRoomView | null;
     setLivingRoomView?: (v: LivingRoomView | null) => void;
-    hasIslandTable?: boolean;
-    setHasIslandTable?: (v: boolean) => void;
-    hasKitchenWindow?: boolean;
-    setHasKitchenWindow?: (v: boolean) => void;
-    hasCityGas?: boolean;
-    setHasCityGas?: (v: boolean) => void;
-    hasInduction?: boolean;
-    setHasInduction?: (v: boolean) => void;
   };
   PRESET_OPTIONS: readonly string[];
 }) {
@@ -55,14 +47,6 @@ export default function OptionsContainer({
       setSofaSize={form.setSofaSize}
       livingRoomView={form.livingRoomView}
       setLivingRoomView={form.setLivingRoomView}
-      hasIslandTable={form.hasIslandTable}
-      setHasIslandTable={form.setHasIslandTable}
-      hasKitchenWindow={form.hasKitchenWindow}
-      setHasKitchenWindow={form.setHasKitchenWindow}
-      hasCityGas={form.hasCityGas}
-      setHasCityGas={form.setHasCityGas}
-      hasInduction={form.hasInduction}
-      setHasInduction={form.setHasInduction}
     />
   );
 }

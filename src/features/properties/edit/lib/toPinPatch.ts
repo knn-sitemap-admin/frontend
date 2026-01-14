@@ -76,8 +76,17 @@ const buildOptionsFromForm = (f: any) => {
     hasDryer: has("건조기"),
     hasBidet: has("비데"),
     hasAirPurifier: has("공기순환기"),
+    hasIslandTable: has("아일랜드 식탁"),
+    hasKitchenWindow: has("주방창"),
+    hasCityGas: has("도시가스"),
+    hasInduction: has("인덕션"),
     // ✅ 항상 키 생성 (문자열이든 null 이든)
     extraOptionsText: extraOptionsText ?? null,
+    // ✅ Nullable Enum 4개 (null 허용)
+    kitchenLayout: f.kitchenLayout ?? null,
+    fridgeSlot: f.fridgeSlot ?? null,
+    sofaSize: f.sofaSize ?? null,
+    livingRoomView: f.livingRoomView ?? null,
   };
 
   // 🔥 항상 객체를 리턴해서 options 패치가 가능하게
@@ -98,7 +107,16 @@ const normalizeOptionsForCompare = (o: any) => {
     hasDryer: !!o.hasDryer || undefined,
     hasBidet: !!o.hasBidet || undefined,
     hasAirPurifier: !!o.hasAirPurifier || undefined,
+    hasIslandTable: !!o.hasIslandTable || undefined,
+    hasKitchenWindow: !!o.hasKitchenWindow || undefined,
+    hasCityGas: !!o.hasCityGas || undefined,
+    hasInduction: !!o.hasInduction || undefined,
     extraOptionsText: t(o.extraOptionsText),
+    // ✅ Nullable Enum 4개
+    kitchenLayout: o.kitchenLayout ?? undefined,
+    fridgeSlot: o.fridgeSlot ?? undefined,
+    sofaSize: o.sofaSize ?? undefined,
+    livingRoomView: o.livingRoomView ?? undefined,
   };
   const y: any = {};
   for (const [k, v] of Object.entries(x)) if (v !== undefined) y[k] = v;

@@ -140,6 +140,14 @@ export function sanitizeOptions(
     hasBidet: !!o.hasBidet,
     hasAirPurifier: !!o.hasAirPurifier,
     isDirectLease: !!o.isDirectLease,
+    hasIslandTable: !!o.hasIslandTable,
+    hasKitchenWindow: !!o.hasKitchenWindow,
+    hasCityGas: !!o.hasCityGas,
+    hasInduction: !!o.hasInduction,
+    kitchenLayout: o.kitchenLayout ?? null,
+    fridgeSlot: o.fridgeSlot ?? null,
+    sofaSize: o.sofaSize ?? null,
+    livingRoomView: o.livingRoomView ?? null,
   };
 
   // extraOptionsText 키가 실제로 들어왔는지 여부

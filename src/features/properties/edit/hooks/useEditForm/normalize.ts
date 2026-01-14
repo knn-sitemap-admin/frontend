@@ -255,8 +255,17 @@ export function normalizeInitialData(initialData: any | null): Normalized {
   let options: string[] = [];
 
   if (Array.isArray(optionsFromServer)) {
-    // 예전 형식이면 그대로
-    options = optionsFromServer.map(asStr).filter(Boolean);
+    // 예전 형식이면 그대로 (뷰에서 Enum 필드가 포함될 수 있으므로 필터링)
+    const enumLabels = new Set([
+      "주방구조 ㄱ", "주방구조 ㄷ", "주방구조 일자",
+      "냉장고자리 1", "냉장고자리 2", "냉장고자리 3",
+      "쇼파 2인", "쇼파 3인", "쇼파 4인",
+      "뻥뷰", "평범", "막힘",
+    ]);
+    options = optionsFromServer
+      .map(asStr)
+      .filter(Boolean)
+      .filter((label) => !enumLabels.has(label));
   } else if (optionsFromServer && typeof optionsFromServer === "object") {
     const o = optionsFromServer as any;
     if (o.hasAircon) options.push("에어컨");
@@ -265,6 +274,10 @@ export function normalizeInitialData(initialData: any | null): Normalized {
     if (o.hasDryer) options.push("건조기");
     if (o.hasBidet) options.push("비데");
     if (o.hasAirPurifier) options.push("공기순환기");
+    if (o.hasIslandTable) options.push("아일랜드 식탁");
+    if (o.hasKitchenWindow) options.push("주방창");
+    if (o.hasCityGas) options.push("도시가스");
+    if (o.hasInduction) options.push("인덕션");
   }
 
   // 2) 직접입력 텍스트: extraOptionsText + 여러 백필드에서 추출

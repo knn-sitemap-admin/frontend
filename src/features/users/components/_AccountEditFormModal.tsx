@@ -133,29 +133,21 @@ const UpdateUserSchema = z
   )
   .refine(
     (data) => {
-      // 팀장/실장/대표이사는 팀 배정 불가
-      const isManagerRank =
-        data.positionRank === "TEAM_LEADER" ||
-        data.positionRank === "DIRECTOR" ||
-        data.positionRank === "CEO";
-      if (isManagerRank && data.team) {
-        return false; // 팀장/실장/대표이사는 팀 배정 불가
+      // 팀장은 팀 배정 불가
+      if (data.positionRank === "TEAM_LEADER" && data.team) {
+        return false; // 팀장은 팀 배정 불가
       }
       return true;
     },
     {
-      message: "팀장/실장/대표이사 직급은 팀 배정이 불가능합니다.",
+      message: "팀장 직급은 팀 배정이 불가능합니다.",
       path: ["team"],
     }
   )
   .refine(
     (data) => {
-      // 팀장/실장/대표이사 직급이면 팀 이름 필수
-      const isManagerRank =
-        data.positionRank === "TEAM_LEADER" ||
-        data.positionRank === "DIRECTOR" ||
-        data.positionRank === "CEO";
-      if (isManagerRank) {
+      // 팀장 직급이면 팀 이름 필수
+      if (data.positionRank === "TEAM_LEADER") {
         return !!data.teamName?.trim();
       }
       return true;
@@ -178,6 +170,7 @@ type UploadField =
 interface AccountEditFormModalProps {
   open: boolean;
   credentialId: string;
+  positionRank?: string | null; // 계정 리스트에서 전달받은 직급 (optional)
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -185,6 +178,7 @@ interface AccountEditFormModalProps {
 export default function AccountEditFormModal({
   open,
   credentialId,
+  positionRank,
   onClose,
   onSuccess,
 }: AccountEditFormModalProps) {
@@ -193,6 +187,7 @@ export default function AccountEditFormModal({
   return (
     <AccountEditFormModalBody
       credentialId={credentialId}
+      positionRank={positionRank}
       onClose={onClose}
       onSuccess={onSuccess}
     />
@@ -201,10 +196,12 @@ export default function AccountEditFormModal({
 
 function AccountEditFormModalBody({
   credentialId,
+  positionRank,
   onClose,
   onSuccess,
 }: {
   credentialId: string;
+  positionRank?: string | null; // 계정 리스트에서 전달받은 직급 (optional)
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -281,14 +278,13 @@ function AccountEditFormModalBody({
         const team = detail.team;
 
         if (account) {
-          const isManagerRank =
-            (account as any).positionRank === "TEAM_LEADER" ||
-            (account as any).positionRank === "DIRECTOR" ||
-            (account as any).positionRank === "CEO";
+          // props로 전달받은 positionRank가 있으면 그것을 사용, 없으면 API 응답에서 가져옴
+          const finalPositionRank = positionRank || (account as any).positionRank || "ASSISTANT_MANAGER";
+          const isTeamLeader = finalPositionRank === "TEAM_LEADER";
 
           form.reset({
             name: account.name || "",
-            positionRank: (account as any).positionRank || "ASSISTANT_MANAGER",
+            positionRank: finalPositionRank,
             phone: account.phone || "",
             birthday: (account as any).birthday || "",
             emergency_contact: account.emergencyContact || "",
@@ -298,14 +294,14 @@ function AccountEditFormModalBody({
             password: "",
             password_confirm: "",
             team:
-              team && !isManagerRank
+              team && !isTeamLeader
                 ? {
                     teamId: team.id,
                     isPrimary: team.isPrimary,
                     joinedAt: team.joinedAt || undefined,
                   }
                 : undefined,
-            teamName: isManagerRank && team ? team.name : "",
+            teamName: isTeamLeader && team ? team.name : "",
             photo_url: account.profileUrl || "",
             id_photo_url: (account as any).docUrlIdCard || "",
             resident_register_url:
@@ -327,7 +323,7 @@ function AccountEditFormModalBody({
     };
 
     loadAccountDetail();
-  }, [credentialId, form, toast]);
+  }, [credentialId, positionRank, form, toast]);
 
   const setFieldError = (field: UploadField, msg: string | null) =>
     setUploadErrors((prev) => ({ ...prev, [field]: msg || undefined }));
@@ -718,9 +714,7 @@ function AccountEditFormModalBody({
                   )}
                 />
                 {/* staff 직급일 때만 팀 선택 표시 (선택사항) */}
-                {form.watch("positionRank") !== "TEAM_LEADER" &&
-                  form.watch("positionRank") !== "DIRECTOR" &&
-                  form.watch("positionRank") !== "CEO" && (
+                {form.watch("positionRank") !== "TEAM_LEADER" && (
                     <>
                       <FormField
                         control={form.control}
@@ -764,17 +758,15 @@ function AccountEditFormModalBody({
                             </FormControl>
                             <FormMessage />
                             <p className="text-xs text-muted-foreground">
-                              팀장/실장/대표이사 직급은 팀 배정이 불가능합니다.
+                              팀장 직급은 팀 배정이 불가능합니다.
                             </p>
                           </FormItem>
                         )}
                       />
                     </>
                   )}
-                {/* 팀장/실장/대표이사 직급일 때 팀 이름 입력 필드 표시 */}
-                {(form.watch("positionRank") === "TEAM_LEADER" ||
-                  form.watch("positionRank") === "DIRECTOR" ||
-                  form.watch("positionRank") === "CEO") && (
+                {/* 팀장 직급일 때 팀 이름 입력 필드 표시 */}
+                {form.watch("positionRank") === "TEAM_LEADER" && (
                   <FormField
                     control={form.control}
                     name="teamName"
@@ -790,8 +782,7 @@ function AccountEditFormModalBody({
                         </FormControl>
                         <FormMessage />
                         <p className="text-xs text-muted-foreground">
-                          팀장/실장/대표이사 직급으로 설정하면 자동으로 팀이
-                          생성됩니다.
+                          팀장 직급으로 설정하면 자동으로 팀이 생성됩니다.
                         </p>
                       </FormItem>
                     )}

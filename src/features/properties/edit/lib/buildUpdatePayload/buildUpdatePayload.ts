@@ -7,6 +7,12 @@ import type {
   OrientationRow,
   BuildingType,
 } from "@/features/properties/types/property-domain";
+import type {
+  KitchenLayout,
+  FridgeSlot,
+  SofaSize,
+  LivingRoomView,
+} from "@/features/properties/types/property-dto";
 import type { ImageItem } from "@/features/properties/types/media";
 import type { PinKind } from "@/features/pins/types";
 
@@ -93,6 +99,11 @@ type BuildUpdateArgs = {
   extraOptionsText?: string | null;
   publicMemo?: string | null;
   secretMemo?: string | null;
+  // ✅ Nullable Enum 4개 (별도 관리)
+  kitchenLayout?: KitchenLayout | null;
+  fridgeSlot?: FridgeSlot | null;
+  sofaSize?: SofaSize | null;
+  livingRoomView?: LivingRoomView | null;
 
   // 향/유닛
   orientations?:
@@ -406,6 +417,11 @@ export function buildUpdatePayload(
   const optionsForServer: any = {
     ...optionsForServerBase,
     extraOptionsText: nextExtraFromOptions,
+    // ✅ Nullable Enum 4개 (별도 관리)
+    kitchenLayout: a.kitchenLayout ?? null,
+    fridgeSlot: a.fridgeSlot ?? null,
+    sofaSize: a.sofaSize ?? null,
+    livingRoomView: a.livingRoomView ?? null,
   };
 
   const sanitizedOptions = sanitizeOptions(optionsForServer);

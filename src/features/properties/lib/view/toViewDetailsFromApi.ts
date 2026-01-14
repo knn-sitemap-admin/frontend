@@ -145,6 +145,25 @@ function toOptionLabels(o?: ApiPin["options"]): string[] | undefined {
   if (o.hasDryer) labels.push("건조기");
   if (o.hasBidet) labels.push("비데");
   if (o.hasAirPurifier) labels.push("공기순환기");
+  if (o.hasIslandTable) labels.push("아일랜드 식탁");
+  if (o.hasKitchenWindow) labels.push("주방창");
+  if (o.hasCityGas) labels.push("도시가스");
+  if (o.hasInduction) labels.push("인덕션");
+  
+  // ✅ Enum 필드들도 뱃지로 추가
+  if (o.kitchenLayout === "G") labels.push("주방구조 ㄱ");
+  if (o.kitchenLayout === "D") labels.push("주방구조 ㄷ");
+  if (o.kitchenLayout === "LINE") labels.push("주방구조 일자");
+  if (o.fridgeSlot === "1") labels.push("냉장고자리 1");
+  if (o.fridgeSlot === "2") labels.push("냉장고자리 2");
+  if (o.fridgeSlot === "3") labels.push("냉장고자리 3");
+  if (o.sofaSize === "SEAT_2") labels.push("쇼파 2인");
+  if (o.sofaSize === "SEAT_3") labels.push("쇼파 3인");
+  if (o.sofaSize === "SEAT_4") labels.push("쇼파 4인");
+  if (o.livingRoomView === "OPEN") labels.push("뻥뷰");
+  if (o.livingRoomView === "NORMAL") labels.push("평범");
+  if (o.livingRoomView === "BLOCKED") labels.push("막힘");
+  
   return labels.length ? labels : undefined;
 }
 

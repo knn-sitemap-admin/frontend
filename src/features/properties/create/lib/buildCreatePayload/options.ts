@@ -7,6 +7,10 @@ export type OptionsForServer = {
   hasDryer?: boolean;
   hasBidet?: boolean;
   hasAirPurifier?: boolean;
+  hasIslandTable?: boolean;
+  hasKitchenWindow?: boolean;
+  hasCityGas?: boolean;
+  hasInduction?: boolean;
   extraOptionsText?: string | null;
 };
 
@@ -35,6 +39,10 @@ export function buildOptionsForServer(selected: string[]): OptionsForServer {
   const hasDryer = hasAny(["건조기", "드럼건조기", "dryer"]);
   const hasBidet = hasAny(["비데", "비데 있음", "bidet"]);
   const hasAirPurifier = hasAny(["공기순환기", "공기청정기", "air purifier"]);
+  const hasIslandTable = hasAny(["아일랜드 식탁", "아일랜드식탁"]);
+  const hasKitchenWindow = hasAny(["주방창"]);
+  const hasCityGas = hasAny(["도시가스"]);
+  const hasInduction = hasAny(["인덕션"]);
 
   // 🔹 프리셋으로 이미 의미가 있는 옵션들은 extraOptionsText에서 제외
   const presetNorms = new Set(
@@ -58,6 +66,11 @@ export function buildOptionsForServer(selected: string[]): OptionsForServer {
       "공기순환기",
       "공기청정기",
       "air purifier",
+      "아일랜드 식탁",
+      "아일랜드식탁",
+      "주방창",
+      "도시가스",
+      "인덕션",
     ].map(norm)
   );
 
@@ -73,6 +86,10 @@ export function buildOptionsForServer(selected: string[]): OptionsForServer {
     hasDryer: hasDryer || undefined,
     hasBidet: hasBidet || undefined,
     hasAirPurifier: hasAirPurifier || undefined,
+    hasIslandTable: hasIslandTable || undefined,
+    hasKitchenWindow: hasKitchenWindow || undefined,
+    hasCityGas: hasCityGas || undefined,
+    hasInduction: hasInduction || undefined,
     extraOptionsText,
   };
 }

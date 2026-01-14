@@ -52,14 +52,6 @@ export default function OptionsSection({
   setSofaSize,
   livingRoomView,
   setLivingRoomView,
-  hasIslandTable,
-  setHasIslandTable,
-  hasKitchenWindow,
-  setHasKitchenWindow,
-  hasCityGas,
-  setHasCityGas,
-  hasInduction,
-  setHasInduction,
 }: OptionsSectionProps) {
   const safeOptions = Array.isArray(options) ? options.map(String) : [];
   const safeSetOptions =
@@ -326,7 +318,7 @@ export default function OptionsSection({
     <div className="space-y-3">
       <div className="text-sm font-medium">옵션</div>
 
-      {/* 프리셋 옵션 + Boolean 옵션 체크박스 (구분선 없이 연결) */}
+      {/* 프리셋 옵션 체크박스 */}
       <div className="grid grid-cols-3 gap-2 items-center">
         {PRESETS_NO_ETC.map((op) => (
           <label key={op} className="inline-flex items-center gap-2 text-sm">

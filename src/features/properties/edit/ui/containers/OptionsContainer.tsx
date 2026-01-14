@@ -22,14 +22,6 @@ export default function OptionsContainer({ form }: { form: EditFormAPI }) {
       setSofaSize={form.setSofaSize}
       livingRoomView={form.livingRoomView}
       setLivingRoomView={form.setLivingRoomView}
-      hasIslandTable={form.hasIslandTable}
-      setHasIslandTable={form.setHasIslandTable}
-      hasKitchenWindow={form.hasKitchenWindow}
-      setHasKitchenWindow={form.setHasKitchenWindow}
-      hasCityGas={form.hasCityGas}
-      setHasCityGas={form.setHasCityGas}
-      hasInduction={form.hasInduction}
-      setHasInduction={form.setHasInduction}
     />
   );
 }

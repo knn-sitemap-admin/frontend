@@ -336,6 +336,11 @@ export function useCreateSave({
 
         publicMemo: f.publicMemo,
         secretMemo: f.secretMemo,
+        // ✅ Nullable Enum 4개 (별도 관리)
+        kitchenLayout: f.kitchenLayout,
+        fridgeSlot: f.fridgeSlot,
+        sofaSize: f.sofaSize,
+        livingRoomView: f.livingRoomView,
 
         aspects: f.aspects,
         unitLines: f.unitLines as UnitLine[],

@@ -155,7 +155,7 @@ export type OptionsFormSlice = {
   optionEtc: string;
   setOptionEtc: (v: string) => void;
 
-  /** ✅ 새로운 옵션 필드들 */
+  /** ✅ Nullable Enum 4개 (별도 관리) */
   kitchenLayout: KitchenLayout | null;
   setKitchenLayout: (v: KitchenLayout | null) => void;
 
@@ -167,18 +167,6 @@ export type OptionsFormSlice = {
 
   livingRoomView: LivingRoomView | null;
   setLivingRoomView: (v: LivingRoomView | null) => void;
-
-  hasIslandTable: boolean;
-  setHasIslandTable: (v: boolean) => void;
-
-  hasKitchenWindow: boolean;
-  setHasKitchenWindow: (v: boolean) => void;
-
-  hasCityGas: boolean;
-  setHasCityGas: (v: boolean) => void;
-
-  hasInduction: boolean;
-  setHasInduction: (v: boolean) => void;
 };
 
 export type StructureLinesFormSlice = {

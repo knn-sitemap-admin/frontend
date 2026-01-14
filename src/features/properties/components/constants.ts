@@ -5,6 +5,10 @@ export const PRESET_OPTIONS = [
   "건조기",
   "비데",
   "공기순환기",
+  "아일랜드 식탁",
+  "주방창",
+  "도시가스",
+  "인덕션",
 ] as const;
 
 export const STRUCTURE_PRESETS = [

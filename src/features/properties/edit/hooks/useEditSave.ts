@@ -119,7 +119,11 @@ export function useEditSave({
 
     // ✅ 면적 제약
     {
-      const msg = validateAreaRanges(f.baseAreaSet, f.extraAreaSets, f.remainingHouseholds);
+      const msg = validateAreaRanges(
+        f.baseAreaSet,
+        f.extraAreaSets,
+        f.remainingHouseholds
+      );
       if (msg) {
         showAlert(msg);
         return;
@@ -418,6 +422,11 @@ export function useEditSave({
           optionEtc: f.optionEtc,
           publicMemo: f.publicMemo,
           secretMemo: f.secretMemo,
+          // ✅ Nullable Enum 4개 (별도 관리)
+          kitchenLayout: f.kitchenLayout,
+          fridgeSlot: f.fridgeSlot,
+          sofaSize: f.sofaSize,
+          livingRoomView: f.livingRoomView,
 
           orientations,
           aspect: aspect ?? "",

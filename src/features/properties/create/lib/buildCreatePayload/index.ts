@@ -70,6 +70,10 @@ export function buildCreatePayload(args: BuildArgs) {
     options,
     publicMemo,
     secretMemo,
+    kitchenLayout,
+    fridgeSlot,
+    sofaSize,
+    livingRoomView,
     aspects,
     unitLines,
 
@@ -195,7 +199,14 @@ export function buildCreatePayload(args: BuildArgs) {
   //    - buildOptionsForServer 내부에서 extraOptionsText까지 구성
   const optionsForServerBase = buildOptionsForServer(options ?? []);
   
-  const optionsForServer = optionsForServerBase;
+  const optionsForServer: any = {
+    ...optionsForServerBase,
+    // ✅ Nullable Enum 4개 (별도 관리)
+    kitchenLayout: kitchenLayout ?? null,
+    fridgeSlot: fridgeSlot ?? null,
+    sofaSize: sofaSize ?? null,
+    livingRoomView: livingRoomView ?? null,
+  };
 
   /* 6) 최종 payload 조립 */
   const payload: CreatePayload & {

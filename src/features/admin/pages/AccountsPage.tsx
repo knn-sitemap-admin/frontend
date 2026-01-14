@@ -16,12 +16,18 @@ import type { UserRow, RoleKey } from "@/features/users/types";
 import { api } from "@/shared/api/api";
 import { useToast } from "@/hooks/use-toast";
 import { SearchBar } from "@/features/table/components/SearchBar";
-import { getCredentialIdFromAccountId, getCredentialDetail } from "@/features/users/api/account";
+import {
+  getCredentialIdFromAccountId,
+  getCredentialDetail,
+} from "@/features/users/api/account";
 
 export default function AccountsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingCredentialId, setEditingCredentialId] = useState<string | null>(
+    null
+  );
+  const [editingPositionRank, setEditingPositionRank] = useState<string | null>(
     null
   );
   const [viewingFavoritesAccountId, setViewingFavoritesAccountId] = useState<
@@ -129,7 +135,9 @@ export default function AccountsPage() {
   const credentialIdMapRef = React.useRef<Map<string, string>>(new Map());
   const loadingCredentialIdsRef = React.useRef<Set<string>>(new Set());
   // accountId -> role 매핑 캐시
-  const [roleMap, setRoleMap] = React.useState<Map<string, "admin" | "manager" | "staff">>(new Map());
+  const [roleMap, setRoleMap] = React.useState<
+    Map<string, "admin" | "manager" | "staff">
+  >(new Map());
   const loadingRolesRef = React.useRef<Set<string>>(new Set());
 
   // 계정 목록이 변경될 때 각 계정의 role 정보 미리 로드
@@ -138,7 +146,9 @@ export default function AccountsPage() {
 
     const loadRoles = async () => {
       const accountsToLoad = employeesList.filter(
-        (employee) => !roleMap.has(employee.accountId) && !loadingRolesRef.current.has(employee.accountId)
+        (employee) =>
+          !roleMap.has(employee.accountId) &&
+          !loadingRolesRef.current.has(employee.accountId)
       );
 
       if (accountsToLoad.length === 0) return;
@@ -239,6 +249,10 @@ export default function AccountsPage() {
 
   // 계정 수정 핸들러
   const handleEdit = async (accountId: string) => {
+    // userRows에서 해당 계정 찾기 (positionRank 가져오기 위해)
+    const account = userRows.find((row) => row.id === accountId);
+    const positionRank = account?.positionRank || null;
+
     // 캐시에서 credentialId 조회
     let credentialId = credentialIdMapRef.current.get(accountId);
 
@@ -269,12 +283,14 @@ export default function AccountsPage() {
       return;
     }
     setEditingCredentialId(credentialId);
+    setEditingPositionRank(positionRank);
   };
 
   // 수정 완료 핸들러
   const handleEditSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ["employees-list"] });
     setEditingCredentialId(null);
+    setEditingPositionRank(null);
   };
 
   // 즐겨찾기 목록 보기 핸들러
@@ -294,14 +310,18 @@ export default function AccountsPage() {
   // 현재 보고 있는 계정의 favoritePins 가져오기
   const viewingAccountFavorites = useMemo(() => {
     if (!viewingFavoritesAccountId) return null;
-    const account = userRows.find((row) => row.id === viewingFavoritesAccountId);
+    const account = userRows.find(
+      (row) => row.id === viewingFavoritesAccountId
+    );
     return account?.favoritePins || [];
   }, [viewingFavoritesAccountId, userRows]);
 
   // 현재 보고 있는 계정의 reservedPinDrafts 가져오기
   const viewingAccountReservedPins = useMemo(() => {
     if (!viewingReservedPinsAccountId) return null;
-    const account = userRows.find((row) => row.id === viewingReservedPinsAccountId);
+    const account = userRows.find(
+      (row) => row.id === viewingReservedPinsAccountId
+    );
     return account?.reservedPinDrafts || [];
   }, [viewingReservedPinsAccountId, userRows]);
 
@@ -368,7 +388,11 @@ export default function AccountsPage() {
         <AccountEditFormModal
           open={true}
           credentialId={editingCredentialId}
-          onClose={() => setEditingCredentialId(null)}
+          positionRank={editingPositionRank}
+          onClose={() => {
+            setEditingCredentialId(null);
+            setEditingPositionRank(null);
+          }}
           onSuccess={handleEditSuccess}
         />
       )}

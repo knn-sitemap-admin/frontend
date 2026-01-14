@@ -23,10 +23,6 @@ export function useOptionsMemos() {
   const [livingRoomView, setLivingRoomView] = useState<LivingRoomView | null>(
     null
   );
-  const [hasIslandTable, setHasIslandTable] = useState(false);
-  const [hasKitchenWindow, setHasKitchenWindow] = useState(false);
-  const [hasCityGas, setHasCityGas] = useState(false);
-  const [hasInduction, setHasInduction] = useState(false);
 
   const state = useMemo(
     () => ({
@@ -38,10 +34,6 @@ export function useOptionsMemos() {
       fridgeSlot,
       sofaSize,
       livingRoomView,
-      hasIslandTable,
-      hasKitchenWindow,
-      hasCityGas,
-      hasInduction,
     }),
     [
       options,
@@ -52,10 +44,6 @@ export function useOptionsMemos() {
       fridgeSlot,
       sofaSize,
       livingRoomView,
-      hasIslandTable,
-      hasKitchenWindow,
-      hasCityGas,
-      hasInduction,
     ]
   );
 
@@ -69,10 +57,6 @@ export function useOptionsMemos() {
       setFridgeSlot,
       setSofaSize,
       setLivingRoomView,
-      setHasIslandTable,
-      setHasKitchenWindow,
-      setHasCityGas,
-      setHasInduction,
     }),
     []
   );

@@ -213,6 +213,23 @@ export function useInjectInitialData({
     // ✅ 옵션/직접입력 주입
     const normalizedOptions: string[] = (normalized as any).options ?? [];
 
+    // ✅ 서버에서 받은 Boolean 옵션들을 options 배열에 추가
+    const optionsData = (sourceData as any)?.options ?? null;
+    if (optionsData && typeof optionsData === "object") {
+      if (optionsData.hasIslandTable) {
+        normalizedOptions.push("아일랜드 식탁");
+      }
+      if (optionsData.hasKitchenWindow) {
+        normalizedOptions.push("주방창");
+      }
+      if (optionsData.hasCityGas) {
+        normalizedOptions.push("도시가스");
+      }
+      if (optionsData.hasInduction) {
+        normalizedOptions.push("인덕션");
+      }
+    }
+
     const extraCandidatesRaw: unknown[] = [
       (normalized as any).optionEtc,
       (normalized as any).extraOptionsText,
@@ -241,26 +258,17 @@ export function useInjectInitialData({
       )
     );
 
-    // 새로운 옵션 필드들
-    const optionsData = (sourceData as any)?.options ?? null;
+    // ✅ Nullable Enum 4개 (별도 관리)
     if (optionsData && typeof optionsData === "object") {
       api.setKitchenLayout?.(optionsData.kitchenLayout ?? null);
       api.setFridgeSlot?.(optionsData.fridgeSlot ?? null);
       api.setSofaSize?.(optionsData.sofaSize ?? null);
       api.setLivingRoomView?.(optionsData.livingRoomView ?? null);
-      api.setHasIslandTable?.(Boolean(optionsData.hasIslandTable));
-      api.setHasKitchenWindow?.(Boolean(optionsData.hasKitchenWindow));
-      api.setHasCityGas?.(Boolean(optionsData.hasCityGas));
-      api.setHasInduction?.(Boolean(optionsData.hasInduction));
     } else {
       api.setKitchenLayout?.(null);
       api.setFridgeSlot?.(null);
       api.setSofaSize?.(null);
       api.setLivingRoomView?.(null);
-      api.setHasIslandTable?.(false);
-      api.setHasKitchenWindow?.(false);
-      api.setHasCityGas?.(false);
-      api.setHasInduction?.(false);
     }
 
     api.setPublicMemo(normalized.publicMemo);

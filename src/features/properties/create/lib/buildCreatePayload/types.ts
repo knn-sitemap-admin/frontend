@@ -7,6 +7,12 @@ import type {
 import type { ImageItem } from "@/features/properties/types/media";
 import type { PinKind } from "@/features/pins/types";
 import type { AreaSet as StrictAreaSet } from "@/features/properties/components/sections/AreaSetsSection/types";
+import type {
+  KitchenLayout,
+  FridgeSlot,
+  SofaSize,
+  LivingRoomView,
+} from "@/features/properties/types/property-dto";
 import { StarStr } from "@/features/properties/types/property-dto";
 
 /** 느슨한 AreaSet (필드가 일부 비어 있을 수 있음) */
@@ -88,6 +94,11 @@ export type BuildArgs = {
   optionEtc: string;
   publicMemo: string;
   secretMemo: string;
+  // ✅ Nullable Enum 4개 (별도 관리)
+  kitchenLayout?: KitchenLayout | null;
+  fridgeSlot?: FridgeSlot | null;
+  sofaSize?: SofaSize | null;
+  livingRoomView?: LivingRoomView | null;
 
   aspects: AspectRowLite[];
   unitLines: UnitLine[];

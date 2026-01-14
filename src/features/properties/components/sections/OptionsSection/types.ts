@@ -29,14 +29,4 @@ export interface OptionsSectionProps {
   setSofaSize?: (v: SofaSize | null) => void;
   livingRoomView?: LivingRoomView | null;
   setLivingRoomView?: (v: LivingRoomView | null) => void;
-
-  // Boolean 필드
-  hasIslandTable?: boolean;
-  setHasIslandTable?: (v: boolean) => void;
-  hasKitchenWindow?: boolean;
-  setHasKitchenWindow?: (v: boolean) => void;
-  hasCityGas?: boolean;
-  setHasCityGas?: (v: boolean) => void;
-  hasInduction?: boolean;
-  setHasInduction?: (v: boolean) => void;
 }

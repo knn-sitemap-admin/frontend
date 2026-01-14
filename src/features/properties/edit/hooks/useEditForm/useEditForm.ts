@@ -123,10 +123,6 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
   const [livingRoomView, setLivingRoomView] = useState<LivingRoomView | null>(
     null
   );
-  const [hasIslandTable, setHasIslandTable] = useState(false);
-  const [hasKitchenWindow, setHasKitchenWindow] = useState(false);
-  const [hasCityGas, setHasCityGas] = useState(false);
-  const [hasInduction, setHasInduction] = useState(false);
 
   /** 유닛 라인(방/욕실/복층/테라스) */
   const {
@@ -194,10 +190,6 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
     setFridgeSlot(null);
     setSofaSize(null);
     setLivingRoomView(null);
-    setHasIslandTable(false);
-    setHasKitchenWindow(false);
-    setHasCityGas(false);
-    setHasInduction(false);
     setUnitLines([]);
     setBuildingType(null);
     setRebateText("");
@@ -255,10 +247,6 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
     setFridgeSlot,
     setSofaSize,
     setLivingRoomView,
-    setHasIslandTable,
-    setHasKitchenWindow,
-    setHasCityGas,
-    setHasInduction,
     // 유닛/빌딩
     setUnitLines,
     setBuildingType,
@@ -332,10 +320,6 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       fridgeSlot,
       sofaSize,
       livingRoomView,
-      hasIslandTable,
-      hasKitchenWindow,
-      hasCityGas,
-      hasInduction,
       unitLines,
       buildingType,
       buildingGrade,
@@ -382,10 +366,6 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       fridgeSlot,
       sofaSize,
       livingRoomView,
-      hasIslandTable,
-      hasKitchenWindow,
-      hasCityGas,
-      hasInduction,
       unitLines,
       buildingType,
       buildingGrade,
@@ -436,10 +416,6 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       setFridgeSlot,
       setSofaSize,
       setLivingRoomView,
-      setHasIslandTable,
-      setHasKitchenWindow,
-      setHasCityGas,
-      setHasInduction,
       setUnitLines,
       addLineFromPreset,
       addEmptyLine,
