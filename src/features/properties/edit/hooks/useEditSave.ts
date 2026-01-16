@@ -319,18 +319,21 @@ export function useEditSave({
 
     // 저장 버튼을 눌렀다면 항상 쿼리 무효화 및 refetch하여 화면 리렌더링
     // staleTime 때문에 무효화만으로는 부족하므로 명시적으로 refetch 필요
+    // 1) 쿼리 무효화 및 refetch (staleTime 무시하고 즉시 갱신)
     const idStr = String(propertyId);
 
-    // 1) 쿼리 무효화 (staleTime 무시하고 즉시 stale로 표시)
     await Promise.all([
       queryClient.invalidateQueries({
         queryKey: pinDetailKey(idStr),
+        refetchType: "active",
       }),
       queryClient.invalidateQueries({
         queryKey: ["photoGroupsByPin", idStr],
+        refetchType: "active",
       }),
       queryClient.invalidateQueries({
         queryKey: ["groupPhotosByPin", idStr],
+        refetchType: "active",
       }),
     ]);
 
@@ -338,12 +341,15 @@ export function useEditSave({
     await Promise.all([
       queryClient.refetchQueries({
         queryKey: pinDetailKey(idStr),
+        type: "active",
       }),
       queryClient.refetchQueries({
         queryKey: ["photoGroupsByPin", idStr],
+        type: "active",
       }),
       queryClient.refetchQueries({
         queryKey: ["groupPhotosByPin", idStr],
+        type: "active",
       }),
     ]);
 
