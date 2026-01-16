@@ -346,6 +346,7 @@ export default function OptionsSection({
             placeholder="선택"
             className="h-9 text-sm"
             contentClassName="z-[1200]"
+            allowUnset
           />
         </div>
         <div className="space-y-1">
@@ -361,6 +362,7 @@ export default function OptionsSection({
             placeholder="선택"
             className="h-9 text-sm"
             contentClassName="z-[1200]"
+            allowUnset
           />
         </div>
         <div className="space-y-1">
@@ -376,6 +378,7 @@ export default function OptionsSection({
             placeholder="선택"
             className="h-9 text-sm"
             contentClassName="z-[1200]"
+            allowUnset
           />
         </div>
         <div className="space-y-1">
@@ -391,6 +394,7 @@ export default function OptionsSection({
             placeholder="선택"
             className="h-9 text-sm"
             contentClassName="z-[1200]"
+            allowUnset
           />
         </div>
       </div>

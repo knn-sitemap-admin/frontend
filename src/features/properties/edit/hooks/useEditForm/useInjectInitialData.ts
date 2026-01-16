@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import type React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { normalizeInitialData } from "./normalize";
 import { resolveRegistryUi } from "./registry";
@@ -44,6 +45,8 @@ export function useInjectInitialData({
   aspectsTouchedRef,
 }: Args): InitialForPatch {
   const wrapper = initialData as any;
+  const queryClient = useQueryClient();
+
   const sourceData =
     (wrapper?.raw as any) ?? (wrapper?.view as any) ?? initialData ?? null;
 
@@ -210,10 +213,10 @@ export function useInjectInitialData({
       (normalized.remainingHouseholds ?? "") as unknown as string
     );
 
-    // ✅ 옵션/직접입력 주입
+    //  옵션/직접입력 주입
     const normalizedOptions: string[] = (normalized as any).options ?? [];
 
-    // ✅ 서버에서 받은 Boolean 옵션들을 options 배열에 추가
+    //  서버에서 받은 Boolean 옵션들을 options 배열에 추가
     const optionsData = (sourceData as any)?.options ?? null;
     if (optionsData && typeof optionsData === "object") {
       if (optionsData.hasIslandTable) {
@@ -258,12 +261,57 @@ export function useInjectInitialData({
       )
     );
 
-    // ✅ Nullable Enum 4개 (별도 관리)
-    if (optionsData && typeof optionsData === "object") {
-      api.setKitchenLayout?.(optionsData.kitchenLayout ?? null);
-      api.setFridgeSlot?.(optionsData.fridgeSlot ?? null);
-      api.setSofaSize?.(optionsData.sofaSize ?? null);
-      api.setLivingRoomView?.(optionsData.livingRoomView ?? null);
+    // Nullable Enum 4개 (별도 관리)
+    // 중요: wrapper?.raw가 원본 API 응답이므로 여기서 options를 가져와야 함
+    // wrapper?.raw?.options가 이미 배열로 변환된 경우, 원본 객체를 찾아야 함
+    // React Query 캐시에서도 확인 (usePinDetail의 data.raw.options)
+    const pinDetailFromCache = initId
+      ? (queryClient?.getQueryData(["pinDetail", String(initId)]) as
+          | { raw?: any }
+          | undefined)
+      : null;
+    const rawOptionsFromCache = pinDetailFromCache?.raw?.options;
+
+    const rawOptionsFromRaw = (wrapper?.raw as any)?.options;
+    const rawOptionsFromWrapper = (wrapper as any)?.options;
+    const rawOptionsFromSource = (sourceData as any)?.options;
+
+    // 객체 형태의 options 찾기 (배열이 아닌 객체만)
+    // 우선순위: 캐시의 raw > wrapper.raw > wrapper > sourceData
+    const rawOptionsObject =
+      rawOptionsFromCache &&
+      typeof rawOptionsFromCache === "object" &&
+      !Array.isArray(rawOptionsFromCache)
+        ? rawOptionsFromCache
+        : rawOptionsFromRaw &&
+          typeof rawOptionsFromRaw === "object" &&
+          !Array.isArray(rawOptionsFromRaw)
+        ? rawOptionsFromRaw
+        : rawOptionsFromWrapper &&
+          typeof rawOptionsFromWrapper === "object" &&
+          !Array.isArray(rawOptionsFromWrapper)
+        ? rawOptionsFromWrapper
+        : rawOptionsFromSource &&
+          typeof rawOptionsFromSource === "object" &&
+          !Array.isArray(rawOptionsFromSource)
+        ? rawOptionsFromSource
+        : null;
+
+    if (rawOptionsObject) {
+      const kitchenLayout = rawOptionsObject.kitchenLayout ?? null;
+
+      let fridgeSlot = rawOptionsObject.fridgeSlot ?? null;
+      if (typeof fridgeSlot === "string" && fridgeSlot.startsWith("SLOT_")) {
+        fridgeSlot = fridgeSlot.replace("SLOT_", "") as any;
+      }
+
+      const sofaSize = rawOptionsObject.sofaSize ?? null;
+      const livingRoomView = rawOptionsObject.livingRoomView ?? null;
+
+      api.setKitchenLayout?.(kitchenLayout);
+      api.setFridgeSlot?.(fridgeSlot);
+      api.setSofaSize?.(sofaSize);
+      api.setLivingRoomView?.(livingRoomView);
     } else {
       api.setKitchenLayout?.(null);
       api.setFridgeSlot?.(null);
@@ -276,7 +324,7 @@ export function useInjectInitialData({
     api.setUnitLines(normalized.unitLines);
     api.setAspects(normalized.aspects);
 
-    // ✅ buildingType: registry / buildingType / propertyType / type 를 한 번에 정규화
+    // buildingType: registry / buildingType / propertyType / type 를 한 번에 정규화
     let resolvedBt: BuildingType | null = null;
     {
       const rawCandidates: any[] = [
