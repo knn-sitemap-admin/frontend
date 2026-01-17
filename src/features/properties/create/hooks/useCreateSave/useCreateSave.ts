@@ -437,9 +437,32 @@ export function useCreateSave({
 const normalizePhone = (v: string) => v.replace(/[^\d]/g, "");
 const isValidPhoneKR = (raw?: string | null) => {
   const s = (raw ?? "").trim();
+  
   if (!s) return false;
+  
   const v = normalizePhone(s);
-  if (!/^0\d{9,10}$/.test(v)) return false;
+  
+  // 특수번호 체크 (1588, 1544, 1577, 1644 등)
+  if (/^1[5-9]\d{2}$/.test(v.slice(0, 4))) {
+    // 특수번호는 8자리 또는 10자리 허용
+    return v.length === 8 || v.length === 10;
+  }
+  
+  // 0으로 시작하는 일반 번호 체크
+  if (!v.startsWith("0")) return false;
+  
   if (v.startsWith("02")) return v.length === 9 || v.length === 10;
-  return v.length === 10 || v.length === 11;
+  
+  // 070, 050 등 인터넷전화 및 휴대폰 번호 (011자리)
+  if (v.startsWith("01") || v.startsWith("070") || v.startsWith("050")) {
+    return v.length === 10 || v.length === 11;
+  }
+  
+  // 기타 지역번호 (031, 032, 033, 041, 042, 043, 044, 051, 052, 053, 054, 055, 061, 062, 063, 064)
+  if (v.startsWith("03") || v.startsWith("04") || v.startsWith("05") || v.startsWith("06")) {
+    return v.length === 9 || v.length === 10 || v.length === 11;
+  }
+  
+  // 기본 체크: 10~11자리
+  return v.length >= 10 && v.length <= 11;
 };
