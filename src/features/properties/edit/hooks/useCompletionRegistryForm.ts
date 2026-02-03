@@ -68,6 +68,13 @@ export function useCompletionRegistryForm({
     [form]
   );
 
+  const setBuildingTypes = useCallback(
+    (v: string[]) => {
+      form?.setBuildingTypes?.(v);
+    },
+    [form]
+  );
+
   const setRebateText = useCallback(
     (v: string | null) => {
       const s = v ?? "";
@@ -113,6 +120,10 @@ export function useCompletionRegistryForm({
       // ✅ 등기/건물 타입
       buildingType: (form?.buildingType ?? null) as BuildingType | null,
       setBuildingType,
+      buildingTypes: Array.isArray(form?.buildingTypes)
+        ? form.buildingTypes
+        : [],
+      setBuildingTypes,
 
       // ⭐ 리베이트 텍스트
       rebateText: form?.rebateText ?? "",
@@ -129,6 +140,7 @@ export function useCompletionRegistryForm({
       form?.slopeGrade,
       form?.structureGrade,
       form?.buildingType,
+      form?.buildingTypes,
       form?.rebateText,
       form?.buildingGrade,
       setCompletionDate,
@@ -138,6 +150,7 @@ export function useCompletionRegistryForm({
       setSlopeGrade,
       setStructureGrade,
       setBuildingType,
+      setBuildingTypes,
       setRebateText,
       setBuildingGrade,
     ]

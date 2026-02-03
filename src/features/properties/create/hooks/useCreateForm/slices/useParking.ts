@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
  */
 export function useParking() {
   const [parkingType, setParkingType] = useState<string | null>(null);
+  const [parkingTypes, setParkingTypes] = useState<string[]>([]);
   const [totalParkingSlots, setTotalParkingSlots] = useState<number | null>(
     null
   );
@@ -22,15 +23,17 @@ export function useParking() {
   const state = useMemo(
     () => ({
       parkingType,
+      parkingTypes,
       totalParkingSlots,
       registrationTypeId,
     }),
-    [parkingType, totalParkingSlots, registrationTypeId]
+    [parkingType, parkingTypes, totalParkingSlots, registrationTypeId]
   );
 
   const actions = useMemo(
     () => ({
       setParkingType,
+      setParkingTypes,
       setTotalParkingSlots,
       setRegistrationTypeId,
     }),

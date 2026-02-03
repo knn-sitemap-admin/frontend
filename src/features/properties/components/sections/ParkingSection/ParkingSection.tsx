@@ -2,116 +2,94 @@
 
 import Field from "@/components/atoms/Field/Field";
 import { Input } from "@/components/atoms/Input/Input";
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { ParkingSectionProps, Preset } from "./types";
+import PillCheckboxGroup from "@/components/atoms/PillCheckboxGroup";
+import { useCallback, useEffect, useState } from "react";
+import { ParkingSectionProps } from "./types";
 import { PRESETS } from "./constants";
-import SafeSelect from "@/shared/components/safe/SafeSelect";
 
 const PARKING_TYPE_MAX_LEN = 50;
 
+type Preset = (typeof PRESETS)[number];
+const isPreset = (x: string): x is Preset =>
+  (PRESETS as readonly string[]).includes(x);
+
+const toArr = (v: string[] | string | null | undefined): string[] =>
+  Array.isArray(v) ? v.filter(Boolean) : v ? [v] : [];
+
 type Props = Omit<ParkingSectionProps, "parkingCount" | "setParkingCount"> & {
-  /** 상위는 number|null 로 내려줌 */
   totalParkingSlots?: number | null;
   setTotalParkingSlots?: (v: number | null) => void;
+  parkingTypes?: string[];
+  setParkingTypes?: (v: string[]) => void;
 };
 
 export default function ParkingSection({
   parkingType,
   setParkingType,
-
+  parkingTypes,
+  setParkingTypes,
   totalParkingSlots,
   setTotalParkingSlots,
 }: Props) {
-  const isPreset = (v: string): v is Preset =>
-    (PRESETS as readonly string[]).includes(v);
+  const arr = parkingTypes ?? toArr(parkingType);
+  const presetSelected = arr.filter(isPreset) as Preset[];
+  const customValues = arr.filter((x) => x && !isPreset(x));
 
-  /** 내부 UI 상태(셀렉트 값/커스텀 입력) — 내부에서는 문자열로 관리 */
-  const [selectValue, setSelectValue] = useState<string>(""); // "" | Preset | "custom"
-  const [custom, setCustom] = useState<string>("");
-
-  /** 셀렉트 아이템 */
-  const selectItems = useMemo(
-    () => [
-      ...PRESETS.map((opt) => ({ value: opt, label: opt } as const)),
-      { value: "custom", label: "직접입력" } as const,
-    ],
-    []
+  const [custom, setCustom] = useState<string>(customValues[0] ?? "");
+  const [showCustomInput, setShowCustomInput] = useState(
+    customValues.length > 0
   );
 
-  /** 숫자 입력 표시값 (controlled string) */
-  const displayCountStr =
-    typeof totalParkingSlots === "number" && Number.isFinite(totalParkingSlots)
-      ? String(totalParkingSlots)
-      : "";
-
-  /* ───────── prop → 내부 상태 동기화 ───────── */
   useEffect(() => {
-    // 커스텀 입력 중일 때는 사용자가 타이핑하는 걸 우선시
-    if (selectValue === "custom") return;
-
-    // 값이 없는 경우 리셋
-    if (!parkingType) {
-      if (selectValue !== "") setSelectValue("");
-      if (custom !== "") setCustom("");
-      return;
+    if (customValues.length > 0) {
+      setCustom(customValues[0]);
+      setShowCustomInput(true);
     }
+  }, [customValues.join(",")]);
 
-    // 프리셋 값인 경우
-    if (isPreset(parkingType)) {
-      if (selectValue !== parkingType) setSelectValue(parkingType);
-      if (custom !== "") setCustom("");
-      return;
-    }
-
-    // 프리셋이 아니면 "직접입력" 모드로
-    if (selectValue !== "custom") setSelectValue("custom");
-    if (custom !== parkingType) setCustom(parkingType);
-  }, [parkingType, selectValue, custom]);
-
-  /* ───────── 이벤트 → 상위 반영 ───────── */
-
-  const onChangeSelect = useCallback(
-    (val: string | null) => {
-      const next = val ?? "";
-      if (next === selectValue) return;
-      setSelectValue(next);
-
-      // 미선택
-      if (next === "") {
-        setParkingType?.(null);
-        return;
-      }
-
-      // 직접입력 모드일 때는 parkingType는 커스텀 인풋 blur 시에만 반영
-      if (next === "custom") {
-        if (parkingType !== null) setParkingType?.(null);
-        return;
-      }
-
-      // 프리셋 선택
-      if (parkingType !== next) setParkingType?.(next);
+  const updateArr = useCallback(
+    (next: string[]) => {
+      if (setParkingTypes) setParkingTypes(next);
+      else setParkingType?.(next[0] ?? null);
     },
-    [selectValue, parkingType, setParkingType]
+    [setParkingTypes, setParkingType]
   );
 
-  /** 커스텀 문자열 입력 (길이 제한 포함) */
+  const onChangePresets = useCallback(
+    (nextPresets: Preset[]) => {
+      updateArr([...nextPresets, ...customValues]);
+    },
+    [customValues, updateArr]
+  );
+
+  const toggleCustomInput = useCallback(() => {
+    if (showCustomInput) {
+      setShowCustomInput(false);
+      setCustom("");
+      updateArr(presetSelected);
+    } else {
+      setShowCustomInput(true);
+    }
+  }, [showCustomInput, presetSelected, updateArr]);
+
   const onChangeCustomInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const next = e.target.value.slice(0, PARKING_TYPE_MAX_LEN);
-      setCustom(next);
+      setCustom(e.target.value.slice(0, PARKING_TYPE_MAX_LEN));
     },
     []
   );
 
   const onBlurCustom = useCallback(() => {
     const trimmed = custom.trim();
-    if (trimmed === "") {
-      setParkingType?.(null);
-      setSelectValue("");
-    } else {
-      setParkingType?.(trimmed);
+    if (trimmed) {
+      updateArr([...presetSelected, trimmed]);
     }
-  }, [custom, setParkingType]);
+  }, [custom, presetSelected, updateArr]);
+
+  const displayCountStr =
+    typeof totalParkingSlots === "number" && Number.isFinite(totalParkingSlots)
+      ? String(totalParkingSlots)
+      : "";
 
   const onChangeCount = useCallback(
     (raw: string) => {
@@ -122,71 +100,40 @@ export default function ParkingSection({
     [setTotalParkingSlots]
   );
 
-  /* ───────── 레이아웃 분기 ───────── */
-
-  // ✅ 직접입력일 때:
-  // - 모바일: 한 컬럼 → 주차유형(셀렉트+인풋) 위, 총 주차대수 아래
-  // - md 이상: 두 컬럼 → 왼쪽 주차유형(셀렉트+인풋), 오른쪽 총 주차대수
-  if (selectValue === "custom") {
-    return (
-      <div className="grid gap-4 md:grid-cols-2 md:gap-x-36 md:gap-y-4 md:items-center">
-        {/* 왼쪽: 주차 유형 + 직접입력 인풋 (항상 한 줄에 나란히) */}
-        <Field label="주차 유형">
-          <div className="flex items-center gap-2">
-            <SafeSelect
-              value={selectValue || null}
-              onChange={onChangeSelect}
-              items={selectItems}
-              placeholder="선택"
-              className="h-9 w-28 flex-shrink-0"
-              contentClassName="max-h-[320px] z-[10010]"
-              side="bottom"
-              align="start"
-            />
+  return (
+    <div className="flex flex-col gap-4">
+      <Field label="주차 유형" align="center">
+        <div className="flex flex-wrap items-center gap-2">
+          <PillCheckboxGroup
+            name="parkingTypes"
+            options={PRESETS}
+            value={presetSelected}
+            onChange={onChangePresets}
+          />
+          <label
+            className={[
+              "inline-flex h-8 min-w-10 items-center justify-center rounded-lg px-1 md:px-3 text-sm whitespace-nowrap",
+              "border transition-colors select-none cursor-pointer",
+              showCustomInput
+                ? "bg-blue-500 text-white border-blue-500"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+            ].join(" ")}
+            onClick={toggleCustomInput}
+          >
+            직접입력
+          </label>
+          {showCustomInput && (
             <Input
               value={custom}
               onChange={onChangeCustomInput}
               onBlur={onBlurCustom}
+              onKeyDown={(e) => e.key === "Enter" && onBlurCustom()}
               placeholder="예: 지상 병렬 10대"
-              className="h-9 w-[160px] md:w-[200px]"
+              className="h-8 min-w-[140px] md:min-w-[180px]"
               maxLength={PARKING_TYPE_MAX_LEN}
+              autoFocus
             />
-          </div>
-        </Field>
-
-        {/* 오른쪽(or 모바일에서는 아래): 총 주차대수 */}
-        <Field label="총 주차대수">
-          <div className="flex items-center gap-3">
-            <Input
-              value={displayCountStr}
-              onChange={(e) => onChangeCount(e.target.value)}
-              className="w-16 h-9"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="0"
-            />
-            <span className="text-gray-500">대</span>
-          </div>
-        </Field>
-      </div>
-    );
-  }
-
-  // 나머지(프리셋/미선택): 기존 레이아웃 유지
-  return (
-    <div className="grid grid-cols-2 items-center md:grid-cols-3">
-      <Field label="주차 유형">
-        <div className="flex items-center gap-2">
-          <SafeSelect
-            value={selectValue || null}
-            onChange={onChangeSelect}
-            items={selectItems}
-            placeholder="선택"
-            className="w-28 h-9"
-            contentClassName="max-h-[320px] z-[10010]"
-            side="bottom"
-            align="start"
-          />
+          )}
         </div>
       </Field>
 

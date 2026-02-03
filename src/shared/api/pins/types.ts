@@ -49,6 +49,12 @@ export type CreatePinDto = {
   /** 주차유형 문자열 (백엔드 DTO에도 존재) */
   parkingType?: string | null;
 
+  /** 주차유형 배열 (다중 선택) — parkingTypes: ["직렬", "기계식"] */
+  parkingTypes?: string[];
+
+  /** 건물유형 배열 (다중 선택) — buildingTypes: ["APT", "OP"] */
+  buildingTypes?: string[];
+
   /** ✅ 서버 전달 시 "1"~"5" 문자열 또는 null 권장 (입력은 number|string|null 수용) */
   parkingGrade?: number | string | null;
 

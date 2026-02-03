@@ -25,7 +25,8 @@ type Args = {
   title: string;
   address: string;
   officePhone: string;
-  parkingType: string | null;
+  parkingType?: string | null;
+  parkingTypes?: string[];
   completionDate: string;
   salePrice: string;
 

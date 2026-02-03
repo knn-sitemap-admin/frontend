@@ -6,6 +6,9 @@ export type ParkingFormSlice = {
   parkingType: string | null;
   setParkingType: (v: string | null) => void;
 
+  parkingTypes?: string[];
+  setParkingTypes?: (v: string[]) => void;
+
   totalParkingSlots: string | null;
   setTotalParkingSlots: (v: string | null) => void;
 };
@@ -34,6 +37,9 @@ export function useParkingForm({ form }: UseParkingFormArgs): ParkingFormSlice {
     () => ({
       parkingType: form?.parkingType ?? null,
       setParkingType,
+
+      parkingTypes: Array.isArray(form?.parkingTypes) ? form.parkingTypes : [],
+      setParkingTypes: (v: string[]) => form?.setParkingTypes?.(v),
 
       totalParkingSlots: (() => {
         const raw = form?.totalParkingSlots;

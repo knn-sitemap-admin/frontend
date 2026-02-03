@@ -24,7 +24,11 @@ export type CompletionRegistrySectionProps = {
   structureGrade?: Grade;
   setStructureGrade?: (v?: Grade) => void;
 
-  /** 건물유형(백엔드 enum). 컨테이너에서 registry ↔ buildingType 매핑 가능 */
+  /** 건물유형(백엔드 enum) 단일 선택 레거시 */
   buildingType?: BuildingType | null;
   setBuildingType?: (v: BuildingType | null) => void;
+
+  /** 건물유형 다중 선택 — buildingTypes: ["APT", "OP"] */
+  buildingTypes?: string[];
+  setBuildingTypes?: (v: string[]) => void;
 };

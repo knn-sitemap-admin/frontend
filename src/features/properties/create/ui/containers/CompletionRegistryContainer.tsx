@@ -22,9 +22,12 @@ export type CRContainerForm = {
   structureGrade?: Grade;
   setStructureGrade: (v?: Grade) => void;
 
-  /** 등기(서버 enum): registryOne 대신 buildingType 사용 */
+  /** 등기(서버 enum): 단일 선택 레거시 */
   buildingType?: BuildingType | null;
   setBuildingType?: (v: BuildingType | null) => void;
+  /** 등기 다중 선택 — buildingTypes: ["APT", "OP"] */
+  buildingTypes?: string[];
+  setBuildingTypes?: (v: string[]) => void;
 
   /** ✅ 신규: 최저 실입(정수, 만원 단위) */
   minRealMoveInCost?: number | string | null;
@@ -57,7 +60,8 @@ export default function CompletionRegistryContainer({
   /** 답사예정 핀 여부 */
   isVisitPlanPin?: boolean;
 }) {
-  // 안전 폴백 (buildingType 관련은 optional 그대로 유지)
+  const buildingTypes = (form as any).buildingTypes ?? [];
+  const setBuildingTypes = (form as any).setBuildingTypes;
   const buildingType = (form as any).buildingType ?? null;
   const setBuildingType = ((form as any).setBuildingType ?? (() => {})) as (
     v: BuildingType | null
@@ -94,7 +98,9 @@ export default function CompletionRegistryContainer({
       setSlopeGrade={form.setSlopeGrade}
       structureGrade={form.structureGrade}
       setStructureGrade={form.setStructureGrade}
-      // 건물유형
+      // 건물유형 (다중 선택)
+      buildingTypes={buildingTypes}
+      setBuildingTypes={setBuildingTypes}
       buildingType={buildingType}
       setBuildingType={setBuildingType}
       // ✅ 엘리베이터

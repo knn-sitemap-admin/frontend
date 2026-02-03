@@ -149,7 +149,7 @@ function toOptionLabels(o?: ApiPin["options"]): string[] | undefined {
   if (o.hasKitchenWindow) labels.push("주방창");
   if (o.hasCityGas) labels.push("도시가스");
   if (o.hasInduction) labels.push("인덕션");
-  
+
   // ✅ Enum 필드들도 뱃지로 추가
   if (o.kitchenLayout === "G") labels.push("주방구조 ㄱ");
   if (o.kitchenLayout === "D") labels.push("주방구조 ㄷ");
@@ -163,7 +163,7 @@ function toOptionLabels(o?: ApiPin["options"]): string[] | undefined {
   if (o.livingRoomView === "OPEN") labels.push("뻥뷰");
   if (o.livingRoomView === "NORMAL") labels.push("평범");
   if (o.livingRoomView === "BLOCKED") labels.push("막힘");
-  
+
   return labels.length ? labels : undefined;
 }
 

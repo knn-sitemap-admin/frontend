@@ -4,9 +4,11 @@ import ParkingSection from "@/features/properties/components/sections/ParkingSec
 
 /** Body에서 내려오는 슬라이스(문자열 기반) */
 type ParkingFormSliceFromBody = {
-  /** UI에 보이는 주차 유형 라벨 (문자열로만 관리) */
-  parkingType: string | null;
-  setParkingType: (v: string | null) => void;
+  parkingType?: string | null;
+  setParkingType?: (v: string | null) => void;
+  /** 주차 유형 다중 선택 — parkingTypes: ["직렬", "기계식"] */
+  parkingTypes?: string[];
+  setParkingTypes?: (v: string[]) => void;
 
   /** 총 주차대수 — Body에서는 문자열로 관리 */
   totalParkingSlots: string | null;
@@ -21,6 +23,8 @@ export default function ParkingContainer({ form }: Props) {
   const {
     parkingType,
     setParkingType,
+    parkingTypes,
+    setParkingTypes,
     totalParkingSlots,
     setTotalParkingSlots,
   } = form;
@@ -37,10 +41,10 @@ export default function ParkingContainer({ form }: Props) {
 
   return (
     <ParkingSection
-      /** 주차 유형은 string | null 그대로 */
-      parkingType={parkingType}
-      setParkingType={setParkingType}
-      /** 총 주차대수는 Section이 number|null을 기대 */
+      parkingType={parkingType ?? null}
+      setParkingType={setParkingType ?? (() => {})}
+      parkingTypes={parkingTypes}
+      setParkingTypes={setParkingTypes}
       totalParkingSlots={toNum(totalParkingSlots)}
       setTotalParkingSlots={(v) => setTotalParkingSlots(toStr(v))}
     />

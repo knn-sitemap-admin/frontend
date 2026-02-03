@@ -29,7 +29,11 @@ import ViewActionsBar from "../parts/ViewActionsBar";
 import AreaSetsViewContainer from "../containers/AreaSetsViewContainer";
 import AspectsViewContainer from "../containers/AspectsViewContainer";
 import { useMe } from "@/shared/api/auth/auth";
-import { getFavoriteGroups, upsertFavoriteItem, deleteFavoriteItem } from "@/features/favorites/api/favorites";
+import {
+  getFavoriteGroups,
+  upsertFavoriteItem,
+  deleteFavoriteItem,
+} from "@/features/favorites/api/favorites";
 import FavGroupModal from "@/features/sidebar/components/FavGroupModal";
 import type { FavorateListItem } from "@/features/sidebar/types/sidebar";
 
@@ -88,8 +92,12 @@ export default function ViewStage({
   // ✅ 즐겨찾기 관련 상태
   const [favoriteGroups, setFavoriteGroups] = useState<FavorateListItem[]>([]);
   const [favModalOpen, setFavModalOpen] = useState(false);
-  const [favoriteIndex, setFavoriteIndex] = useState<Record<string, { groupId: string; itemId: string }>>({});
-  const favoriteIndexRef = useRef<Record<string, { groupId: string; itemId: string }>>({});
+  const [favoriteIndex, setFavoriteIndex] = useState<
+    Record<string, { groupId: string; itemId: string }>
+  >({});
+  const favoriteIndexRef = useRef<
+    Record<string, { groupId: string; itemId: string }>
+  >({});
   const pinId = useMemo(() => String(data?.id ?? "").trim(), [data?.id]);
   const isFavorited = useMemo(() => {
     return !!favoriteIndexRef.current[pinId];
@@ -100,7 +108,7 @@ export default function ViewStage({
     try {
       const groups = await getFavoriteGroups(true);
       const index: Record<string, { groupId: string; itemId: string }> = {};
-      
+
       groups.forEach((group) => {
         (group.items || []).forEach((item) => {
           index[item.pinId] = { groupId: group.id, itemId: item.itemId };
@@ -183,7 +191,9 @@ export default function ViewStage({
         await loadFavorites();
         toast({
           title: "즐겨찾기 추가 완료",
-          description: `${data?.title || "매물"}이(가) 즐겨찾기에 추가되었습니다.`,
+          description: `${
+            data?.title || "매물"
+          }이(가) 즐겨찾기에 추가되었습니다.`,
         });
         setFavModalOpen(false);
       } catch (error: any) {
@@ -218,7 +228,9 @@ export default function ViewStage({
         await loadFavorites();
         toast({
           title: "즐겨찾기 추가 완료",
-          description: `${data?.title || "매물"}이(가) 즐겨찾기에 추가되었습니다.`,
+          description: `${
+            data?.title || "매물"
+          }이(가) 즐겨찾기에 추가되었습니다.`,
         });
         setFavModalOpen(false);
       } catch (error: any) {
@@ -256,14 +268,20 @@ export default function ViewStage({
     return fromView ?? fromForm ?? fromMetaRoot ?? fromRaw ?? null;
   }, [data, f, metaDetails]);
 
-  /** ✅ parkingType도 여러 소스에서 안전하게 합쳐서 사용 */
-  const parkingTypeResolved = useMemo(() => {
-    const fromForm = (f as any)?.parkingType;
-    const fromView = (data as any)?.parkingType;
-    const fromMetaRoot = (metaDetails as any)?.parkingType;
-    const fromRaw = (metaDetails as any)?.raw?.parkingType;
-
-    return fromForm ?? fromView ?? fromMetaRoot ?? fromRaw ?? null;
+  /** ✅ parkingTypes/parkingType 여러 소스에서 안전하게 합쳐서 사용 */
+  const parkingTypesResolved = useMemo(() => {
+    const fromForm = (f as any)?.parkingTypes;
+    const fromView = (data as any)?.parkingTypes;
+    const fromMetaRoot = (metaDetails as any)?.parkingTypes;
+    const fromRaw = (metaDetails as any)?.raw?.parkingTypes;
+    const arr = fromForm ?? fromView ?? fromMetaRoot ?? fromRaw;
+    if (Array.isArray(arr) && arr.length > 0) return arr;
+    const single =
+      (f as any)?.parkingType ??
+      (data as any)?.parkingType ??
+      (metaDetails as any)?.parkingType ??
+      (metaDetails as any)?.raw?.parkingType;
+    return single ? [single] : undefined;
   }, [f, data, metaDetails]);
 
   /** ✅ 옵션 직접입력(기타) 텍스트도 여러 소스에서 합쳐서 사용 */
@@ -494,7 +512,8 @@ export default function ViewStage({
                 remainingHouseholds={f.remainingHouseholds}
               />
               <ParkingViewContainer
-                parkingType={parkingTypeResolved}
+                parkingType={parkingTypesResolved?.[0]}
+                parkingTypes={parkingTypesResolved}
                 totalParkingSlots={
                   (f as any).totalParkingSlots ??
                   (data as any)?.totalParkingSlots ??
