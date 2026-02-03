@@ -16,6 +16,25 @@ type OptionsBadgesProps = {
 const SPLIT_RE = /[,\n;/]+/;
 const normalize = (s: string) => s.trim().toLowerCase();
 
+/** 주방구조/냉장고자리/쇼파자리/거실뷰 → 줄바꿈 + mt 로 따로 표시 */
+const DETAIL_OPTION_LABELS = new Set([
+  "주방구조 ㄱ",
+  "주방구조 ㄷ",
+  "주방구조 일자",
+  "냉장고자리 1",
+  "냉장고자리 2",
+  "냉장고자리 3",
+  "쇼파 2인",
+  "쇼파 3인",
+  "쇼파 4인",
+  "뻥뷰",
+  "평범",
+  "막힘",
+]);
+
+const BADGE_CLASS =
+  "inline-flex items-center rounded-full border px-2.5 h-6 text-sm bg-green-50 text-green-700";
+
 export default function OptionsBadges({
   options,
   optionEtc,
@@ -63,10 +82,14 @@ export default function OptionsBadges({
     extrasDedup.push(label);
   }
 
-  // 최종 리스트: 기본 옵션 + 직접입력 옵션들
+  // 최종 리스트 → 주방/냉장고/쇼파/거실뷰만 줄바꿈 + mt 로 분리
   const list = [...baseDedup, ...extrasDedup];
+  const mainOptions = list.filter((op) => !DETAIL_OPTION_LABELS.has(op));
+  const detailOptions = list.filter((op) => DETAIL_OPTION_LABELS.has(op));
 
-  if (list.length === 0) {
+  const hasAny = mainOptions.length > 0 || detailOptions.length > 0;
+
+  if (!hasAny) {
     return (
       <div className="text-sm">
         <span className="text-muted-foreground">옵션</span>
@@ -76,18 +99,31 @@ export default function OptionsBadges({
   }
 
   return (
-    <div className="space-y-1">
-      <div className="text-sm font-medium">옵션</div>
-      <div className="flex flex-wrap gap-2" aria-label="옵션 목록">
-        {list.map((op, i) => (
-          <span
-            key={`${op}-${i}`}
-            className="inline-flex items-center rounded-full border px-2.5 h-6 text-sm bg-green-50 text-green-700"
-          >
-            {op}
-          </span>
-        ))}
+    <div>
+      <div className="space-y-1">
+        <div className="text-sm font-medium">옵션</div>
+        {mainOptions.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1" aria-label="옵션 목록">
+            {mainOptions.map((op, i) => (
+              <span key={`${op}-${i}`} className={BADGE_CLASS}>
+                {op}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
+      {detailOptions.length > 0 && (
+        <div
+          className="flex flex-wrap gap-2 pt-4"
+          aria-label="주방구조, 냉장고자리, 쇼파자리, 거실뷰"
+        >
+          {detailOptions.map((op, i) => (
+            <span key={`detail-${op}-${i}`} className={BADGE_CLASS}>
+              {op}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -17,9 +17,9 @@ export interface CreatePinAreaGroupDto {
   exclusiveMinM2: number;
   exclusiveMaxM2: number;
 
-  /** 실평(㎡) — 필수 */
-  actualMinM2: number;
-  actualMaxM2: number;
+  /** 실평(㎡) — 선택 (미입력 시 null) */
+  actualMinM2: number | null;
+  actualMaxM2: number | null;
 
   /** 평(선택): 참조용으로만 전송하고, 서버 계산은 m² 기준 */
   exclusiveMinPy?: number;

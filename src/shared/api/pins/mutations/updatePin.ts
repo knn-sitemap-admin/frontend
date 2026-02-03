@@ -19,6 +19,13 @@ export async function updatePin(
   dto: UpdatePinDto,
   signal?: AbortSignal
 ): Promise<{ id: string }> {
+  // 수정 저장 시 parkingTypes/buildingTypes 확인용
+  console.log(
+    "[updatePin] parkingTypes:",
+    (dto as any).parkingTypes,
+    "buildingTypes:",
+    (dto as any).buildingTypes
+  );
   const has = (k: keyof UpdatePinDto) =>
     Object.prototype.hasOwnProperty.call(dto, k);
 
@@ -62,14 +69,19 @@ export async function updatePin(
       )
     : undefined;
 
-  // buildingType
-  let buildingTypePayload: any = {};
-  if (has("buildingType")) {
+  // buildingTypes 배열 우선, buildingType 단일 폴백
+  let buildingTypesPayload: any = {};
+  if (has("buildingTypes") && Array.isArray((dto as any).buildingTypes)) {
+    const arr = (dto as any).buildingTypes
+      .map((x: string) => String(x ?? "").trim())
+      .filter(Boolean);
+    buildingTypesPayload = { buildingTypes: arr };
+  } else if (has("buildingType")) {
     if (dto.buildingType === null) {
-      buildingTypePayload = { buildingType: null };
+      buildingTypesPayload = { buildingTypes: [] };
     } else if (dto.buildingType !== undefined) {
       const mapped = toServerBuildingType(dto.buildingType);
-      if (mapped) buildingTypePayload = { buildingType: mapped };
+      if (mapped) buildingTypesPayload = { buildingTypes: [mapped] };
     }
   }
 
@@ -107,7 +119,7 @@ export async function updatePin(
         : {}
       : {}),
 
-    ...buildingTypePayload,
+    ...buildingTypesPayload,
 
     ...(has("totalHouseholds")
       ? {
@@ -154,10 +166,19 @@ export async function updatePin(
         }
       : {}),
 
-    ...(has("parkingType")
+    // createPin과 동일: parkingTypes 배열 우선, parkingType 단일 폴백 (값 직접 체크)
+    ...(Array.isArray((dto as any).parkingTypes)
       ? {
-          parkingType:
-            dto.parkingType == null ? null : String(dto.parkingType).trim(),
+          parkingTypes: (dto as any).parkingTypes
+            .map((x: string) => String(x ?? "").trim())
+            .filter(Boolean),
+        }
+      : (dto as any).parkingType != null
+      ? {
+          parkingTypes:
+            (dto as any).parkingType === ""
+              ? []
+              : [String((dto as any).parkingType).trim()],
         }
       : {}),
 

@@ -170,7 +170,10 @@ export function useCreateSave({
       // 가격/면적 검증은 입력된 값이 있을 때만 체크 (옵셔널)
       const unitLinesArray = Array.isArray(f.unitLines) ? f.unitLines : [];
       if (unitLinesArray.length > 0) {
-        const priceError = validateUnitPriceRanges(unitLinesArray as any[], f.remainingHouseholds);
+        const priceError = validateUnitPriceRanges(
+          unitLinesArray as any[],
+          f.remainingHouseholds
+        );
         if (priceError) {
           alert(priceError);
           return;
@@ -193,8 +196,11 @@ export function useCreateSave({
         );
       };
 
-      const extraAreaSetsArray = Array.isArray(f.extraAreaSets) ? f.extraAreaSets : [];
-      const hasAnyAreaInput = hasAreaInput(f.baseAreaSet) || extraAreaSetsArray.some(hasAreaInput);
+      const extraAreaSetsArray = Array.isArray(f.extraAreaSets)
+        ? f.extraAreaSets
+        : [];
+      const hasAnyAreaInput =
+        hasAreaInput(f.baseAreaSet) || extraAreaSetsArray.some(hasAreaInput);
 
       if (hasAnyAreaInput) {
         const areaError = validateAreaSets(
@@ -220,6 +226,18 @@ export function useCreateSave({
       }
 
       const anyForm = f as any;
+      const parkingTypesForm = Array.isArray(anyForm.parkingTypes)
+        ? anyForm.parkingTypes.filter(Boolean)
+        : [];
+      const buildingTypesForm = Array.isArray(anyForm.buildingTypes)
+        ? anyForm.buildingTypes.filter(Boolean)
+        : [];
+      console.log(
+        "[CreateSave] parkingTypes:",
+        parkingTypesForm,
+        "buildingTypes:",
+        buildingTypesForm
+      );
 
       const rawMinRealMoveInCost =
         anyForm.minRealMoveInCost ??
@@ -306,6 +324,7 @@ export function useCreateSave({
 
         parkingGrade: f.parkingGrade,
         parkingType: f.parkingType ?? null,
+        parkingTypes: parkingTypesForm,
         totalParkingSlots: f.totalParkingSlots,
 
         completionDate: normalizedCompletion,
@@ -330,6 +349,7 @@ export function useCreateSave({
         remainingHouseholds: f.remainingHouseholds,
 
         buildingType: (f as any).buildingType ?? null,
+        buildingTypes: buildingTypesForm,
         registrationTypeId: (f as any).registrationTypeId ?? null,
 
         // ✅ 옵션 배열 + extraOptionsText 소스

@@ -61,7 +61,8 @@ export type BuildArgs = {
   badge?: string | null;
 
   parkingGrade: StarStr;
-  parkingType: string | null;
+  parkingType?: string | null;
+  parkingTypes?: string[];
   totalParkingSlots?: number | string | null;
 
   completionDate?: string;
@@ -87,6 +88,7 @@ export type BuildArgs = {
   remainingHouseholds: string;
 
   buildingType?: string | null;
+  buildingTypes?: string[];
   registrationTypeId?: number | string | null;
 
   options: string[];

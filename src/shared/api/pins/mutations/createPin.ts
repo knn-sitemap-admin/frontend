@@ -47,6 +47,8 @@ export async function createPin(
   dto: CreatePinDto,
   signal?: AbortSignal
 ): Promise<{ id: string; matchedDraftId: number | null }> {
+  // 항상 출력 (저장 시 parkingTypes/buildingTypes 확인용)
+  console.log("[createPin] parkingTypes:", (dto as any).parkingTypes, "buildingTypes:", (dto as any).buildingTypes);
   if (DEV) {
     console.groupCollapsed("[createPin] start dto");
     console.log(dto);
@@ -99,7 +101,7 @@ export async function createPin(
     (dto.badge ?? null) ||
     (pinKind ? mapPinKindToBadge(pinKind) ?? null : null);
 
-  // 동일 입력 단일비행 해시
+  // 동일 입력 단일비행 해시 (parkingTypes, buildingTypes 포함해야 캐시로 다른 선택이 덮어쓰이지 않음)
   const preview = {
     lat: round6(dto.lat),
     lng: round6(dto.lng),
@@ -115,6 +117,8 @@ export async function createPin(
         ? undefined
         : Number(dto.registrationTypeId),
     buildingType: dto.buildingType ?? undefined,
+    buildingTypes: JSON.stringify((dto as any).buildingTypes ?? []),
+    parkingTypes: JSON.stringify((dto as any).parkingTypes ?? []),
     options: dto.options
       ? {
           a: !!dto.options.hasAircon,
@@ -142,13 +146,20 @@ export async function createPin(
   if (!Number.isFinite(lngNum))
     throw new Error("lng가 유효한 숫자가 아닙니다.");
 
-  // buildingType 매핑
-  let buildingTypePayload:
-    | { buildingType: "APT" | "OP" | "주택" | "도생" | "근생" }
-    | {} = {};
-  if (dto.buildingType !== undefined && dto.buildingType !== null) {
+  // buildingTypes 배열 우선, buildingType 단일 폴백
+  let buildingTypesPayload: { buildingTypes?: string[] } = {};
+  if (
+    Array.isArray((dto as any).buildingTypes) &&
+    (dto as any).buildingTypes.length > 0
+  ) {
+    buildingTypesPayload = {
+      buildingTypes: (dto as any).buildingTypes
+        .map((x: string) => String(x ?? "").trim())
+        .filter(Boolean),
+    };
+  } else if (dto.buildingType !== undefined && dto.buildingType !== null) {
     const mapped = toServerBuildingType(dto.buildingType);
-    if (mapped) buildingTypePayload = { buildingType: mapped };
+    if (mapped) buildingTypesPayload = { buildingTypes: [mapped] };
   }
 
   const payload = {
@@ -177,7 +188,7 @@ export async function createPin(
       ? { completionDate: dto.completionDate }
       : {}),
 
-    ...buildingTypePayload,
+    ...buildingTypesPayload,
 
     ...(dto.totalHouseholds != null
       ? { totalHouseholds: Number(dto.totalHouseholds) }
@@ -201,8 +212,16 @@ export async function createPin(
       ? { registrationTypeId: Number(dto.registrationTypeId) }
       : {}),
 
-    ...(dto.parkingType != null && String(dto.parkingType).trim() !== ""
-      ? { parkingType: String(dto.parkingType).trim() }
+    ...(Array.isArray((dto as any).parkingTypes) &&
+    (dto as any).parkingTypes.length > 0
+      ? {
+          parkingTypes: (dto as any).parkingTypes
+            .map((x: string) => String(x ?? "").trim())
+            .filter(Boolean),
+        }
+      : (dto as any).parkingType != null &&
+        String((dto as any).parkingType).trim() !== ""
+      ? { parkingTypes: [String((dto as any).parkingType).trim()] }
       : {}),
 
     ...(pg === null
@@ -255,6 +274,12 @@ export async function createPin(
   if (DEV) {
     console.groupCollapsed("[createPin] final payload");
     console.log(payload);
+    console.log(
+      "→ payload.parkingTypes:",
+      (payload as any).parkingTypes,
+      "payload.buildingTypes:",
+      (payload as any).buildingTypes
+    );
     console.groupEnd();
   }
 

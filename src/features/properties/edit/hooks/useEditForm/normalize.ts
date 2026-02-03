@@ -104,6 +104,8 @@ type Normalized = {
   parkingGrade: StarStr;
   /** 주차 유형 (문자열) */
   parkingType: string | null;
+  /** 주차 유형 다중 선택 */
+  parkingTypes: string[];
   totalParkingSlots: string;
   completionDate: string;
   salePrice: string;
@@ -130,6 +132,8 @@ type Normalized = {
 
   aspects: AspectRowLite[];
   buildingType: BuildingType | null;
+  /** 건물유형 다중 선택 */
+  buildingTypes: string[];
 
   /** 리베이트(만원 단위 텍스트) */
   rebateText: string;
@@ -212,6 +216,12 @@ export function normalizeInitialData(initialData: any | null): Normalized {
   ).trim();
   const parkingType: string | null = rawParkingType ? rawParkingType : null;
 
+  const parkingTypes: string[] = Array.isArray(d.parkingTypes)
+    ? (d.parkingTypes as string[]).map((x) => String(x ?? "").trim()).filter(Boolean)
+    : parkingType
+      ? [parkingType]
+      : [];
+
   const totalParkingSlots = asStr(
     d.totalParkingSlots ?? d.parking?.totalSlots ?? ""
   );
@@ -258,6 +268,12 @@ export function normalizeInitialData(initialData: any | null): Normalized {
   const buildingType: BuildingType | null =
     normalizeBuildingType(buildingTypeSource);
 
+  const buildingTypes: string[] = Array.isArray(d.buildingTypes)
+    ? (d.buildingTypes as string[]).map((x) => String(x ?? "").trim()).filter(Boolean)
+    : buildingType
+      ? [buildingType]
+      : [];
+
   /* ───────── 옵션/직접입력/리베이트 ───────── */
 
   // 1) options: 서버 객체 → 라벨 배열
@@ -267,10 +283,18 @@ export function normalizeInitialData(initialData: any | null): Normalized {
   if (Array.isArray(optionsFromServer)) {
     // 예전 형식이면 그대로 (뷰에서 Enum 필드가 포함될 수 있으므로 필터링)
     const enumLabels = new Set([
-      "주방구조 ㄱ", "주방구조 ㄷ", "주방구조 일자",
-      "냉장고자리 1", "냉장고자리 2", "냉장고자리 3",
-      "쇼파 2인", "쇼파 3인", "쇼파 4인",
-      "뻥뷰", "평범", "막힘",
+      "주방구조 ㄱ",
+      "주방구조 ㄷ",
+      "주방구조 일자",
+      "냉장고자리 1",
+      "냉장고자리 2",
+      "냉장고자리 3",
+      "쇼파 2인",
+      "쇼파 3인",
+      "쇼파 4인",
+      "뻥뷰",
+      "평범",
+      "막힘",
     ]);
     options = optionsFromServer
       .map(asStr)
@@ -333,6 +357,7 @@ export function normalizeInitialData(initialData: any | null): Normalized {
     listingStars,
     parkingGrade,
     parkingType,
+    parkingTypes,
     totalParkingSlots,
     completionDate: asYMD(d.completionDate),
     salePrice: asStr(d.salePrice ?? d.minRealMoveInCost),
@@ -366,6 +391,7 @@ export function normalizeInitialData(initialData: any | null): Normalized {
 
     // 빌딩 타입
     buildingType,
+    buildingTypes,
 
     // 리베이트
     rebateText,

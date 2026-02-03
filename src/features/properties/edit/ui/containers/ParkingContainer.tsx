@@ -3,9 +3,11 @@ import ParkingSection from "@/features/properties/components/sections/ParkingSec
 import { useMemo, useCallback } from "react";
 
 type ParkingFormSlice = {
-  /** 주차 유형 (자주식/기계식 등 문자열) */
   parkingType: string | null;
   setParkingType: (v: string | null) => void;
+
+  parkingTypes?: string[];
+  setParkingTypes?: (v: string[]) => void;
 
   /** 총 주차 대수: 상위는 string|null 로 들고 있음 */
   totalParkingSlots: string | null;
@@ -30,10 +32,10 @@ export default function ParkingContainer({ form }: { form: ParkingFormSlice }) {
 
   return (
     <ParkingSection
-      /** ✅ 주차유형: 문자열만 내려보냄 */
       parkingType={form.parkingType}
       setParkingType={form.setParkingType}
-      /** ✅ 총 주차대수: 섹션에는 number|null로 전달 */
+      parkingTypes={form.parkingTypes}
+      setParkingTypes={form.setParkingTypes}
       totalParkingSlots={totalParkingSlotsNumber}
       setTotalParkingSlots={setTotalParkingSlotsNumber}
     />

@@ -68,6 +68,8 @@ export function useVisitPlanMode({ form, pinDraftId, initialPinKind }: Args) {
 
       anyForm.setBuildingType?.(null);
       anyForm.buildingType = null;
+      anyForm.setBuildingTypes?.([]);
+      anyForm.buildingTypes = [];
 
       anyForm.setCompletionDate?.("");
       anyForm.completionDate = "";
@@ -85,6 +87,8 @@ export function useVisitPlanMode({ form, pinDraftId, initialPinKind }: Args) {
 
       anyForm.setTotalParkingSlots?.(null);
       anyForm.setParkingType?.("");
+      anyForm.setParkingTypes?.([]);
+      anyForm.parkingTypes = [];
 
       anyForm.setElevator?.(null);
 

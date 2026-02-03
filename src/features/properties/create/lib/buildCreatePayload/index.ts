@@ -43,6 +43,7 @@ export function buildCreatePayload(args: BuildArgs) {
 
     parkingGrade,
     parkingType,
+    parkingTypes,
     totalParkingSlots,
     completionDate,
 
@@ -65,6 +66,7 @@ export function buildCreatePayload(args: BuildArgs) {
     remainingHouseholds,
 
     buildingType,
+    buildingTypes,
     registrationTypeId,
 
     options,
@@ -197,7 +199,7 @@ export function buildCreatePayload(args: BuildArgs) {
   // 옵션: 배열만 받아서 서버 DTO(CreatePinOptionsDto)에 맞게 변환
   //    - buildOptionsForServer 내부에서 extraOptionsText까지 구성
   const optionsForServerBase = buildOptionsForServer(options ?? []);
-  
+
   const optionsForServer: any = {
     ...optionsForServerBase,
     // Nullable Enum 4개 (별도 관리)
@@ -278,7 +280,16 @@ export function buildCreatePayload(args: BuildArgs) {
     ...(directions ? { directions } : {}),
 
     // 주차 유형: 값 있을 때만 전송 (trim 후)
-    ...(s(parkingType) ? { parkingType: s(parkingType) } : {}),
+    // 주차 유형: 배열 우선, 레거시 단일 값 폴백
+    ...(Array.isArray(parkingTypes) && parkingTypes.length > 0
+      ? {
+          parkingTypes: parkingTypes
+            .map((x) => String(x ?? "").trim())
+            .filter(Boolean),
+        }
+      : s(parkingType)
+      ? { parkingTypes: [s(parkingType)] }
+      : {}),
 
     // 총 주차 대수: null 제외(0 허용)
     ...(normalizedTotalParkingSlots === null
@@ -367,8 +378,16 @@ export function buildCreatePayload(args: BuildArgs) {
     areaSetTitle: baseAreaTitle,
     areaSetTitles: extraAreaTitles,
 
-    /* 분류/ID */
-    ...(s(buildingType) ? { buildingType: s(buildingType) } : {}),
+    /* 분류/ID: buildingTypes 배열 (다중선택) — "buildingTypes": ["APT", "OP"] */
+    ...(Array.isArray(buildingTypes) && buildingTypes.length > 0
+      ? {
+          buildingTypes: buildingTypes
+            .map((x) => String(x ?? "").trim())
+            .filter(Boolean),
+        }
+      : s(buildingType)
+        ? { buildingTypes: [s(buildingType)] }
+        : {}),
     ...(toNum(registrationTypeId) !== undefined
       ? { registrationTypeId: toNum(registrationTypeId)! }
       : {}),

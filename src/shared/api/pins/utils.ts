@@ -208,7 +208,7 @@ export function sanitizeDirections(
   return out.length ? out : undefined;
 }
 
-/* ✅ areaGroups sanitize: 전용 min/max는 필수, 실제 min/max는 없으면 전용값으로 대체 */
+/* areaGroups sanitize: 전용 min/max는 필수, 실제 min/max는 없으면 전용값으로 대체 */
 export function sanitizeAreaGroups(
   list?: CreatePinAreaGroupDto[] | null
 ): CreatePinAreaGroupDto[] | undefined {
@@ -221,22 +221,22 @@ export function sanitizeAreaGroups(
     const title = String(g.title ?? "").trim();
     if (!title) return;
 
-    // ▶ 전용(㎡) — 필수
+    // 전용(㎡) — 필수
     const exMin = Number(g.exclusiveMinM2);
     const exMax = Number(g.exclusiveMaxM2);
     if (!Number.isFinite(exMin) || !Number.isFinite(exMax)) return;
     if (exMin > exMax) return; // 역전 방지 (같은 값 허용)
 
-    // ▶ 실제(㎡) — 필수 스펙: 없으면 전용값으로 대체
+    // 실제(㎡) — 선택 (미입력 시 null)
     const hasActMin =
       g.actualMinM2 != null && Number.isFinite(Number(g.actualMinM2));
     const hasActMax =
       g.actualMaxM2 != null && Number.isFinite(Number(g.actualMaxM2));
 
-    const actMin = hasActMin ? Number(g.actualMinM2) : exMin;
-    const actMax = hasActMax ? Number(g.actualMaxM2) : exMax;
+    const actMin = hasActMin ? Number(g.actualMinM2) : null;
+    const actMax = hasActMax ? Number(g.actualMaxM2) : null;
 
-    if (actMin > actMax) return; // 역전 방지 (같은 값 허용)
+    if (actMin != null && actMax != null && actMin > actMax) return; // 역전 방지 (같은 값 허용)
 
     out.push({
       title: title.slice(0, 50),
@@ -254,7 +254,7 @@ export function sanitizeAreaGroups(
   return out;
 }
 
-/* ✅ units sanitize: 정수/boolean 캐스팅 + 음수 0 가드, 빈배열 → [] */
+/* units sanitize: 정수/boolean 캐스팅 + 음수 0 가드, 빈배열 → [] */
 export function sanitizeUnits(
   list?: UnitsItemDto[] | null
 ): UnitsItemDto[] | undefined {
