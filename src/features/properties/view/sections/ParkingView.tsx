@@ -28,10 +28,13 @@ export default function ParkingView({
       ? parkingTypes.filter(Boolean).join(", ")
       : parkingType?.trim() || "-";
 
+  const pillClass =
+    "inline-flex h-8 items-center rounded-lg px-3 text-sm border bg-blue-50 text-blue-700";
+
   return (
     <div className="grid grid-cols-2 items-center">
       <Field label="주차 유형">
-        <div className="h-9 flex items-center text-sm">{typeText}</div>
+        <span className={pillClass}>{typeText}</span>
       </Field>
       <Field label="총 주차대수">
         <div className="h-9 flex items-center text-sm">{countText}</div>
