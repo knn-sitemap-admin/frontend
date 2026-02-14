@@ -36,8 +36,9 @@ import { AddressModal } from "../../components/AddressModal";
 import { hideLabelsAround } from "../../engine/overlays/labelRegistry";
 import { useBounds } from "../../hooks/viewport/useBounds";
 import { useBoundsRaw } from "../../hooks/viewport/useBoundsRaw";
-import { type Bounds, type Viewport } from "../../shared/types/map";
+import { type Bounds } from "../../shared/types/bounds.type";
 import { distM } from "../../poi/lib/geometry";
+import { Viewport } from "../hooks/useMapHomeState/mapHome.types";
 
 
 export function MapHomeUI(props: MapHomeUIProps) {
@@ -220,60 +221,62 @@ export function MapHomeUI(props: MapHomeUIProps) {
     onMarkerClick,
   });
 
-    // --- VIEWPORT CHANGE HANDLING ---
-    const lastViewportRef = useRef<Viewport | null>(null);
+  // --- VIEWPORT CHANGE HANDLING ---
+  const lastViewportRef = useRef<Viewport | null>(null);
 
-    const isSameViewport = (a: Viewport, b: Viewport) => {
-      if (!a || !b) return false;
-      const EPS = 1e-6;
-  
-      const diff =
-        Math.abs(a.leftTop.lat - b.leftTop.lat) +
-        Math.abs(a.leftTop.lng - b.leftTop.lng) +
-        Math.abs(a.rightBottom.lat - b.rightBottom.lat) +
-        Math.abs(a.rightBottom.lng - b.rightBottom.lng);
-  
-      return diff < EPS;
-    };
-  
-    const handleViewportChange = useCallback((v: Viewport) => {
-      if (!v) return;
-  
-      if (lastViewportRef.current && isSameViewport(lastViewportRef.current, v))
-        return;
-  
-      lastViewportRef.current = v;
-  
-      // Update bounds for data fetching
-      setBounds({
-        sw: { lat: v.leftBottom.lat, lng: v.leftBottom.lng },
-        ne: { lat: v.rightTop.lat, lng: v.rightTop.lng },
-      });
-  
-      // Preserve original logic from usePlaceSearchOnMap
-      if (lastSearchCenterRef.current) {
-        const centerLat = (v.leftTop.lat + v.rightBottom.lat) / 2;
-        const centerLng = (v.leftTop.lng + v.rightBottom.lng) / 2;
-  
-        const d = distM(
-          centerLat,
-          centerLng,
-          lastSearchCenterRef.current.lat,
-          lastSearchCenterRef.current.lng
-        );
-  
-        const THRESHOLD_M = 300;
-        if (d > THRESHOLD_M) {
-          clearSearchMarkers();
-          lastSearchCenterRef.current = null;
-        }
+  const isSameViewport = (a: Viewport, b: Viewport) => {
+    if (!a || !b) return false;
+    const EPS = 1e-6;
+
+    const diff =
+      Math.abs(a.leftTop.lat - b.leftTop.lat) +
+      Math.abs(a.leftTop.lng - b.leftTop.lng) +
+      Math.abs(a.rightBottom.lat - b.rightBottom.lat) +
+      Math.abs(a.rightBottom.lng - b.rightBottom.lng);
+
+    return diff < EPS;
+  };
+
+  const handleViewportChange = useCallback((v: Viewport) => {
+    if (!v) return;
+
+    if (lastViewportRef.current && isSameViewport(lastViewportRef.current, v))
+      return;
+
+    lastViewportRef.current = v;
+
+    // Update bounds for data fetching
+    setBounds({
+      swLat: v.leftBottom.lat,
+      swLng: v.leftBottom.lng,
+      neLat: v.rightTop.lat,
+      neLng: v.rightTop.lng,
+    });
+
+    // Preserve original logic from usePlaceSearchOnMap
+    if (lastSearchCenterRef.current) {
+      const centerLat = (v.leftTop.lat + v.rightBottom.lat) / 2;
+      const centerLng = (v.leftTop.lng + v.rightBottom.lng) / 2;
+
+      const d = distM(
+        centerLat,
+        centerLng,
+        lastSearchCenterRef.current.lat,
+        lastSearchCenterRef.current.lng
+      );
+
+      const THRESHOLD_M = 300;
+      if (d > THRESHOLD_M) {
+        clearSearchMarkers();
+        lastSearchCenterRef.current = null;
       }
-  
-      // Preserve original prop call
-      onViewportChange?.(v);
-  
-    }, [onViewportChange, clearSearchMarkers, lastSearchCenterRef]);
-    // --- END VIEWPORT CHANGE HANDLING ---
+    }
+
+    // Preserve original prop call
+    onViewportChange?.(v);
+
+  }, [onViewportChange, clearSearchMarkers, lastSearchCenterRef]);
+  // --- END VIEWPORT CHANGE HANDLING ---
 
   // 서버핀 + 로컬 임시핀 merge
   const { mergedWithTempDraft, mergedMeta } = useMergedMarkers({
@@ -313,9 +316,9 @@ export function MapHomeUI(props: MapHomeUIProps) {
       draftPin ?? // 임시핀
       (mapInstance?.getCenter
         ? {
-            lat: mapInstance.getCenter().getLat(),
-            lng: mapInstance.getCenter().getLng(),
-          }
+          lat: mapInstance.getCenter().getLat(),
+          lng: mapInstance.getCenter().getLng(),
+        }
         : null);
 
     if (anchor) {
@@ -372,7 +375,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
     try {
       hideLabelsAround(mapInstance, menuAnchor.lat, menuAnchor.lng, 56);
-    } catch (e) {}
+    } catch (e) { }
   }, [menuOpen, menuAnchor, visibleMarkers, kakaoSDK, mapInstance]);
 
   // 🔄 /map 다시 치도록 하는 함수: 이제는 훅의 reloadPins 사용

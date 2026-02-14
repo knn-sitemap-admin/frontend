@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+// import { Inter } from "next/font/google"; // ⛔️ 구글 폰트 에러 방지
 import "./globals.css";
 import ReactQueryProvider from "./providers/ReactQueryProvider";
 import { Toaster } from "@/components/atoms/Toast/Toaster"; // 🔥 추가
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "K&N 부동산 - 테스트페이지",
@@ -16,7 +16,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="font-sans">
         <ReactQueryProvider>
           {children}
           <Toaster />

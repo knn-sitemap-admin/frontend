@@ -8,7 +8,7 @@ import {
   toServerPointsFromPins,
   toServerDraftsFromDrafts,
 } from "../lib/searchUtils";
-import { type Bounds } from "@/features/map/shared/types/map";
+import { type Bounds } from "@/features/map/shared/types/bounds.type";
 
 type Args = {
   bounds: Bounds | null; // mapInstance 대신 bounds를 직접 받음

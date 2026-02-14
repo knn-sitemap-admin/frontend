@@ -30,7 +30,7 @@ try {
 }
 
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true },
+  //   eslint: { ignoreDuringBuilds: true }, // ⛔️ Deprecated warning fix
   images: { remotePatterns }, // ⛔️ domains 대신 remotePatterns
   async rewrites() {
     return [

@@ -7,7 +7,8 @@ import {
   type PinsMapPoint,
   type PinsMapDraft,
 } from "@/shared/api/pins/queries/getPinsInBounds";
-import { type Bounds } from "../../shared/types/map";
+import { Bounds } from "../../shared/types/bounds.type";
+
 
 type UsePinsOpts = {
   bounds: Bounds | null; // map 대신 bounds를 직접 받음
@@ -85,16 +86,14 @@ export function usePinsFromViewport({
 
     try {
       const res = await getPinsInBounds({
-        swLat: currentBounds.sw.lat,
-        swLng: currentBounds.sw.lng,
-        neLat: currentBounds.ne.lat,
-        neLng: currentBounds.ne.lng,
+        swLat: currentBounds.swLat,
+        swLng: currentBounds.swLng,
+        neLat: currentBounds.neLat,
+        neLng: currentBounds.neLng,
         draftState,
         ...(typeof isNew === "boolean" ? { isNew } : {}),
         ...(typeof isOld === "boolean" ? { isOld } : {}),
-      }, {
-        signal: controller.signal,
-      });
+      }, controller.signal);
 
       if (controller.signal.aborted) return;
 
