@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 
 import { useSidebar as useSidebarCtx, Sidebar } from "@/features/sidebar";
 
@@ -37,6 +37,9 @@ import { MapDistanceMeasure } from "../../components/MapDistanceMeasure/MapDista
 import { hideLabelsAround } from "../../engine/overlays/labelRegistry";
 import { useBounds } from "../../hooks/viewport/useBounds";
 import { useBoundsRaw } from "../../hooks/viewport/useBoundsRaw";
+import { type Bounds, type Viewport } from "../../shared/types/map";
+import { distM } from "../../poi/lib/geometry";
+
 
 export function MapHomeUI(props: MapHomeUIProps) {
   const {
@@ -92,6 +95,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
   const getBoundsLLB = useBounds(kakaoSDK, mapInstance);
   const getBoundsRaw = useBoundsRaw(kakaoSDK, mapInstance);
+
+  const [bounds, setBounds] = useState<Bounds | null>(null);
 
   // 🔭 로드뷰
   const {
@@ -171,7 +176,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
     effectiveServerDrafts,
     reloadPins, // ✅ /map 다시 치는 훅
   } = useViewportPinsForMapHome({
-    mapInstance,
+    bounds, // mapInstance 대신 bounds 전달
     filter: filter as MapMenuKey,
     searchRes,
   });
@@ -202,14 +207,14 @@ export function MapHomeUI(props: MapHomeUIProps) {
     upsertDraftMarker,
     replaceTempByRealId,
     handleSubmitSearch,
-    handleViewportChangeInternal,
+    clearSearchMarkers,
+    lastSearchCenterRef,
   } = usePlaceSearchOnMap({
     kakaoSDK,
     mapInstance,
     effectiveServerPoints,
     effectiveServerDrafts,
     onSubmitSearch,
-    onViewportChange,
     onOpenMenu: handleOpenMenuInternal,
     onChangeHideLabelForId,
     menuOpen,
@@ -217,6 +222,61 @@ export function MapHomeUI(props: MapHomeUIProps) {
     hideLabelForId: hideLabelForId ?? undefined,
     onMarkerClick,
   });
+
+    // --- VIEWPORT CHANGE HANDLING ---
+    const lastViewportRef = useRef<Viewport | null>(null);
+
+    const isSameViewport = (a: Viewport, b: Viewport) => {
+      if (!a || !b) return false;
+      const EPS = 1e-6;
+  
+      const diff =
+        Math.abs(a.leftTop.lat - b.leftTop.lat) +
+        Math.abs(a.leftTop.lng - b.leftTop.lng) +
+        Math.abs(a.rightBottom.lat - b.rightBottom.lat) +
+        Math.abs(a.rightBottom.lng - b.rightBottom.lng);
+  
+      return diff < EPS;
+    };
+  
+    const handleViewportChange = useCallback((v: Viewport) => {
+      if (!v) return;
+  
+      if (lastViewportRef.current && isSameViewport(lastViewportRef.current, v))
+        return;
+  
+      lastViewportRef.current = v;
+  
+      // Update bounds for data fetching
+      setBounds({
+        sw: { lat: v.leftBottom.lat, lng: v.leftBottom.lng },
+        ne: { lat: v.rightTop.lat, lng: v.rightTop.lng },
+      });
+  
+      // Preserve original logic from usePlaceSearchOnMap
+      if (lastSearchCenterRef.current) {
+        const centerLat = (v.leftTop.lat + v.rightBottom.lat) / 2;
+        const centerLng = (v.leftTop.lng + v.rightBottom.lng) / 2;
+  
+        const d = distM(
+          centerLat,
+          centerLng,
+          lastSearchCenterRef.current.lat,
+          lastSearchCenterRef.current.lng
+        );
+  
+        const THRESHOLD_M = 300;
+        if (d > THRESHOLD_M) {
+          clearSearchMarkers();
+          lastSearchCenterRef.current = null;
+        }
+      }
+  
+      // Preserve original prop call
+      onViewportChange?.(v);
+  
+    }, [onViewportChange, clearSearchMarkers, lastSearchCenterRef]);
+    // --- END VIEWPORT CHANGE HANDLING ---
 
   // 서버핀 + 로컬 임시핀 merge
   const { mergedWithTempDraft, mergedMeta } = useMergedMarkers({
@@ -390,7 +450,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
         onOpenMenu={handleOpenMenuInternal}
         onChangeHideLabelForId={onChangeHideLabelForId}
         onMapReady={handleMapReady}
-        onViewportChange={handleViewportChangeInternal}
+        onViewportChange={handleViewportChange}
         isDistrictOn={isDistrictOn}
         showRoadviewOverlay={roadviewRoadOn}
         onRoadviewClick={roadviewRoadOn ? handleRoadviewClickOnMap : undefined}
