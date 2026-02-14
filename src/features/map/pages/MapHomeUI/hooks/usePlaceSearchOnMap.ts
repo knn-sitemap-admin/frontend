@@ -12,7 +12,6 @@ type Args = {
   effectiveServerPoints: any[];
   effectiveServerDrafts: any[];
   onSubmitSearch?: (q: string) => void;
-  onViewportChange?: (v: any) => void;
   onOpenMenu?: (args: {
     position: { lat: number; lng: number };
     propertyId: string | number;
@@ -33,7 +32,6 @@ function usePlaceSearchOnMap({
   effectiveServerPoints,
   effectiveServerDrafts,
   onSubmitSearch,
-  onViewportChange,
   onOpenMenu,
   onChangeHideLabelForId,
   menuOpen,
@@ -42,7 +40,6 @@ function usePlaceSearchOnMap({
   onMarkerClick,
 }: Args) {
   const lastSearchCenterRef = useRef<{ lat: number; lng: number } | null>(null);
-  const lastViewportRef = useRef<any | null>(null);
 
   const {
     localDraftMarkers: rawLocalDraftMarkers,
@@ -138,52 +135,6 @@ function usePlaceSearchOnMap({
     );
   }, [rawLocalDraftMarkers, effectiveServerPoints, effectiveServerDrafts]);
 
-  /** viewport 동일 여부 검사 */
-  const isSameViewport = (a: any, b: any) => {
-    if (!a || !b) return false;
-    const EPS = 1e-6;
-
-    const diff =
-      Math.abs(a.leftTop.lat - b.leftTop.lat) +
-      Math.abs(a.leftTop.lng - b.leftTop.lng) +
-      Math.abs(a.rightBottom.lat - b.rightBottom.lat) +
-      Math.abs(a.rightBottom.lng - b.rightBottom.lng);
-
-    return diff < EPS;
-  };
-
-  /** viewport 변경 처리 */
-  const handleViewportChangeInternal = useCallback(
-    (v: any) => {
-      if (!v) return;
-
-      if (lastViewportRef.current && isSameViewport(lastViewportRef.current, v))
-        return;
-
-      lastViewportRef.current = v;
-
-      if (lastSearchCenterRef.current) {
-        const centerLat = (v.leftTop.lat + v.rightBottom.lat) / 2;
-        const centerLng = (v.leftTop.lng + v.rightBottom.lng) / 2;
-
-        const d = distM(
-          centerLat,
-          centerLng,
-          lastSearchCenterRef.current.lat,
-          lastSearchCenterRef.current.lng
-        );
-
-        const THRESHOLD_M = 300;
-        if (d > THRESHOLD_M) {
-          clearSearchMarkers();
-          lastSearchCenterRef.current = null;
-        }
-      }
-
-      onViewportChange?.(v);
-    },
-    [onViewportChange, clearSearchMarkers]
-  );
 
   /** 검색 실행 */
   const handleSubmitSearch = useCallback(
@@ -240,8 +191,9 @@ function usePlaceSearchOnMap({
     upsertDraftMarker,
     replaceTempByRealId,
     clearTempMarkers,
+    clearSearchMarkers, // 이 함수를 외부에서 사용하도록 노출
+    lastSearchCenterRef, // 이것도 외부에서 사용
     handleSubmitSearch,
-    handleViewportChangeInternal,
   };
 }
 

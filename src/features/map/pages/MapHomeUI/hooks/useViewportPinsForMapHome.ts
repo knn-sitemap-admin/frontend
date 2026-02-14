@@ -8,15 +8,16 @@ import {
   toServerPointsFromPins,
   toServerDraftsFromDrafts,
 } from "../lib/searchUtils";
+import { type Bounds } from "@/features/map/shared/types/map";
 
 type Args = {
-  mapInstance: any;
+  bounds: Bounds | null; // mapInstance 대신 bounds를 직접 받음
   filter: MapMenuKey;
   searchRes: PinSearchResult | null;
 };
 
 export function useViewportPinsForMapHome({
-  mapInstance,
+  bounds,
   filter,
   searchRes,
 }: Args) {
@@ -46,10 +47,9 @@ export function useViewportPinsForMapHome({
     drafts: serverDrafts,
     loading: pinsLoading,
     error: pinsError,
-    reload, // 👈 usePinsFromViewport에서 넘어오는 reload
+    reload,
   } = usePinsFromViewport({
-    map: mapInstance,
-    debounceMs: 300,
+    bounds, // mapInstance 대신 bounds 전달
     draftState: draftStateForQuery,
     isNew: isNewFlag,
     isOld: isOldFlag,

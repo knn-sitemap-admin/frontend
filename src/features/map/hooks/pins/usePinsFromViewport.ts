@@ -1,17 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
 import type { MapMarker } from "@/features/map/shared/types/mapMarker.type";
 import {
   getPinsInBounds,
   type PinsMapPoint,
   type PinsMapDraft,
 } from "@/shared/api/pins/queries/getPinsInBounds";
+import { type Bounds } from "../../shared/types/map";
 
 type UsePinsOpts = {
-  map?: kakao.maps.Map | null;
-  debounceMs?: number;
+  bounds: Bounds | null; // map 대신 bounds를 직접 받음
   draftState?: "before" | "scheduled" | "all";
   isNew?: boolean;
   isOld?: boolean;
@@ -61,29 +60,8 @@ function pinPointToMarker(
   };
 }
 
-type BBox = {
-  swLat: number;
-  swLng: number;
-  neLat: number;
-  neLng: number;
-};
-
-/** 🔍 BBox 거의 같은지 비교 (애니메이션 중 미세한 오차 방지용) */
-function isSameBBox(a: BBox | null, b: BBox | null) {
-  if (!a || !b) return false;
-  const EPS = 1e-6;
-  return (
-    Math.abs(a.swLat - b.swLat) +
-      Math.abs(a.swLng - b.swLng) +
-      Math.abs(a.neLat - b.neLat) +
-      Math.abs(a.neLng - b.neLng) <
-    EPS
-  );
-}
-
 export function usePinsFromViewport({
-  map,
-  debounceMs = 250,
+  bounds,
   draftState,
   isNew,
   isOld,
@@ -92,71 +70,62 @@ export function usePinsFromViewport({
   const [points, setPoints] = useState<PinsMapPoint[]>([]);
   const [drafts, setDrafts] = useState<PinsMapDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 🔒 마지막으로 호출한 BBox
-  const lastBBoxRef = useRef<BBox | null>(null);
+  const load = useCallback(async (currentBounds: Bounds) => {
+    // 이전 요청 취소
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-  // 필터 바뀌면 “다음 BBox는 무조건 다시 호출”
-  useEffect(() => {
-    lastBBoxRef.current = null;
-  }, [draftState, isNew, isOld]);
+    setLoading(true);
+    setError(null);
 
-  const load = useCallback(async () => {
-    if (!map) return;
     try {
-      // 현재 BBox 계산
-      const b = map.getBounds();
-      const curBBox: BBox = {
-        swLat: b.getSouthWest().getLat(),
-        swLng: b.getSouthWest().getLng(),
-        neLat: b.getNorthEast().getLat(),
-        neLng: b.getNorthEast().getLng(),
-      };
-
-      // ✅ 같은 BBox로 이미 호출했다면 /map 재요청 스킵
-      if (isSameBBox(lastBBoxRef.current, curBBox)) {
-        return;
-      }
-
-      lastBBoxRef.current = curBBox;
-
-      setLoading(true);
-      setError(null);
-
       const res = await getPinsInBounds({
-        ...curBBox,
+        swLat: currentBounds.sw.lat,
+        swLng: currentBounds.sw.lng,
+        neLat: currentBounds.ne.lat,
+        neLng: currentBounds.ne.lng,
         draftState,
         ...(typeof isNew === "boolean" ? { isNew } : {}),
         ...(typeof isOld === "boolean" ? { isOld } : {}),
+      }, {
+        signal: controller.signal,
       });
+
+      if (controller.signal.aborted) return;
 
       setPoints(res.points ?? []);
       setDrafts(res.drafts ?? []);
     } catch (e: any) {
+      if (e.name === 'AbortError') return; // Abort는 에러 아님
       setError(e?.message ?? "Failed to load pins");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
-  }, [map, draftState, isNew, isOld]);
+  }, [draftState, isNew, isOld]);
 
-  // 🔁 지도 idle 시 자동 로드 + 디바운스
   useEffect(() => {
-    if (!map) return;
-
-    const schedule = () => {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(load, debounceMs);
-    };
-
-    kakao.maps.event.addListener(map, "idle", schedule);
-    schedule();
+    if (bounds) {
+      load(bounds);
+    } else {
+      // bounds가 없으면 데이터 초기화
+      setPoints([]);
+      setDrafts([]);
+    }
 
     return () => {
-      if (timer.current) clearTimeout(timer.current);
-      kakao.maps.event.removeListener(map, "idle", schedule);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
-  }, [map, load, debounceMs]);
+  }, [bounds, load]);
+
 
   const markers: MapMarker[] = useMemo(() => {
     const live = (points ?? []).map((p) => pinPointToMarker(p, "pin"));
@@ -166,13 +135,11 @@ export function usePinsFromViewport({
     return [...live, ...draftMarkers];
   }, [points, drafts]);
 
-  /** 🧼 수정 모달 등에서 강제로 다시 불러오고 싶을 때 사용
-   *  - lastBBoxRef를 초기화해서, 같은 BBox여도 다음 load에서 다시 GET 나가도록 함
-   */
   const reload = useCallback(() => {
-    lastBBoxRef.current = null;
-    return load();
-  }, [load]);
+    if (bounds) {
+      return load(bounds);
+    }
+  }, [bounds, load]);
 
   return { loading, points, drafts, markers, error, reload };
 }
