@@ -527,7 +527,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
         roadviewVisible={roadviewVisible}
         onToggleRoadview={toggleRoadview}
         distanceMeasureVisible={distanceMeasureVisible}
-        onToggleDistanceMeasure={onToggleDistanceMeasure ?? (() => {})}
+        onToggleDistanceMeasure={onToggleDistanceMeasure ?? (() => { })}
         rightOpen={rightOpen}
         setRightOpen={handleSetRightOpen}
         sidebarOpen={useSidebar}

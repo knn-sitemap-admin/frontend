@@ -125,10 +125,6 @@ const useKakaoMap = ({
           geocoderRef.current = new kakao.maps.services.Geocoder();
           placesRef.current = new kakao.maps.services.Places();
 
-          // 축소 상한
-          maxLevelRef.current = maxLevel;
-          map.setMaxLevel(maxLevelRef.current);
-
           // 전국 보기 옵션 (초기 1회)
           if (fitKoreaBounds) {
             const bounds = new kakao.maps.LatLngBounds(
@@ -136,10 +132,11 @@ const useKakaoMap = ({
               new kakao.maps.LatLng(KOREA_BOUNDS.ne.lat, KOREA_BOUNDS.ne.lng)
             );
             map.setBounds(bounds);
-            const lv = map.getLevel();
-            maxLevelRef.current = lv;
-            map.setMaxLevel(lv);
           }
+
+          // 축소 상한 설정 (fitKoreaBounds와 별개로 설정)
+          maxLevelRef.current = maxLevel;
+          map.setMaxLevel(maxLevelRef.current);
 
           // 로드뷰 도로 오버레이 인스턴스만 생성 (초기엔 꺼둔다)
           try {
@@ -249,12 +246,12 @@ const useKakaoMap = ({
           roadviewOverlayRef.current.setMap(null);
           roadviewOverlayRef.current = null;
         }
-      } catch {}
+      } catch { }
 
       // https 패치 옵저버 해제
       try {
         (map as any)?.__detachHttpsPatch__?.();
-      } catch {}
+      } catch { }
 
       if (
         typeof window !== "undefined" &&
