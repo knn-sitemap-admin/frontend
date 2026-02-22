@@ -282,7 +282,7 @@ export function FinancialInfoSection({
 
         {/* 지원 내용 */}
         <div className="mt-4 space-y-2">
-          <Label className="text-sm font-medium text-gray-700">지원 내용</Label>
+          <Label className="text-sm font-medium text-gray-700">지원 내용 ( 기타 입력 )</Label>
           <Textarea
             value={financialInfo.supportContent || ""}
             onChange={(e) =>
