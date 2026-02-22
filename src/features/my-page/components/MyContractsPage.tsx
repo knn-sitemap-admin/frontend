@@ -33,6 +33,7 @@ export function MyContractsPage() {
       title="내 계약"
       loadContracts={loadContracts}
       initialLoading={false}
+      showAddButton={true}
     />
   );
 }

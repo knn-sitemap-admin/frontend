@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/atoms/Select/Select"; // Corrected import path
 import { Button } from "@/components/atoms/Button/Button"; // Import Button component
+import { Plus } from "lucide-react";
 
 interface ContractListProps {
   title: string;
@@ -32,6 +33,7 @@ interface ContractListProps {
   initialLoading?: boolean;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  showAddButton?: boolean;
 }
 
 export function ContractList({
@@ -40,6 +42,7 @@ export function ContractList({
   initialLoading = false,
   searchPlaceholder = "계약번호, 고객명, 담당자로 검색...",
   emptyMessage = "계약이 없습니다.",
+  showAddButton = false,
 }: ContractListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("all");
@@ -271,6 +274,18 @@ export function ContractList({
             >
               필터 초기화
             </Button>
+            {showAddButton && (
+              <Button
+                onClick={() => {
+                  setSelectedContract(null);
+                  setIsModalOpen(true);
+                }}
+                className="w-full sm:w-auto"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                신규 계약
+              </Button>
+            )}
           </div>
         </div>
 
