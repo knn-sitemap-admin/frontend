@@ -17,6 +17,7 @@ export interface FinancialInfo {
   totalRebate: number;
   taxStatus: "taxable" | "tax-free";
   totalSupportAmount: number;
+  supportCashAmount: number;
   customerAccountNumber: string;
   customerBank: string;
   supportContent: string;

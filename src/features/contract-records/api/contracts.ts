@@ -13,7 +13,8 @@ export type ContractResponse = {
   brokerageFee: number; // 중개보수
   vat: boolean; // 부가세 여부
   rebate: number; // 리베이트 units (1 = 100만원)
-  supportAmount: number; // 지원금
+  supportAmount: number; // 지원금 (영수)
+  supportCashAmount: number; // 지원금 (현금)
   isTaxed: boolean; // 과세 여부
   calcMemo: string | null;
   companyPercent: number; // 회사 비율
@@ -52,7 +53,8 @@ export type CreateContractRequest = {
   brokerageFee: number;
   vat: boolean; // 부가세 여부 (10%)
   rebate: number; // units (1 = 100만원)
-  supportAmount: number; // 원
+  supportAmount: number; // 영수 지원금 (원)
+  supportCashAmount: number; // 현금 지원금 (원)
   isTaxed: boolean; // 과세 여부 (0.967 적용)
   calcMemo?: string;
   companyPercent: number; // 회사 비율 (0~100)
@@ -99,7 +101,8 @@ export type ContractListItemResponse = {
   brokerageFee: number; // 중개보수금 (원)
   vatEnabled: boolean; // 부가세 여부
   rebateUnits: number; // 리베이트 units (1 = 100만원)
-  supportAmount: number; // 지원금액 (원)
+  supportAmount: number; // 영수 지원금액 (원)
+  supportCashAmount: number; // 현금 지원금액 (원)
   isTaxed: boolean; // 과세 여부 (0.967 적용)
   companyPercent?: number; // 회사 비율 (담당자 분배 계산용)
 };

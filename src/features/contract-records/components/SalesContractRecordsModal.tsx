@@ -75,6 +75,7 @@ const defaultData: SalesContractData = {
     totalRebate: 0,
     taxStatus: "tax-free",
     totalSupportAmount: 0,
+    supportCashAmount: 0,
     customerAccountNumber: "",
     customerBank: "",
     supportContent: "",
@@ -260,6 +261,25 @@ export function SalesContractRecordsModal({
     }
   };
 
+  // 재사용 가능한 내부 계산 함수
+  const recalculateTotal = (
+    financialInfo: SalesContractData["financialInfo"],
+    currentStatus: SalesContractData["status"]
+  ) => {
+    const isInvalidStatus =
+      currentStatus === "rejected" || currentStatus === "cancelled";
+    if (isInvalidStatus) return 0;
+
+    const brokerageAndVat = Number(financialInfo.totalBrokerageFee) || 0;
+    const totalRebate = Number(financialInfo.totalRebate) || 0;
+    const totalSupportAmount = Number(financialInfo.totalSupportAmount) || 0;
+    const supportCashAmount = Number(financialInfo.supportCashAmount) || 0;
+    const rebateMinusSupport =
+      totalRebate - totalSupportAmount - supportCashAmount;
+    const multiplier = financialInfo.taxStatus === "taxable" ? 0.967 : 1;
+    return brokerageAndVat + rebateMinusSupport * multiplier;
+  };
+
   // 인적 정보 변경 핸들러
   const handleCustomerInfoChange = (customerInfo: any) => {
     handleDataChange({ ...data, customerInfo });
@@ -294,13 +314,8 @@ export function SalesContractRecordsModal({
     // 총 계산 자동 업데이트
     // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-지원금액)×0.967)
     // 비과세시 (중개수수료+부가세)+(리베이트-지원금액)
-    const brokerageAndVat = Number(totalBrokerageFee) || 0;
-    const totalRebate = Number(updatedFinancialInfo.totalRebate) || 0;
-    const totalSupportAmount =
-      Number(updatedFinancialInfo.totalSupportAmount) || 0;
-    const rebateMinusSupport = totalRebate - totalSupportAmount;
-    const multiplier = updatedFinancialInfo.taxStatus === "taxable" ? 0.967 : 1;
-    const totalCalculation = brokerageAndVat + rebateMinusSupport * multiplier;
+    // 부결, 해약 시에는 0 처리
+    const totalCalculation = recalculateTotal(updatedFinancialInfo, data.status);
 
     handleDataChange({
       ...data,
@@ -437,7 +452,8 @@ export function SalesContractRecordsModal({
       });
       return;
     }
-    if (data.totalCalculation <= 0) {
+    const isInvalidStatus = data.status === "rejected" || data.status === "cancelled";
+    if (!isInvalidStatus && data.totalCalculation <= 0) {
       toast({
         title: "입력 오류",
         description: "계약금액을 확인해주세요.",
@@ -738,13 +754,20 @@ export function SalesContractRecordsModal({
                     <Select
                       value={data.status || "ongoing"}
                       onValueChange={(value) => {
+                        const newStatus = value as
+                          | "ongoing"
+                          | "rejected"
+                          | "cancelled"
+                          | "completed";
+                        const newTotal = recalculateTotal(
+                          data.financialInfo,
+                          newStatus
+                        );
+
                         handleDataChange({
                           ...data,
-                          status: value as
-                            | "ongoing"
-                            | "rejected"
-                            | "cancelled"
-                            | "completed",
+                          status: newStatus,
+                          totalCalculation: newTotal,
                         });
                       }}
                       disabled={!isEditMode}
