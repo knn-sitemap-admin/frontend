@@ -65,7 +65,7 @@ const MapView = React.forwardRef<MapViewHandle, Props>(function MapView(
     center,
     level,
     fitKoreaBounds: true,
-    maxLevel: 14, // 최대 축소 레벨 (1=가장 확대, 14=가장 축소)
+    maxLevel: 12, // 최대 축소 레벨 (1=가장 확대, 12=가장 축소)
     viewportDebounceMs: 500,
     onMapReady,
     onViewportChange, // 그대로 전달 (훅이 디바운스 처리)

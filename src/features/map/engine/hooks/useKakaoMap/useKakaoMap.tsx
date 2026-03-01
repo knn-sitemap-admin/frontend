@@ -81,6 +81,9 @@ const useKakaoMap = ({
   // center prop → map.panTo 동기화 시 첫 호출은 스킵
   const firstCenterSyncRef = useRef(true);
 
+  // 자동 이동 중일 때 bound 제한 로직을 우회하기 위한 플래그
+  const isProgrammaticPanRef = useRef(false);
+
   // ─────────────────────────────────────────────
   // 1) 지도 초기화: 최초 1회만 생성
   // ─────────────────────────────────────────────
@@ -165,9 +168,13 @@ const useKakaoMap = ({
                   cur.getLat() !== next.getLat() ||
                   cur.getLng() !== next.getLng()
                 ) {
-                  map.setCenter(next);
+                  isProgrammaticPanRef.current = true;
                   const safeLevel = 4;
                   map.setLevel(safeLevel);
+                  map.setCenter(next);
+                  setTimeout(() => {
+                    isProgrammaticPanRef.current = false;
+                  }, 500);
                 }
               },
               (err) => {
@@ -318,6 +325,58 @@ const useKakaoMap = ({
       kakao.maps.event.addListener(map, "idle", onIdle);
       idleListenerRef.current = onIdle;
     }
+
+    // 영역 이탈 방지 + 축소 시 중앙 정렬 (viewport span 고려)
+    const restrictBounds = () => {
+      if (isProgrammaticPanRef.current) return;
+
+      const bounds = map.getBounds();
+      const center = map.getCenter();
+      if (!bounds || !center) return;
+
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+
+      const viewLatSpan = ne.getLat() - sw.getLat();
+      const viewLngSpan = ne.getLng() - sw.getLng();
+
+      let minLat = KOREA_BOUNDS.sw.lat + viewLatSpan / 2;
+      let maxLat = KOREA_BOUNDS.ne.lat - viewLatSpan / 2;
+      
+      let minLng = KOREA_BOUNDS.sw.lng + viewLngSpan / 2;
+      let maxLng = KOREA_BOUNDS.ne.lng - viewLngSpan / 2;
+
+      let lat = center.getLat();
+      let lng = center.getLng();
+      let isChanged = false;
+
+      // viewport가 KOREA_BOUNDS보다 크면 강하게 중심을 잡지 않고 여유를 줌으로써
+      // 상하 통통 튀는 무한 바운스를 방지합니다 (단, 한반도 좌표 안에만 머물게 느슨한 제한 추가)
+      if (minLat > maxLat) {
+        minLat = KOREA_BOUNDS.sw.lat;
+        maxLat = KOREA_BOUNDS.ne.lat;
+      }
+      if (minLng > maxLng) {
+        minLng = KOREA_BOUNDS.sw.lng;
+        maxLng = KOREA_BOUNDS.ne.lng;
+      }
+
+      if (lat < minLat - 0.0001) { lat = minLat; isChanged = true; }
+      else if (lat > maxLat + 0.0001) { lat = maxLat; isChanged = true; }
+
+      if (lng < minLng - 0.0001) { lng = minLng; isChanged = true; }
+      else if (lng > maxLng + 0.0001) { lng = maxLng; isChanged = true; }
+
+      if (isChanged) {
+        map.setCenter(new kakao.maps.LatLng(lat, lng));
+      }
+    };
+
+    kakao.maps.event.addListener(map, "center_changed", restrictBounds);
+
+    return () => {
+      kakao.maps.event.removeListener(map, "center_changed", restrictBounds);
+    };
   }, [ready, viewportDebounceMs, onViewportChangeRef]);
 
   // 3) center prop → panTo 동기화
@@ -343,7 +402,11 @@ const useKakaoMap = ({
     }
 
     const raf = requestAnimationFrame(() => {
+      isProgrammaticPanRef.current = true;
       map.panTo(next);
+      setTimeout(() => {
+        isProgrammaticPanRef.current = false;
+      }, 500);
     });
     return () => cancelAnimationFrame(raf);
   }, [center.lat, center.lng, disableAutoPan, ready]);
@@ -378,7 +441,11 @@ const useKakaoMap = ({
       cur.getLat() !== next.getLat() ||
       cur.getLng() !== next.getLng()
     ) {
+      isProgrammaticPanRef.current = true;
       map.panTo(next);
+      setTimeout(() => {
+        isProgrammaticPanRef.current = false;
+      }, 500);
     }
   }, []);
 
@@ -388,7 +455,11 @@ const useKakaoMap = ({
     if (!kakao || !map || !points?.length) return;
     const b = new kakao.maps.LatLngBounds();
     points.forEach((p) => b.extend(new kakao.maps.LatLng(p.lat, p.lng)));
+    isProgrammaticPanRef.current = true;
     map.setBounds(b);
+    setTimeout(() => {
+      isProgrammaticPanRef.current = false;
+    }, 500);
   }, []);
 
   const setMaxLevel = useCallback((maxLv: number) => {
