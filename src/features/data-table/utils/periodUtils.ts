@@ -29,6 +29,8 @@ export function getPeriodLabel(
       return `${y}년 ${quarter || "1"}분기`;
     case "yearly":
       return `${y}년`;
+    case "all":
+      return "전체 기간";
     default:
       return `${now.getFullYear()}년 ${now.getMonth() + 1}월`;
   }

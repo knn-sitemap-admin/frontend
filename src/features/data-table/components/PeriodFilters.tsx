@@ -52,6 +52,7 @@ export function PeriodFilters({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">전체보기</SelectItem>
             <SelectItem value="month">이번 달</SelectItem>
             <SelectItem value="monthly">월별 선택</SelectItem>
             <SelectItem value="quarter">분기 선택</SelectItem>

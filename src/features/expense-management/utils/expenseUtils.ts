@@ -47,6 +47,8 @@ export function filterExpenseByPeriod<T extends { date: string }>(
         return y === filterQuery.year && q === (filterQuery.quarter ?? 1);
       case "yearly":
         return y === filterQuery.year;
+      case "all":
+        return true;
       default:
         return true;
     }
