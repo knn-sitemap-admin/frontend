@@ -5,7 +5,7 @@ import { toLatLng } from "./utils/geo";
 import { useDerivedPinState } from "./hooks/useDerivedPinState";
 import { usePlanReserve } from "./hooks/usePlanReserve";
 import ContextMenuPanel from "../ContextMenuPanel/ContextMenuPanel";
-import { PinContextMenuProps } from "./PinContextMenuContainer.types";
+import { PinContextMenuProps, ReserveRequestPayload } from "./PinContextMenuContainer.types";
 import { useScheduledReservations } from "@/features/survey-reservations/hooks/useScheduledReservations";
 import { useCancelReservation } from "@/features/survey-reservations/hooks/useCancelReservation";
 import CustomOverlay from "../../../shared/CustomOverlay/CustomOverlay";
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { deletePinDraft } from "@/shared/api/pins";
 import { useCallback, useEffect, useMemo } from "react";
 import { extractDraftIdFromPropertyId } from "../ContextMenuPanel/panel.utils";
+import { useMeRole } from "@/features/auth/hooks/useMeRole";
 
 type Props = PinContextMenuProps & {
   mergedMeta?: MergedMarker[];
@@ -72,6 +73,8 @@ export default function PinContextMenuContainer(props: Props) {
     setItems: setScheduledReservations,
     refetch: refetchScheduledReservations,
   } = useScheduledReservations();
+
+  const { isPrivileged } = useMeRole();
 
   const { onCancel } = useCancelReservation(
     scheduledReservations,
@@ -474,9 +477,9 @@ export default function PinContextMenuContainer(props: Props) {
     onClose,
   ]);
 
-  const handleReserveWithToast = useCallback(async () => {
+  const handleReserveWithToast = useCallback(async (payload?: ReserveRequestPayload) => {
     try {
-      await handleReserveClick();
+      await handleReserveClick(payload?.assigneeId);
       toast({
         title: "예약 완료",
         description: "답사지를 예약했습니다.",
@@ -517,7 +520,12 @@ export default function PinContextMenuContainer(props: Props) {
               isReservedByOtherAccount={isReservedByOtherAccountAtPos}
               assigneeName={assigneeName}
               reservationId={reservationId}
-              onCancelReservation={isMyReservation && reservationId ? () => onCancel(reservationId) : undefined}
+              onCancelReservation={
+                (isMyReservation || (isReservedByOtherAccount && isPrivileged)) && reservationId
+                  ? () => onCancel(reservationId)
+                  : undefined
+              }
+              isForceCancel={!isMyReservation && isPrivileged && isReservedByOtherAccount}
               showFav={listed}
               onAddFav={onAddFav}
               favActive={favActive}

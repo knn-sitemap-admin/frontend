@@ -387,15 +387,20 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     const initPinKind =
       (initial as any)?.pinKind ??
       ((initial as any)?.badge
-        ? mapBadgeToPinKind((initial as any).badge)
+        ? mapBadgeToPinKind((initial as any).badge, (initial as any).isCompleted)
         : undefined);
     const nowPinKind = (f as any)?.pinKind;
     if (nowPinKind !== undefined && nowPinKind !== initPinKind) {
       (patch as any).pinKind = nowPinKind;
-      try {
-        const badge = mapPinKindToBadge?.(nowPinKind);
-        if (badge) (patch as any).badge = badge;
-      } catch {}
+      if (nowPinKind === "completed") {
+        (patch as any).isCompleted = true;
+      } else {
+        (patch as any).isCompleted = false;
+        try {
+          const badge = mapPinKindToBadge?.(nowPinKind);
+          if (badge) (patch as any).badge = badge;
+        } catch {}
+      }
     }
   }
 
@@ -765,14 +770,16 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
           maxPrice: toNumOrNull(u?.maxPrice ?? u?.secondary),
           note: (u?.note ?? null) as string | null,
         };
-        const hasAny =
+        let hasAny =
           n.rooms != null ||
           n.baths != null ||
           n.hasLoft ||
           n.hasTerrace ||
           n.minPrice != null ||
-          n.maxPrice != null ||
-          (n.note ?? "") !== "";
+          n.maxPrice != null;
+          
+        hasAny = hasAny || (n.note ?? "") !== "";
+        
         return hasAny
           ? {
               rooms: n.rooms,

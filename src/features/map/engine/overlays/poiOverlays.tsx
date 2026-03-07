@@ -104,7 +104,14 @@ export function createPoiOverlay(
   /** 제거 */
   const destroy = () => {
     overlay.setMap(null);
-    root.unmount();
+    // ✅ React 18: 렌더링 주기와 충돌 방지를 위해 unmount를 지연 호출
+    setTimeout(() => {
+      try {
+        root.unmount();
+      } catch (e) {
+        // 이미 언마운트된 경우 등 예외 처리
+      }
+    }, 0);
   };
 
   /** 변경 사항 반영(위치/zIndex/종류/크기) — React root는 재사용 */

@@ -177,6 +177,7 @@ export function toServerPointsFromPins(
       lng: p.lng,
       badge: p.badge ?? null,
       ageType: p.ageType ?? null,
+      address: p.addressLine ?? null, // 🔹 지역 클러스터링을 위해 주소 추가
     };
   });
 }
@@ -197,6 +198,7 @@ export function toServerDraftsFromDrafts(
       lng: d.lng,
       draftState: (d as any).draftState,
       badge: d.badge ?? null,
+      address: d.addressLine ?? null, // 🔹 지역 클러스터링을 위해 주소 추가
     };
   });
 }

@@ -11,13 +11,15 @@ import {
 import { type Bounds } from "@/features/map/shared/types/bounds.type";
 
 type Args = {
-  bounds: Bounds | null; // mapInstance 대신 bounds를 직접 받음
+  bounds: (Bounds & { zoom: number }) | null; // mapInstance 대신 bounds를 직접 받음
+  zoom?: number;
   filter: MapMenuKey;
   searchRes: PinSearchResult | null;
 };
 
 export function useViewportPinsForMapHome({
   bounds,
+  zoom,
   filter,
   searchRes,
 }: Args) {
@@ -50,6 +52,7 @@ export function useViewportPinsForMapHome({
     reload,
   } = usePinsFromViewport({
     bounds, // mapInstance 대신 bounds 전달
+    zoom,
     draftState: draftStateForQuery,
     isNew: isNewFlag,
     isOld: isOldFlag,
@@ -57,13 +60,13 @@ export function useViewportPinsForMapHome({
 
   const normServerPoints = useMemo(
     () =>
-      serverPoints?.map((p) => ({ ...p, title: p.title ?? undefined })) ?? [],
+      serverPoints?.map((p) => ({ ...p, title: p.title ?? undefined, addressLine: p.addressLine ?? undefined })) ?? [],
     [serverPoints]
   );
 
   const normServerDrafts = useMemo(
     () =>
-      serverDrafts?.map((d) => ({ ...d, title: d.title ?? undefined })) ?? [],
+      serverDrafts?.map((d) => ({ ...d, title: d.title ?? undefined, addressLine: d.addressLine ?? undefined })) ?? [],
     [serverDrafts]
   );
 

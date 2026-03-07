@@ -13,12 +13,13 @@ export function useSelectionEffect(
   clustererRef: React.MutableRefObject<any>,
   labelOvRef: React.MutableRefObject<Record<string, any>>,
   hitboxOvRef: React.MutableRefObject<Record<string, any>>,
-  markerObjsRef: React.MutableRefObject<Record<string, any>>
+  markerObjsRef: React.MutableRefObject<Record<string, any>>,
+  forceHideAll: boolean
 ) {
   const prevSelectedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || forceHideAll) return;
     const level = map.getLevel();
     const prevId = prevSelectedIdRef.current;
 
@@ -78,5 +79,5 @@ export function useSelectionEffect(
     }
 
     prevSelectedIdRef.current = selectedKey;
-  }, [isReady, kakao, map, selectedKey, safeLabelMax, clusterMinLevel]);
+  }, [isReady, kakao, map, selectedKey, safeLabelMax, clusterMinLevel, forceHideAll]);
 }

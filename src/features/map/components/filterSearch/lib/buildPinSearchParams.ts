@@ -1,7 +1,6 @@
 import type { FilterState } from "../types/filterSearch.types";
 import type { PinSearchParams } from "@/features/pins/types/pin-search";
 import { BuildingType } from "@/features/properties/types/property-domain";
-import { convertPriceToWon } from "../utils/formatters";
 import { PYEONG_TO_M2 } from "@/features/properties/lib/area";
 
 const toInt = (s: string) => {
@@ -35,13 +34,13 @@ export function buildPinSearchParams(ui: FilterState): PinSearchParams {
     params.hasTownhouse = true;
   }
 
-  // 3) 실입주금 (DTO 필드 이름 그대로)
-  const depositAmount = Number(convertPriceToWon(ui.deposit));
+  // 3) 실입주금 (사용자 입력값을 단위 변환 없이 그대로 전달 — DB와 동일 단위)
+  const depositAmount = toInt(ui.deposit);
   if (Number.isFinite(depositAmount) && depositAmount > 0) {
     params.minRealMoveInCostMax = depositAmount;
   }
 
-  // 4) 매매가
+  // 4) 매매가 (사용자 입력: 백만원 단위 → DB도 백만원 단위이므로 그대로 전달)
   const priceMin = toInt(ui.priceMin);
   const priceMax = toInt(ui.priceMax);
   if (!Number.isNaN(priceMin) && priceMin > 0) {

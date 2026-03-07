@@ -200,6 +200,8 @@ export async function updatePin(
 
     ...(has("hasElevator") ? { hasElevator: !!dto.hasElevator } : {}),
 
+    ...(has("isCompleted") ? { isCompleted: !!dto.isCompleted } : {}),
+
     ...(has("options") ? { options: optionsPayload } : {}),
     ...(has("directions") ? { directions: directionsPayload } : {}),
     ...(has("areaGroups") ? { areaGroups: areaGroupsPayload } : {}),

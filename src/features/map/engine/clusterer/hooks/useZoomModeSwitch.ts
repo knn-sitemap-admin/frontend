@@ -11,16 +11,17 @@ export function useZoomModeSwitch(
   refs: RefsBag,
   selectedKey: string | null,
   safeLabelMax: number,
-  clusterMinLevel: number
+  clusterMinLevel: number,
+  forceHideAll: boolean
 ) {
   useEffect(() => {
     if (!isReady) return;
     const deps: KakaoDeps = { kakao, map };
-    const state = { selectedKey, safeLabelMax, clusterMinLevel };
+    const state = { selectedKey, safeLabelMax, clusterMinLevel, forceHideAll };
     const handler = () => applyMode(deps, refs, state);
     kakao.maps.event.addListener(map, "zoom_changed", handler);
     handler();
     return () =>
       kakao?.maps?.event?.removeListener?.(map, "zoom_changed", handler);
-  }, [isReady, kakao, map, refs, selectedKey, safeLabelMax, clusterMinLevel]);
+  }, [isReady, kakao, map, refs, selectedKey, safeLabelMax, clusterMinLevel, forceHideAll]);
 }

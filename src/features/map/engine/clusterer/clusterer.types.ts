@@ -9,6 +9,7 @@ export type ClustererWithLabelsOptions = {
   hitboxSizePx?: number;
   defaultPinKind?: PinKind;
   hideLabelForId?: string | null;
+  forceHideAll?: boolean;
 };
 
 export type KakaoDeps = {
@@ -31,4 +32,5 @@ export type SelectionState = {
   selectedKey: string | null;
   safeLabelMax: number;
   clusterMinLevel: number;
+  forceHideAll: boolean;
 };

@@ -124,6 +124,8 @@ export function SidebarSection(props: SidebarSectionProps) {
           onDeleteItem={onDeleteItem}
           // ✅ 답사지 예약 아이템 클릭 → 상위 콜백
           onFocusMap={onFocusItemMap}
+          // ✅ 순번 전달 (1-based)
+          number={index + 1}
         />
       )),
     [

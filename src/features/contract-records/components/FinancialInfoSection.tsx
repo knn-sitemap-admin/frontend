@@ -327,11 +327,11 @@ export function FinancialInfoSection({
           <div className="text-xs text-muted-foreground space-y-1">
             <div>계산 공식:</div>
             <div>
-              • (중개수수료 + 부가세) + ((리베이트 - 영수지원금 - 현금지원금){" "}
-              {financialInfo.taxStatus === "taxable" ? "× 0.967" : ""}) ={""}
+              • (중개수수료 + 부가세) + ((리베이트 - 영수지원금){" "}
+              {financialInfo.taxStatus === "taxable" ? "× 0.967" : ""}) - 현금지원금 ={""}
               {(() => {
-                // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금-현금지원금)×0.967)
-                // 비과세시 (중개수수료+부가세)+(리베이트-영수지원금-현금지원금)
+                // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금)×0.967)-현금지원금
+                // 비과세시 (중개수수료+부가세)+(리베이트-영수지원금)-현금지원금
                 const brokerageAndVat =
                   Number(financialInfo.totalBrokerageFee) || 0;
                 const totalRebate = Number(financialInfo.totalRebate) || 0;
@@ -340,11 +340,11 @@ export function FinancialInfoSection({
                 const supportCashAmount =
                   Number(financialInfo.supportCashAmount) || 0;
                 const rebateMinusSupport =
-                  totalRebate - totalSupportAmount - supportCashAmount;
+                  totalRebate - totalSupportAmount;
                 const multiplier =
                   financialInfo.taxStatus === "taxable" ? 0.967 : 1;
                 const finalTotal =
-                  brokerageAndVat + rebateMinusSupport * multiplier;
+                  brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
                 return formatCurrency(finalTotal);
               })()}
               원
@@ -361,8 +361,8 @@ export function FinancialInfoSection({
             <div className="text-sm font-medium mb-1">총 금액</div>
             <div className="text-lg font-bold text-primary">
               {(() => {
-                // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금-현금지원금)×0.967)
-                // 비과세시 (중개수수료+부가세)+(리베이트-영수지원금-현금지원금)
+                // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금)×0.967)-현금지원금
+                // 비과세시 (중개수수료+부가세)+(리베이트-영수지원금)-현금지원금
                 const brokerageAndVat =
                   Number(financialInfo.totalBrokerageFee) || 0;
                 const totalRebate = Number(financialInfo.totalRebate) || 0;
@@ -371,11 +371,11 @@ export function FinancialInfoSection({
                 const supportCashAmount =
                   Number(financialInfo.supportCashAmount) || 0;
                 const rebateMinusSupport =
-                  totalRebate - totalSupportAmount - supportCashAmount;
+                  totalRebate - totalSupportAmount;
                 const multiplier =
                   financialInfo.taxStatus === "taxable" ? 0.967 : 1;
                 const finalTotal =
-                  brokerageAndVat + rebateMinusSupport * multiplier;
+                  brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
                 return formatCurrency(finalTotal);
               })()}
               원

@@ -240,18 +240,18 @@ export function normalizeInitialData(initialData: any | null): Normalized {
         : "") as StarStr);
 
   // ───────── units → unitLines (DB 값 ÷ 1000000 → 백만원 단위로 표시, 등록과 동일) ─────────
+  // toViewDetailsFromApi에서 이미 ×1,000,000이 적용된 값이므로 ÷1,000,000하여 백만원 단위로 폼에 세팅
+  const toMillionUnit = (v: any): string => {
+    if (v == null || v === "") return "";
+    const n = Number(v);
+    return Number.isFinite(n) ? String(Math.round(n / 1_000_000)) : "";
+  };
   const unitLines: UnitLine[] = Array.isArray(d.units)
     ? (d.units as any[]).map((u) => {
         const minVal = u?.minPrice;
         const maxVal = u?.maxPrice;
-        const primary =
-          minVal == null || minVal === ""
-            ? ""
-            : String(Number(minVal) / 1000000);
-        const secondary =
-          maxVal == null || maxVal === ""
-            ? ""
-            : String(Number(maxVal) / 1000000);
+        const primary = toMillionUnit(minVal);
+        const secondary = toMillionUnit(maxVal);
         return {
           rooms: asNum(u?.rooms ?? 0, 0),
           baths: asNum(u?.baths ?? 0, 0),
@@ -259,6 +259,7 @@ export function normalizeInitialData(initialData: any | null): Normalized {
           terrace: !!u?.hasTerrace,
           primary,
           secondary,
+          note: u?.note ?? "",
         };
       })
     : Array.isArray(d.unitLines)

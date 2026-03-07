@@ -562,7 +562,6 @@ export default function ViewStage({
                 publicMemo={isPublicMemoMode ? f.publicMemo : undefined}
                 secretMemo={!isPublicMemoMode ? f.secretMemo : undefined}
               />
-
               {/* 👇 생성자/답사자/수정자 메타 정보 (메모 밑) */}
               <MetaInfoContainer details={metaDetails} />
 

@@ -21,4 +21,5 @@ export type PinItem = PropertyItem & {
   kind: PinKind;
   state?: "draft" | "saved"; // 임시/저장됨
   isFav?: boolean;
+  isCompleted?: boolean;
 };

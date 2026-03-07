@@ -7,7 +7,7 @@ import { LatLng } from "@/lib/geo/types";
 
 /** 컨텍스트 메뉴에서 예약 생성 시 전달되는 payload */
 export type ReserveFromMenuArgs =
-  | { visitId: string; dateISO: string }
+  | { visitId: string; dateISO: string; assigneeId?: number }
   | {
       lat: number;
       lng: number;
@@ -15,6 +15,7 @@ export type ReserveFromMenuArgs =
       roadAddress?: string | null;
       jibunAddress?: string | null;
       dateISO: string;
+      assigneeId?: number;
     };
 
 /** 클릭된 핀 or underlying 핀을 normalized 형태로 표현 */

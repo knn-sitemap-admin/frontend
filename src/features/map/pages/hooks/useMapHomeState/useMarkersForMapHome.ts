@@ -49,7 +49,7 @@ export function useMarkersForMapHome({
     // 4) 매물핀 마커 변환
     const pointMarkers: MapMarkerWithFav[] = visiblePoints.map((p: any) => {
       // 🔹 서버에서 내려준 badge/ageType 기준으로 kind 계산
-      const baseKind = mapBadgeToPinKind(p.badge);
+      const baseKind = mapBadgeToPinKind(p.badge, p.isCompleted);
       const displayKind = getDisplayPinKind(baseKind, p.ageType ?? null);
       const kind: PinKind = (displayKind ?? baseKind ?? "1room") as PinKind;
 
@@ -68,6 +68,9 @@ export function useMarkersForMapHome({
         kind,
         name, // 라벨 텍스트
         title: displayTitle,
+        address: (p.addressLine ?? p.address ?? undefined) as string | undefined,
+        badge: p.badge,
+        isCompleted: p.isCompleted,
         isFav: false,
       };
     });
@@ -84,6 +87,7 @@ export function useMarkersForMapHome({
         kind: "question" as const,
         name: displayName,
         title: title || displayName,
+        address: (d.addressLine ?? d.address ?? undefined) as string | undefined,
         isFav: false,
       };
     });

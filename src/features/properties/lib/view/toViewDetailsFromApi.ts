@@ -14,7 +14,7 @@ export type ApiPin = {
 
   ageType?: "NEW" | "OLD" | null;
 
-  buildingType?: "APT" | "OP" | "주택" | "근생" | string | null;
+  buildingType?: string | null; // 레거시 폴백 (일부 오래된 데이터 대비)
   /** ✅ 건물유형 배열 (등기 표시용) */
   buildingTypes?: string[] | null;
 
@@ -96,6 +96,7 @@ export type ApiPin = {
 
   /** 🔹 리베이트 텍스트(있다면) */
   rebateText?: string | null;
+  isCompleted?: boolean;
 };
 
 /* ───────────── 유틸 ───────────── */
@@ -239,6 +240,7 @@ function mapUnits(apiUnits?: ApiPin["units"]):
       hasTerrace: boolean;
       minPrice?: number | null;
       maxPrice?: number | null;
+      note?: string | null;
     }>
   | undefined {
   if (!Array.isArray(apiUnits) || apiUnits.length === 0) return undefined;
@@ -266,10 +268,10 @@ function mapUnits(apiUnits?: ApiPin["units"]):
     hasLoft: toBool(u?.hasLoft),
     hasTerrace: toBool(u?.hasTerrace),
     minPrice:
-      u?.minPrice == null ? undefined : toIntOrUndef(u?.minPrice) ?? null,
+      u?.minPrice == null ? undefined : (toIntOrUndef(u?.minPrice) ?? 0) * 1000000,
     maxPrice:
-      u?.maxPrice == null ? undefined : toIntOrUndef(u?.maxPrice) ?? null,
-    // note는 버림
+      u?.maxPrice == null ? undefined : (toIntOrUndef(u?.maxPrice) ?? 0) * 1000000,
+    note: u?.note ?? null,
   }));
 }
 
@@ -280,16 +282,16 @@ export function toViewDetailsFromApi(
   const orientations = toOrientationRows(api.directions);
   const area = mapAreaGroups(api);
 
-  // 등기: buildingType(단일) 우선, 없으면 buildingTypes 배열에서 추출 (쉼표로 연결)
+  // 등기: buildingTypes 배열 우선 (API 신규 표준), 레거시 buildingType 폴백 유지
   const registryLabel =
-    BUILDING_TYPE_LABEL[String(api.buildingType ?? "")] ??
-    api.buildingType ??
-    (Array.isArray(api.buildingTypes) && api.buildingTypes.length > 0
+    Array.isArray(api.buildingTypes) && api.buildingTypes.length > 0
       ? api.buildingTypes
           .map((t) => BUILDING_TYPE_LABEL[String(t ?? "")] ?? t)
           .filter(Boolean)
           .join(", ")
-      : undefined);
+      : api.buildingType
+        ? BUILDING_TYPE_LABEL[String(api.buildingType)] ?? api.buildingType
+        : undefined;
 
   // ⭐ parkingGrade/별점 변환
   const pg = normalizeParkingGrade(api.parkingGrade);
@@ -309,7 +311,7 @@ export function toViewDetailsFromApi(
     id: String(api.id),
 
     /** ✅ 서버 badge → 핀 종류로 역매핑 (PinKind | undefined) */
-    pinKind: mapBadgeToPinKind(api.badge),
+    pinKind: mapBadgeToPinKind(api.badge, api.isCompleted),
 
     title: api.name ?? api.badge ?? undefined,
     address: api.addressLine ?? undefined,

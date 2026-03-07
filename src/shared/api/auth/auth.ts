@@ -22,14 +22,15 @@ type SignInResp<T = any> = {
   data: T;
 };
 
-/** 세션에 들어가는 유저 정보 형태 (req.session.user) */
+export type UserRole = 'admin' | 'manager' | 'staff';
 export type MeData = {
   id?: number;
   email?: string;
   accountId?: number;
   credentialId?: string;
   username?: string;
-  role?: string; // 🔥 여기로 'admin' 등 직급/권한 문자열이 들어옴
+  role?: UserRole; // 🔥 여기로 'admin' 등 직급/권한 문자열이 들어옴
+  deviceType?: string;
 } | null;
 
 /** /auth/me 응답: { message, data: MeData } */

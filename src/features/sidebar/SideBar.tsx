@@ -35,15 +35,17 @@ export function Sidebar({
   onFocusSubItemMap,
 }: SidebarProps) {
   // 0) 안전 기본값
-  const {
-    nestedFavorites = [],
-    favoritesLoading,
-    setNestedFavorites,
-    handleDeleteNestedFavorite,
-    handleDeleteSubFavorite,
-    handleContractRecordsClick,
-    updateFavoriteGroupTitle,
-  } = useSidebar();
+    const {
+      nestedFavorites = [],
+      favoritesLoading,
+      setNestedFavorites,
+      handleDeleteNestedFavorite,
+      handleDeleteSubFavorite,
+      handleContractRecordsClick,
+      updateFavoriteGroupTitle,
+      // 🔸 추가: 임시핀(Drafts)
+      siteReservations = [],
+    } = useSidebar();
 
   // 1) 훅 호출(조건문 밖)
   const { items, setItems, refetch } = useScheduledReservations();
@@ -69,21 +71,26 @@ export function Sidebar({
     staleTime: 10 * 60 * 1000, // 10분
   });
 
-  // 2) 파생 리스트 - 내 예약만 필터링
-  const listItems: ListItem[] = useMemo(
-    () =>
-      (items ?? [])
-        .filter((r) => r.isMine === true)
-        .map((r) => ({
-          id: String(r.id),
-          title: r.addressLine ?? (r.posKey ? `좌표 ${r.posKey}` : "주소 미확인"),
-          dateISO: r.reservedDate ?? "",
-          // ✅ 있다면 lat/lng도 함께 내려서 지도 이동에 활용
-          lat: (r as any).lat,
-          lng: (r as any).lng,
-        })),
-    [items]
-  );
+  // 2) 파생 리스트 구성 (임시핀 + 확정 예약)
+  const listItems: ListItem[] = useMemo(() => {
+    const isAdmin = profile?.role === "admin" || profile?.role === "manager";
+    
+    // 2-a) 확정 예약 필터링 & 매핑
+    const filteredScheduled = (items ?? []).filter((r) => {
+      if (isAdmin) return true; // 관리자는 전체
+      return r.isMine === true; // 일반 사용자는 내 것만
+    });
+
+    // 2-b) 확정 예약 목록만 반환 (임시핀 제외)
+    return filteredScheduled.map((r) => ({
+      id: String(r.id),
+      title: r.addressLine ?? (r.posKey ? `좌표 ${r.posKey}` : "주소 미확인"),
+      dateISO: r.reservedDate ?? "",
+      lat: (r as any).lat,
+      lng: (r as any).lng,
+      isDraft: false,
+    }));
+  }, [items, profile?.role]);
 
   const handleListItemsChange = useCallback((_nextList: ListItem[]) => {
     // no-op (현재는 드래그 순서만 서버에 반영, 리스트 자체는 API 기준)

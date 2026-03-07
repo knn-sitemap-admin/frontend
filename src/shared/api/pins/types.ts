@@ -30,6 +30,9 @@ export type CreatePinDto = {
   pinDraftId?: number | string | null;
 
   completionDate?: string | null;
+  
+  /** @deprecated buildingTypes \ubc30\uc5f4\uc744 \uc0ac\uc6a9\ud558\uc138\uc694. \ub808\uac70\uc2dc \ud3f4\ubc31\uc6a9\uc73c\ub85c\ub9cc \uc720\uc9c0. */
+  // 레거시 폴백 (일부 오래된 데이터 대비) 경고용
   buildingType?: string | null;
 
   /** 단지/주택 수 */
@@ -92,6 +95,7 @@ export type CreatePinDto = {
   rebateText?: string | null;
 
   pinKind?: PinKind | null;
+  isCompleted?: boolean;
 };
 
 export type UpdatePinDto = Partial<CreatePinDto> & {

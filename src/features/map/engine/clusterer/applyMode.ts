@@ -8,7 +8,7 @@ export function applyMode(
   state: SelectionState
 ) {
   const { kakao, map } = deps;
-  const { selectedKey, safeLabelMax, clusterMinLevel } = state;
+  const { selectedKey, safeLabelMax, clusterMinLevel, forceHideAll } = state;
 
   const level = map.getLevel();
   const mkList = Object.values(refs.markerObjsRef.current) as any[];
@@ -50,6 +50,14 @@ export function applyMode(
       }
     }
   };
+
+  if (forceHideAll) {
+    labelEntries.forEach(([, ov]) => ov.setMap(null));
+    hitEntries.forEach(([, ov]) => ov.setMap(null));
+    mkList.forEach((mk) => mk.setMap(null));
+    refs.clustererRef.current?.clear?.();
+    return;
+  }
 
   if (level <= safeLabelMax) {
     refs.clustererRef.current?.clear?.();

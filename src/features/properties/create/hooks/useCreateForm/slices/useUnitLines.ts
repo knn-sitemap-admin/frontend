@@ -18,6 +18,7 @@ export function useUnitLines() {
         terrace: false,
         primary: "",
         secondary: "",
+        note: "",
       },
     ]);
   }, []);
@@ -32,6 +33,7 @@ export function useUnitLines() {
         terrace: false,
         primary: "",
         secondary: "",
+        note: "",
       },
     ]);
   }, []);

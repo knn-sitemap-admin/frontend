@@ -309,6 +309,9 @@ export default function MapHomePage() {
 
       /** ✅ ModalsHost까지 전달할 draft numeric id */
       pinDraftId: (s as any).pinDraftId,
+
+      /** 하단 카드 높이 ref (동적 pan 오프셋용) */
+      bottomCardHeightRef: (s as any).bottomCardHeightRef,
     }),
     [
       KAKAO_MAP_KEY,

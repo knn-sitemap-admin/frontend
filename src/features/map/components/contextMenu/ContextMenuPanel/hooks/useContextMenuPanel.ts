@@ -9,6 +9,9 @@ import {
   useState,
 } from "react";
 import type React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useMeRole } from "@/features/auth/hooks/useMeRole";
+import { getEmployeesList } from "@/features/users/api/account";
 
 import { getPinRaw } from "@/shared/api/pins/queries/getPin";
 import { pinKeys } from "@/features/pins/hooks/usePin";
@@ -50,6 +53,22 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
   const headingId = useId();
   const descId = useId();
   const qc = useQueryClient();
+  const { isPrivileged, accountId } = useMeRole();
+
+  // 대리 예약 시 대상 직원 목록 조회
+  const { data: employees } = useQuery({
+    queryKey: ["employees-list"],
+    queryFn: () => getEmployeesList({ sort: "name" }),
+    enabled: isPrivileged,
+  });
+
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState<string>("");
+
+  useEffect(() => {
+    if (accountId && !selectedAssigneeId) {
+      setSelectedAssigneeId(String(accountId));
+    }
+  }, [accountId, selectedAssigneeId]);
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const firstFocusableRef = useRef<HTMLButtonElement | null>(null);
@@ -275,7 +294,11 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
   }, []);
 
   const handleReserveClick = useCallback(() => {
-    const payload: ReserveRequestPayload | undefined = undefined;
+    // ReserveRequestPayload 형식에 맞춰 전달 (kind는 Container에서 보강하거나 여기서 임의 지정)
+    // 여기서는 assigneeId만 넘기고 Container의 handleReserveWithToast에서 처리하도록 유도
+    const payload: any = {
+      assigneeId: selectedAssigneeId ? Number(selectedAssigneeId) : undefined,
+    };
 
     if (onReserve) {
       onReserve(payload);
@@ -284,7 +307,7 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
     }
 
     onClose();
-  }, [onReserve, onPlan, onClose]);
+  }, [onReserve, onPlan, onClose, selectedAssigneeId]);
 
   const handleViewClick = useCallback(() => {
     if (!canView) return;
@@ -367,5 +390,11 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
     handleViewClick,
     handleCreateClick,
     handleHoverPrefetch,
+
+    // 대리 예약 관련
+    isPrivileged,
+    employees,
+    selectedAssigneeId,
+    setSelectedAssigneeId,
   };
 }

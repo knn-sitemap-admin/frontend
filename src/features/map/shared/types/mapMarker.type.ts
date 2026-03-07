@@ -12,6 +12,8 @@ export type MapMarker = {
   source?: "pin" | "draft";
   pinDraftId?: number | string;
   posKey?: string;
+  badge?: string | null;
+  isCompleted?: boolean;
 };
 
 export type MapMarkerTagged = MapMarker & {

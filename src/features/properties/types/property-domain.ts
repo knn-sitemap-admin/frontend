@@ -116,4 +116,5 @@ export type UnitLine = {
   terrace: boolean;
   primary: string;
   secondary: string;
+  note: string;
 };

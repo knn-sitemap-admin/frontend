@@ -31,6 +31,7 @@ export function useClustererWithLabels(
     defaultPinKind = "1room",
     hideLabelForId = null,
     enableDebug = false,
+    forceHideAll = false,
   }: Opts = {}
 ) {
   const { reservationOrderMap = {}, reservationOrderByPosKey = {} } =
@@ -145,6 +146,7 @@ export function useClustererWithLabels(
     hitboxOvRef,
     clustererRef,
     onMarkerClickRef,
+    forceHideAll,
   });
 
   useFitBounds(isReady, kakao, map, markers, fitToMarkers, realMarkersKey);
@@ -165,7 +167,8 @@ export function useClustererWithLabels(
     refs,
     selectedKey,
     safeLabelMax,
-    clusterMinLevel
+    clusterMinLevel,
+    forceHideAll
   );
   useSelectionEffect(
     isReady,
@@ -177,7 +180,8 @@ export function useClustererWithLabels(
     clustererRef,
     labelOvRef,
     hitboxOvRef,
-    markerObjsRef
+    markerObjsRef,
+    forceHideAll
   );
   useRestoreClosedBubbles(
     isReady,
@@ -185,7 +189,8 @@ export function useClustererWithLabels(
     selectedKey,
     safeLabelMax,
     labelOvRef,
-    hitboxOvRef
+    hitboxOvRef,
+    forceHideAll
   );
 
   useUpdateZIndexAndLabels(

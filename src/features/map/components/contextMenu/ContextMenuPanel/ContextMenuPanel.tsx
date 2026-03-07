@@ -3,6 +3,15 @@
 import { Button } from "@/components/atoms/Button/Button";
 import { Plus, Star, Trash2, X } from "lucide-react";
 import StarMeter from "@/features/properties/view/ui/parts/StarMeter";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/atoms/Select/Select";
 
 import type React from "react";
 
@@ -43,6 +52,12 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     assigneeName,
     onCancelReservation,
 
+    // 대리 예약 관련
+    isPrivileged,
+    employees,
+    selectedAssigneeId,
+    setSelectedAssigneeId,
+
     // 핸들러
     stopAll,
     handleCreateClick,
@@ -59,8 +74,6 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
       aria-labelledby={headingId}
       aria-describedby={descId}
       tabIndex={-1}
-      onPointerDown={stopAll}
-      onMouseDown={stopAll}
       onClick={stopAll}
       className="rounded-2xl bg-white shadow-xl border border-gray-200 p-3 w-[280px] sm:w-[320px] max-w-[90vw] outline-none"
     >
@@ -194,43 +207,74 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
               className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
             >
               <X className="w-4 h-4 mr-2" />
-              답사지 예약 취소
+              {props.isForceCancel ? "강제 해제" : "답사지 예약 취소"}
             </Button>
           )}
         </div>
-      ) : planned ? (
-        <Button
-          type="button"
-          variant="default"
-          size="lg"
-          onClick={handleReserveClick}
-          disabled={isAlreadyReserved}
-          className="w-full"
-        >
-          {isAlreadyReserved ? "이미 예약된 핀" : "답사지 예약"}
-        </Button>
-      ) : draft ? (
-        <Button
-          type="button"
-          variant="default"
-          size="lg"
-          onClick={handleCreateClick}
-          className="w-full"
-        >
-          답사예정지 등록
-        </Button>
       ) : (
-        <Button
-          type="button"
-          variant="default"
-          size="lg"
-          onClick={handleViewClick}
-          onMouseEnter={handleHoverPrefetch}
-          className="w-full"
-          disabled={!canView}
-        >
-          상세 보기
-        </Button>
+        <>
+          {/* 대리 예약 담당자 선택 (권한 있는 경우 + 등록 전) */}
+          {isPrivileged && (planned || draft) && (
+            <div className="mt-1 mb-3">
+              <label className="text-[11px] font-medium text-gray-400 ml-1 mb-1 block">
+                예약 할당
+              </label>
+              <Select
+                value={selectedAssigneeId}
+                onValueChange={setSelectedAssigneeId}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="예약자 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>사원 목록</SelectLabel>
+                    {(employees || []).map((emp) => (
+                      <SelectItem key={emp.accountId} value={emp.accountId}>
+                        {emp.name || "이름 없음"} ({emp.teamName})
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {planned ? (
+            <Button
+              type="button"
+              variant="default"
+              size="lg"
+              onClick={handleReserveClick}
+              disabled={isAlreadyReserved}
+              className="w-full"
+            >
+              {isAlreadyReserved ? "이미 예약된 핀" : "답사지 예약"}
+            </Button>
+          ) : draft ? (
+            <Button
+              type="button"
+              variant="default"
+              size="lg"
+              onClick={handleCreateClick}
+              className="w-full"
+            >
+              답사예정지 등록
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="default"
+              size="lg"
+              onClick={handleViewClick}
+              onMouseEnter={handleHoverPrefetch}
+              className="w-full"
+              disabled={!canView}
+            >
+              상세 보기
+            </Button>
+          )}
+        </>
       )}
     </div>
   );

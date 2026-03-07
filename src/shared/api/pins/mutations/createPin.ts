@@ -245,6 +245,10 @@ export async function createPin(
       ? { hasElevator: dto.hasElevator }
       : {}),
 
+    ...(typeof dto.isCompleted === "boolean"
+      ? { isCompleted: dto.isCompleted }
+      : {}),
+
     ...(dto.options ? { options: sanitizeOptions(dto.options) } : {}),
 
     ...(dirs ? { directions: dirs } : {}),

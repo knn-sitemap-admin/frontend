@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import {
   fetchMySurveyReservations,
   type MyReservation,
 } from "@/shared/api/survey-reservations/surveyReservations";
+import { useQuery } from "@tanstack/react-query";
+import { getProfile } from "@/features/users/api/account";
 
 /* ───────── 정렬/보정 유틸 ───────── */
 function sortByServerRuleLocal<
@@ -78,8 +80,8 @@ async function refetchInternal(signal?: AbortSignal) {
   }
 }
 
-/* 최초 1회 로드 트리거 (모듈 로드 시점) */
-void refetchInternal();
+/* 훅 최초 마운트 시 1회 fetch (모듈 로드 시점이 아닌 훅 마운트 시점에 실행) */
+let _initialized = false;
 
 /* ───────── 외부에서 호출할 액션 ───────── */
 function refetch() {
@@ -208,6 +210,13 @@ function reconcileOptimistic(
 
 /* ───────── Hook: useSyncExternalStore로 구독 ───────── */
 export function useScheduledReservations() {
+  // 세션 쿠키가 이미 존재하는 시점(ClientSessionGuard 통과 후)에 1회만 초기 fetch
+  useEffect(() => {
+    if (_initialized) return;
+    _initialized = true;
+    void refetchInternal();
+  }, []);
+
   const snapshot = useSyncExternalStore(
     (l) => {
       store.listeners.add(l);
@@ -217,26 +226,41 @@ export function useScheduledReservations() {
     () => store.state // SSR fallback
   );
 
+  // 프로필 정보를 가져와서 관리자 여부 확인 (순번 계산 필터링용)
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: getProfile,
+    staleTime: 10 * 60 * 1000,
+  });
+  const isAdmin = profile?.role === "admin" || profile?.role === "manager";
+
   // 파생 맵들/유틸은 memoize
   const reservationOrderMap = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const r of snapshot.items) {
-      if (r.pinDraftId != null && typeof r.sortOrder === "number") {
-        m[String(r.pinDraftId)] = r.sortOrder;
+    const visibleItems = snapshot.items.filter((r) => {
+      if (isAdmin) return true;
+      return r.isMine === true;
+    });
+    visibleItems.forEach((r, idx) => {
+      if (r.pinDraftId != null) {
+        m[String(r.pinDraftId)] = idx; // 0-based index
       }
-    }
+    });
     return m;
-  }, [snapshot.items, snapshot.version]); // 🔸 version 의존성 추가
+  }, [snapshot.items, snapshot.version, isAdmin]);
 
   const reservationOrderByPosKey = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const r of snapshot.items) {
-      if (typeof r.sortOrder !== "number") continue;
+    const visibleItems = snapshot.items.filter((r) => {
+      if (isAdmin) return true;
+      return r.isMine === true;
+    });
+    visibleItems.forEach((r, idx) => {
       const key = r.posKey ?? toPosKey(r.lat ?? undefined, r.lng ?? undefined);
-      if (key) m[key] = r.sortOrder;
-    }
+      if (key) m[key] = idx; // 0-based index
+    });
     return m;
-  }, [snapshot.items, snapshot.version]); // 🔸 version 의존성 추가
+  }, [snapshot.items, snapshot.version, isAdmin]);
 
   const getOrderIndex = useCallback(
     (marker: {

@@ -265,15 +265,13 @@ export function sanitizeUnits(
   const mapped = list.map((u) => {
     const minP = toNumOrNull(u?.minPrice);
     const maxP = toNumOrNull(u?.maxPrice);
-    const toStoredPrice = (n: number | null) =>
-      n == null ? null : nz(Math.round(n * 1000000));
     return {
       rooms: nz(toIntOrNull(u?.rooms)),
       baths: nz(toIntOrNull(u?.baths)),
       hasLoft: !!u?.hasLoft,
       hasTerrace: !!u?.hasTerrace,
-      minPrice: toStoredPrice(minP),
-      maxPrice: toStoredPrice(maxP),
+      minPrice: minP,
+      maxPrice: maxP,
     };
   });
 

@@ -171,7 +171,7 @@ export default function TopRightControls(props: {
 
   // 🔧 roadviewVisible일 때 살짝 비활성/투명 처리 (이제 고정 위치는 아님)
   const rootClass = cn(
-    "fixed flex flex-row items-center gap-2", // 공통
+    "fixed flex flex-row items-center gap-1 md:gap-2", // 공통
     "bottom-4 left-[4.5rem]", // 기본: 모바일
     "lg:top-3 lg:right-3 lg:bottom-auto lg:left-auto", // PC 이상에서 override
     props.roadviewVisible
@@ -193,8 +193,8 @@ export default function TopRightControls(props: {
         <button
           type="button"
           onClick={props.onToggleRoadviewRoad}
-          className={`h-8 px-3 text-xs rounded-md border shadow-sm ${
-            props.roadviewRoadOn
+          className={`h-8 px-2 text-xs rounded-md border shadow-sm shrink-0 whitespace-nowrap ${
+            props.roadviewRoadOn || props.roadviewVisible
               ? "bg-blue-600 text-white border-blue-600"
               : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
           }`}
@@ -252,6 +252,7 @@ export default function TopRightControls(props: {
             poiKinds={props.poiKinds}
             onChangePoiKinds={handleChangePoiKinds}
             roadviewVisible={props.roadviewVisible}
+            roadviewRoadOn={props.roadviewRoadOn}
             onToggleRoadview={props.onToggleRoadview}
             distanceMeasureVisible={props.distanceMeasureVisible ?? false}
             onToggleDistanceMeasure={props.onToggleDistanceMeasure ?? (() => {})}

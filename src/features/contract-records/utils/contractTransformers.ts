@@ -315,9 +315,9 @@ export function transformContractResponseToSalesContract(
 
   const supportAmount = Number(contract.supportAmount) || 0;
   const supportCashAmount = Number(contract.supportCashAmount) || 0;
-  const rebateMinusSupport = totalRebate - supportAmount - supportCashAmount;
+  const rebateMinusSupport = totalRebate - supportAmount;
   const multiplier = contract.isTaxed ? 0.967 : 1;
-  const rawTotalCalculation = totalBrokerageFee + rebateMinusSupport * multiplier;
+  const rawTotalCalculation = totalBrokerageFee + rebateMinusSupport * multiplier - supportCashAmount;
   const totalCalculation = isInvalidStatus ? 0 : rawTotalCalculation;
 
   return {
@@ -403,9 +403,9 @@ export function transformContractResponseToContractData(
     const totalRebate = (Number(contract.rebate) || 0) * 1000000; // units를 원으로 변환
     const totalSupportAmount = Number(contract.supportAmount) || 0;
     const supportCashAmount = Number(contract.supportCashAmount) || 0;
-    const rebateMinusSupport = totalRebate - totalSupportAmount - supportCashAmount;
+    const rebateMinusSupport = totalRebate - totalSupportAmount;
     const multiplier = contract.isTaxed ? 0.967 : 1;
-    return brokerageAndVat + rebateMinusSupport * multiplier;
+    return brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
   })();
 
   return {
@@ -451,9 +451,9 @@ export function transformContractListItemToContractData(
   const rebateAmount = (Number(item.rebateUnits) || 0) * 1000000; // units를 원으로 변환
   const supportAmount = Number(item.supportAmount) || 0;
   const supportCashAmount = Number(item.supportCashAmount) || 0;
-  const rebateMinusSupport = rebateAmount - supportAmount - supportCashAmount;
+  const rebateMinusSupport = rebateAmount - supportAmount;
   const multiplier = item.isTaxed ? 0.967 : 1;
-  const rawTotalCalculation = brokerageAndVat + rebateMinusSupport * multiplier;
+  const rawTotalCalculation = brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
   
   const totalCalculation = isInvalidStatus ? 0 : rawTotalCalculation;
   const companyPercent = item.companyPercent ?? 0;
@@ -502,9 +502,9 @@ export function transformMyContractListItemToContractData(
   const rebateAmount = (Number(item.rebateUnits) || 0) * 1000000; // units를 원으로 변환
   const supportAmount = Number(item.supportAmount) || 0;
   const supportCashAmount = Number(item.supportCashAmount) || 0;
-  const rebateMinusSupport = rebateAmount - supportAmount - supportCashAmount;
+  const rebateMinusSupport = rebateAmount - supportAmount;
   const multiplier = item.isTaxed ? 0.967 : 1;
-  const rawTotalCalculation = brokerageAndVat + rebateMinusSupport * multiplier;
+  const rawTotalCalculation = brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
   
   const totalCalculation = isInvalidStatus ? 0 : rawTotalCalculation;
   const salesPersonSalary = isInvalidStatus ? 0 : Math.round(

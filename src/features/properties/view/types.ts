@@ -29,6 +29,7 @@ export type UnitView = {
   hasTerrace: boolean;
   minPrice?: number | null;
   maxPrice?: number | null;
+  note?: string | null;
 };
 
 export type PropertyViewDetails = {

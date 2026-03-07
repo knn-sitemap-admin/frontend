@@ -23,6 +23,8 @@ export function MapDistanceMeasure({
   const distanceOverlayRef = useRef<any>(null);
   const dotsRef = useRef<{ circle: any; distance?: any }[]>([]);
 
+  // --- 유틸리티 함수들 ---
+
   const deleteClickLine = useCallback(() => {
     if (clickLineRef.current && mapInstance) {
       clickLineRef.current.setMap(null);
@@ -116,6 +118,50 @@ export function MapDistanceMeasure({
     `;
   }, []);
 
+  // --- 비즈니스 로직 함수들 ---
+
+  const finishDrawing = useCallback(() => {
+    if (!drawingFlag) return;
+
+    if (moveLineRef.current) {
+      moveLineRef.current.setMap(null);
+      moveLineRef.current = null;
+    }
+
+    const path = clickLineRef.current?.getPath();
+    if (path && path.length > 1) {
+      const lastDot = dotsRef.current[dotsRef.current.length - 1];
+      if (lastDot?.distance) {
+        lastDot.distance.setMap(null);
+        lastDot.distance = null;
+      }
+      const distance = Math.round(clickLineRef.current.getLength());
+      const content = getTimeHTML(distance);
+      showDistance(content, path[path.length - 1]);
+    } else {
+      deleteClickLine();
+      deleteCircleDot();
+      deleteDistance();
+    }
+
+    setDrawingFlag(false);
+    setShowIntro(true);
+  }, [drawingFlag, getTimeHTML, showDistance, deleteClickLine, deleteCircleDot, deleteDistance]);
+
+  const cancelDrawing = useCallback(() => {
+    if (moveLineRef.current) {
+      moveLineRef.current.setMap(null);
+      moveLineRef.current = null;
+    }
+    deleteClickLine();
+    deleteCircleDot();
+    deleteDistance();
+    setDrawingFlag(false);
+    setShowIntro(true);
+  }, [deleteClickLine, deleteCircleDot, deleteDistance]);
+
+  // --- Effects (이벤트 리스너 등록) ---
+
   // 클릭: 그리기 시작 또는 점 추가
   useEffect(() => {
     if (!visible || !kakaoSDK || !mapInstance) return;
@@ -202,39 +248,11 @@ export function MapDistanceMeasure({
     const ev = kakaoSDK.maps?.event ?? (globalThis as any)?.kakao?.maps?.event;
     if (!ev?.addListener) return;
 
-    const handler = () => {
-      if (!drawingFlag) return;
-
-      if (moveLineRef.current) {
-        moveLineRef.current.setMap(null);
-        moveLineRef.current = null;
-      }
-
-      const path = clickLineRef.current?.getPath();
-      if (path && path.length > 1) {
-        const lastDot = dotsRef.current[dotsRef.current.length - 1];
-        if (lastDot?.distance) {
-          lastDot.distance.setMap(null);
-          lastDot.distance = null;
-        }
-        const distance = Math.round(clickLineRef.current.getLength());
-        const content = getTimeHTML(distance);
-        showDistance(content, path[path.length - 1]);
-      } else {
-        deleteClickLine();
-        deleteCircleDot();
-        deleteDistance();
-      }
-
-      setDrawingFlag(false);
-      setShowIntro(true);
-    };
-
-    ev.addListener(mapInstance, "rightclick", handler);
+    ev.addListener(mapInstance, "rightclick", finishDrawing);
     return () => {
-      ev.removeListener(mapInstance, "rightclick", handler);
+      ev.removeListener(mapInstance, "rightclick", finishDrawing);
     };
-  }, [visible, kakaoSDK, mapInstance, drawingFlag, showDistance, getTimeHTML, deleteClickLine, deleteCircleDot, deleteDistance]);
+  }, [visible, kakaoSDK, mapInstance, finishDrawing]);
 
   // 비활성 시 전부 제거
   useEffect(() => {
@@ -263,8 +281,27 @@ export function MapDistanceMeasure({
           <span className="text-sm">지도를 클릭해 거리 측정 구간을 찍어 주세요.</span>
           <br />
           <em className="text-[11px] opacity-90 block">
-            왼쪽 클릭으로 선 그리기, 오른쪽 클릭으로 종료
+            클릭으로 선 그리기, 완료 버튼이나 우클릭으로 종료
           </em>
+        </div>
+      )}
+
+      {drawingFlag && (
+        <div className="fixed left-1/2 bottom-20 z-[100] -translate-x-1/2 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={finishDrawing}
+            className="px-3 py-2.5 rounded-full bg-blue-600 text-white shadow-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition"
+          >
+            측정 완료
+          </button>
+          <button
+            type="button"
+            onClick={cancelDrawing}
+            className="px-5 py-2.5 rounded-full bg-gray-700 text-white shadow-lg font-bold text-sm hover:bg-gray-800 active:scale-95 transition"
+          >
+            취소
+          </button>
         </div>
       )}
     </>

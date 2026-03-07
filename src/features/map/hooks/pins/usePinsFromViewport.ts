@@ -1,21 +1,24 @@
-"use client";
-
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MapMarker } from "@/features/map/shared/types/mapMarker.type";
 import {
-  getPinsInBounds,
-  type PinsMapPoint,
-  type PinsMapDraft,
+  getMapPins,
 } from "@/shared/api/pins/queries/getPinsInBounds";
 import { Bounds } from "../../shared/types/bounds.type";
 
-
-type UsePinsOpts = {
-  bounds: Bounds | null; // map 대신 bounds를 직접 받음
+export type UsePinsOpts = {
+  bounds: (Bounds & { zoom: number }) | null;
+  zoom?: number;
   draftState?: "before" | "scheduled" | "all";
   isNew?: boolean;
   isOld?: boolean;
+  favoriteOnly?: boolean;
 };
+
+// 세션별 글로벌 캐시: 전체 로딩(Full Fetch) 시 모든 데이터를 여기에 저장하여 중복 요청을 방지합니다.
+const globalPinCache = new Map<string, any>();
+const globalDraftCache = new Map<string, any>();
+let lastFilterHash: string | null = null;
+let isFetchingAll = false;
 
 /** 🔹 그룹핑/매칭 전용 키 (표시·클러스터 용) */
 function toPosKey(lat?: number, lng?: number) {
@@ -38,107 +41,115 @@ function pickDisplayName(p: any): string {
   );
 }
 
-/** PinsMapPoint/PinsMapDraft -> MapMarker 변환 */
+/** 데이터 객체를 MapMarker로 변환 */
 function pinPointToMarker(
-  p: PinsMapPoint | PinsMapDraft,
+  p: any,
   source: "pin" | "draft"
 ): MapMarker {
-  const lat = Number((p as any).lat ?? (p as any).y);
-  const lng = Number((p as any).lng ?? (p as any).x);
+  const lat = Number(p.lat);
+  const lng = Number(p.lng);
   const displayName = String(pickDisplayName(p)).trim();
 
   return {
-    id: String(p.id),
+    id: source === "draft" ? `__visit__${String(p.id)}` : String(p.id),
     position: { lat, lng },
     name: displayName,
     title: displayName,
-    address: (p as any).addressLine ?? (p as any).address ?? undefined,
-    kind: ((p as any).pinKind ?? "1room") as any,
+    address: p.addressLine ?? p.address ?? undefined,
+    kind: (p.pinKind ?? (source === "draft" ? "question" : "1room")) as any,
     source,
-    pinDraftId: (p as any).draftId ?? (p as any).pin_draft_id ?? undefined,
+    pinDraftId: p.draftId ?? p.pin_draft_id ?? undefined,
     posKey: toPosKey(lat, lng),
-    isNew: (p as any).isNew ?? undefined,
+    isNew: p.isNew ?? undefined,
   };
 }
 
-export function usePinsFromViewport({
-  bounds,
-  draftState,
-  isNew,
-  isOld,
-}: UsePinsOpts) {
+/**
+ * usePinsFromViewport (전체 로딩 버전)
+ * - 복잡한 타일 로직을 제거하고, 필터가 바뀔 때마다 전체 데이터를 1회 가져옵니다.
+ * - 데이터 규모(1만 개 이하)를 고려하여 지도 이동 시 추가 네트워크 요청을 발생시키지 않습니다.
+ */
+export function usePinsFromViewport(opts: UsePinsOpts) {
+  const { isOld, isNew, favoriteOnly } = opts;
+
   const [loading, setLoading] = useState(false);
-  const [points, setPoints] = useState<PinsMapPoint[]>([]);
-  const [drafts, setDrafts] = useState<PinsMapDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const [updateTick, setUpdateTick] = useState(0); // 캐시 갱신 반영용
+  
+  // 현재 필터 상태를 해시화하여 변경 여부 판단
+  const filterHash = `${isOld}|${isNew}|${favoriteOnly}`;
 
-  const load = useCallback(async (currentBounds: Bounds) => {
-    // 이전 요청 취소
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await getPinsInBounds({
-        swLat: currentBounds.swLat,
-        swLng: currentBounds.swLng,
-        neLat: currentBounds.neLat,
-        neLng: currentBounds.neLng,
-        draftState,
-        ...(typeof isNew === "boolean" ? { isNew } : {}),
-        ...(typeof isOld === "boolean" ? { isOld } : {}),
-      }, controller.signal);
-
-      if (controller.signal.aborted) return;
-
-      setPoints(res.points ?? []);
-      setDrafts(res.drafts ?? []);
-    } catch (e: any) {
-      if (e.name === 'AbortError') return; // Abort는 에러 아님
-      setError(e?.message ?? "Failed to load pins");
-    } finally {
-      if (!controller.signal.aborted) {
-        setLoading(false);
-      }
-    }
-  }, [draftState, isNew, isOld]);
-
+  // 🔄 핀 데이터 로드 (전체 로딩 전략)
   useEffect(() => {
-    if (bounds) {
-      load(bounds);
-    } else {
-      // bounds가 없으면 데이터 초기화
-      setPoints([]);
-      setDrafts([]);
-    }
+    // 이미 같은 필터로 데이터를 받았거나 현재 가져오는 중이면 스킵
+    if (lastFilterHash === filterHash || isFetchingAll) return;
 
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+    const loadAllPins = async () => {
+      isFetchingAll = true;
+      setLoading(true);
+      setError(null);
+
+      try {
+        // 영역(bounds) 없이 요청을 보내 전 영역의 모든 핀을 가져옵니다.
+        const resp = await getMapPins({
+          isOld,
+          isNew,
+          favoriteOnly,
+        });
+
+        if (resp) {
+          const { points = [], drafts = [] } = resp;
+
+          // 캐시 초기화 (필터가 바뀌었으므로)
+          globalPinCache.clear();
+          globalDraftCache.clear();
+
+          // 새로운 데이터 캐싱
+          points.forEach((p: any) => globalPinCache.set(String(p.id), p));
+          drafts.forEach((d: any) => globalDraftCache.set(String(d.id), d));
+
+          lastFilterHash = filterHash;
+          setUpdateTick(t => t + 1);
+        }
+      } catch (err: any) {
+        console.error("Full Fetch Error:", err);
+        setError(err.message || "데이터를 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+        isFetchingAll = false;
       }
     };
-  }, [bounds, load]);
 
+    loadAllPins();
+  }, [filterHash, isOld, isNew, favoriteOnly]);
 
-  const markers: MapMarker[] = useMemo(() => {
-    const live = (points ?? []).map((p) => pinPointToMarker(p, "pin"));
-    const draftMarkers = (drafts ?? []).map((p) =>
-      pinPointToMarker(p, "draft")
-    );
-    return [...live, ...draftMarkers];
-  }, [points, drafts]);
+  // 🏠 캐시에서 데이터 추출
+  const { points, drafts, markers } = useMemo(() => {
+    const pList = Array.from(globalPinCache.values());
+    const dList = Array.from(globalDraftCache.values());
+    
+    const pMarkers = pList.map(p => pinPointToMarker(p, "pin"));
+    const dMarkers = dList.map(d => pinPointToMarker(d, "draft"));
 
+    return {
+      points: pList,
+      drafts: dList,
+      markers: [...pMarkers, ...dMarkers],
+    };
+  }, [updateTick, loading]);
+
+  // 강제 새로고침 (캐시 비우고 재요청)
   const reload = useCallback(() => {
-    if (bounds) {
-      return load(bounds);
-    }
-  }, [bounds, load]);
+    lastFilterHash = null;
+    setUpdateTick(t => t + 1);
+  }, []);
 
-  return { loading, points, drafts, markers, error, reload };
+  return {
+    points,
+    drafts,
+    markers,
+    loading,
+    error,
+    reload,
+  };
 }

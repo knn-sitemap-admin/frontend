@@ -91,6 +91,9 @@ export function useMapHomeState() {
   const resolveAddress = useResolveAddress(kakaoSDK);
   const panToWithOffset = usePanToWithOffset(kakaoSDK, mapInstance);
 
+  // 하단 메뉴 카드 높이 측정용 ref (동적 pan 오프셋)
+  const bottomCardHeightRef = useRef<number>(0);
+
   // ───────── 메뉴/드래프트 훅 ─────────
   const {
     hideLabelForId,
@@ -120,6 +123,7 @@ export function useMapHomeState() {
     toast,
     resolveAddress,
     panToWithOffset,
+    bottomCardHeightRef,
     // ⭐ 답사예정지 등록/삭제 후 서버 핀을 다시 가져오기 위해 usePinsMap.refetch 넘김
     refetchPins: refetch,
   });
@@ -397,5 +401,8 @@ export function useMapHomeState() {
 
     /** ✅ ModalsHost로 내려줄 draft numeric id */
     pinDraftId,
+
+    /** 하단 카드 높이 ref (동적 pan 오프셋용) */
+    bottomCardHeightRef,
   } as const;
 }

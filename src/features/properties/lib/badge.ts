@@ -36,16 +36,17 @@ export function mapPinKindToBadge(pinKind: PinKind): string | null {
     case "question":
       return "SURVEY_SCHEDULED";
 
-    case "completed":
-      return "MOVE_IN_COMPLETE";
-
     default:
       return null;
   }
 }
 
-/** 서버 badge -> PinKind */
-export function mapBadgeToPinKind(badge?: string | null): PinKind | undefined {
+/** 서버 badge + isCompleted -> PinKind */
+export function mapBadgeToPinKind(
+  badge?: string | null,
+  isCompleted?: boolean
+): PinKind | undefined {
+  if (isCompleted) return "completed";
   const b = (badge ?? "").toUpperCase();
   if (!b) return undefined;
 

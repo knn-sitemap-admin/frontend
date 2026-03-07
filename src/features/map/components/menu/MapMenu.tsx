@@ -22,6 +22,7 @@ export default function MapMenu(props: MapMenuProps) {
     poiKinds,
     onChangePoiKinds,
     roadviewVisible,
+    roadviewRoadOn,
     onToggleRoadview,
     distanceMeasureVisible,
     onToggleDistanceMeasure,
@@ -134,6 +135,7 @@ export default function MapMenu(props: MapMenuProps) {
               poiKinds={poiKinds}
               onChangePoiKinds={onChangePoiKinds}
               roadviewVisible={roadviewVisible}
+              roadviewRoadOn={roadviewRoadOn}
               onToggleRoadview={onToggleRoadview}
               distanceMeasureVisible={distanceMeasureVisible}
               onToggleDistanceMeasure={onToggleDistanceMeasure}

@@ -179,7 +179,7 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
 
       // ✅ 실제 매물핀
       (effectiveServerPoints ?? []).forEach((p: any) => {
-        const baseKind = mapBadgeToPinKind(p.badge);
+        const baseKind = mapBadgeToPinKind(p.badge, p.isCompleted);
         const displayKind = getDisplayPinKind(baseKind, p.ageType ?? null);
         const kind = (displayKind ?? baseKind ?? "1room") as PinKind;
 

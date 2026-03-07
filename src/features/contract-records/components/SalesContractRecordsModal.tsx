@@ -275,9 +275,9 @@ export function SalesContractRecordsModal({
     const totalSupportAmount = Number(financialInfo.totalSupportAmount) || 0;
     const supportCashAmount = Number(financialInfo.supportCashAmount) || 0;
     const rebateMinusSupport =
-      totalRebate - totalSupportAmount - supportCashAmount;
+      totalRebate - totalSupportAmount;
     const multiplier = financialInfo.taxStatus === "taxable" ? 0.967 : 1;
-    return brokerageAndVat + rebateMinusSupport * multiplier;
+    return brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
   };
 
   // 인적 정보 변경 핸들러
