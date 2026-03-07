@@ -112,6 +112,7 @@ export function usePinsMap() {
       lat: number;
       lng: number;
       title?: string | null;
+      addressLine?: string | null;
       draftState?: "BEFORE" | "SCHEDULED";
     }) => {
       setLocalDrafts((prev) => {
@@ -122,6 +123,7 @@ export function usePinsMap() {
         const next: DraftWithTitle = {
           id,
           title: m.title ?? "답사예정",
+          addressLine: m.addressLine ?? "",
           lat: m.lat,
           lng: m.lng,
           draftState: (m.draftState as any) ?? "BEFORE",
