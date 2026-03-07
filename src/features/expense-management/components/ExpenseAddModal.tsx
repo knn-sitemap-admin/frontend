@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -44,12 +44,14 @@ interface ExpenseAddModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: ExpenseFormData) => Promise<void>;
+  initialData?: ExpenseFormData | null;
 }
 
 export function ExpenseAddModal({
   open,
   onOpenChange,
   onSubmit,
+  initialData,
 }: ExpenseAddModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -70,6 +72,21 @@ export function ExpenseAddModal({
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      if (initialData) {
+        reset(initialData);
+      } else {
+        reset({
+          date: new Date().toISOString().slice(0, 10),
+          itemName: "",
+          amount: undefined as unknown as number,
+          memo: "",
+        });
+      }
+    }
+  }, [open, initialData, reset]);
+
   const handleFormSubmit = async (data: ExpenseFormData) => {
     setIsLoading(true);
     try {
@@ -89,9 +106,6 @@ export function ExpenseAddModal({
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      reset();
-    }
     onOpenChange(newOpen);
   };
 
@@ -99,7 +113,7 @@ export function ExpenseAddModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>지출 추가</DialogTitle>
+          <DialogTitle>{initialData ? "지출 수정" : "지출 추가"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           <div className="space-y-2">
@@ -205,7 +219,13 @@ export function ExpenseAddModal({
               취소
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "등록 중..." : "등록"}
+              {isLoading
+                ? initialData
+                  ? "수정 중..."
+                  : "등록 중..."
+                : initialData
+                ? "수정"
+                : "등록"}
             </Button>
           </div>
         </form>

@@ -21,6 +21,7 @@ import {
   getExpenseSummary,
   getExpenseList,
   createExpense,
+  updateExpense,
   deleteExpense,
 } from "../api/expense";
 import { ExpenseAddModal, type ExpenseFormData } from "./ExpenseAddModal";
@@ -32,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function Expense() {
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<ExpenseFormData | (ExpenseFormData & { id: string }) | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -110,6 +112,26 @@ export function Expense() {
     },
   });
 
+  const { mutate: updateMutate } = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ExpenseFormData }) =>
+      updateExpense(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expense-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-list"] });
+      toast({
+        title: "지출 수정 완료",
+        description: "지출 내역이 성공적으로 수정되었습니다.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "수정 실패",
+        description: "지출 내역 수정 중 오류가 발생했습니다.",
+      });
+    },
+  });
+
   const { mutate: deleteMutate } = useMutation({
     mutationFn: deleteExpense,
     onSuccess: () => {
@@ -130,8 +152,18 @@ export function Expense() {
   });
 
   const handleAddExpense = async (data: ExpenseFormData) => {
-    createMutate(data);
+    if (editingItem && "id" in editingItem) {
+      updateMutate({ id: editingItem.id, data });
+    } else {
+      createMutate(data);
+    }
     setAddModalOpen(false);
+    setEditingItem(null);
+  };
+
+  const handleEditExpense = (item: any) => {
+    setEditingItem(item);
+    setAddModalOpen(true);
   };
 
   const handleDeleteExpense = (id: string) => {
@@ -205,7 +237,10 @@ export function Expense() {
       <CardWithTable
         title="지출 내역"
         headerActions={
-          <Button onClick={() => setAddModalOpen(true)}>
+          <Button onClick={() => {
+            setEditingItem(null);
+            setAddModalOpen(true);
+          }}>
             <Plus className="h-4 w-4" />
             새로 만들기
           </Button>
@@ -237,16 +272,26 @@ export function Expense() {
               {
                 key: "actions",
                 label: "관리",
-                width: "15%",
+                width: "20%",
                 render: (_, item: any) => (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleDeleteExpense(item.id)}
-                  >
-                    삭제
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => handleEditExpense(item)}
+                    >
+                      수정
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleDeleteExpense(item.id)}
+                    >
+                      삭제
+                    </Button>
+                  </div>
                 ),
               },
             ]}
@@ -260,6 +305,7 @@ export function Expense() {
         open={addModalOpen}
         onOpenChange={setAddModalOpen}
         onSubmit={handleAddExpense}
+        initialData={editingItem}
       />
     </DataTablePageLayout>
   );
