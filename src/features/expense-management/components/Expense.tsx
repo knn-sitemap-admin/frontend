@@ -30,6 +30,7 @@ import {
   filterExpenseByPeriod,
 } from "../utils/expenseUtils";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/atoms/Skeleton/Skeleton";
 
 export function Expense() {
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -214,9 +215,10 @@ export function Expense() {
       />
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-gray-500">로딩 중...</div>
-        </div>
+        <StatCardsGrid title="지출금액" columns={2}>
+          <Skeleton className="h-[102px] w-full" />
+          <Skeleton className="h-[102px] w-full" />
+        </StatCardsGrid>
       ) : (
         <StatCardsGrid title="지출금액" columns={2}>
           <StatCard
@@ -247,57 +249,67 @@ export function Expense() {
         }
       >
         <TableScrollWrapper>
-          <Table
-            data={tableData}
-            columns={[
-              { key: "date", label: "날짜", sortable: true, width: "15%" },
-              {
-                key: "itemName",
-                label: "품목명",
-                sortable: true,
-                width: "20%",
-              },
-              {
-                key: "amount",
-                label: "금액",
-                sortable: true,
-                width: "15%",
-                render: (value) => (
-                  <span className="font-semibold text-gray-900">
-                    {formatCurrency(value)}
-                  </span>
-                ),
-              },
-              { key: "memo", label: "메모", sortable: false, width: "35%" },
-              {
-                key: "actions",
-                label: "관리",
-                width: "20%",
-                render: (_, item: any) => (
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                      onClick={() => handleEditExpense(item)}
-                    >
-                      수정
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeleteExpense(item.id)}
-                    >
-                      삭제
-                    </Button>
-                  </div>
-                ),
-              },
-            ]}
-            loading={isLoadingList}
-            emptyMessage="등록된 지출 내역이 없습니다."
-          />
+          {isLoadingList ? (
+            <div className="space-y-4 p-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <Table
+              data={tableData}
+              columns={[
+                { key: "date", label: "날짜", sortable: true, width: "15%" },
+                {
+                  key: "itemName",
+                  label: "품목명",
+                  sortable: true,
+                  width: "20%",
+                },
+                {
+                  key: "amount",
+                  label: "금액",
+                  sortable: true,
+                  width: "15%",
+                  render: (value) => (
+                    <span className="font-semibold text-gray-900">
+                      {formatCurrency(value)}
+                    </span>
+                  ),
+                },
+                { key: "memo", label: "메모", sortable: false, width: "35%" },
+                {
+                  key: "actions",
+                  label: "관리",
+                  width: "20%",
+                  render: (_, item: any) => (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => handleEditExpense(item)}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDeleteExpense(item.id)}
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+              loading={false} // Skeleton으로 처리하므로 false로 설정
+              emptyMessage="등록된 지출 내역이 없습니다."
+            />
+          )}
         </TableScrollWrapper>
       </CardWithTable>
 

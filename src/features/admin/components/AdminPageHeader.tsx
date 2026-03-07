@@ -51,7 +51,8 @@ export function AdminPageHeader({ className }: AdminPageHeaderProps) {
             alt="로고"
             width={120}
             height={40}
-            className="h-10 w-auto"
+            className="h-10 w-[120px]"
+            priority
           />
         </Link>
       </div>

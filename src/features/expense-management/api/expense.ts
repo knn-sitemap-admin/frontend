@@ -20,27 +20,30 @@ export interface ExpenseItem {
 export async function getExpenseSummary(
   _filterQuery: ExpenseFilterQuery
 ): Promise<ExpenseSummary> {
-  const { data } = await api.get<{ data: ExpenseItem[] }>("/ledgers");
-  const ledgers = data.data;
+  const { data } = await api.get<{ data: any[] }>("/ledgers");
+  const ledgers = data.data || [];
 
   const now = new Date();
-  const currentMonth = now.getMonth();
+  const currentMonth = now.getMonth(); // 0-11
   const currentYear = now.getFullYear();
 
-  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-  const prevMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
+  const prevMonth = prevMonthDate.getMonth();
+  const prevMonthYear = prevMonthDate.getFullYear();
 
   const currentMonthAmount = ledgers
     .filter((l) => {
-      const d = new Date(l.date);
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      if (!l.entryDate) return false;
+      const [y, m] = l.entryDate.split("-").map(Number);
+      return y === currentYear && m - 1 === currentMonth;
     })
     .reduce((sum, l) => sum + Number(l.amount), 0);
 
   const previousMonthAmount = ledgers
     .filter((l) => {
-      const d = new Date(l.date);
-      return d.getFullYear() === prevMonthYear && d.getMonth() === prevMonth;
+      if (!l.entryDate) return false;
+      const [y, m] = l.entryDate.split("-").map(Number);
+      return y === prevMonthYear && m - 1 === prevMonth;
     })
     .reduce((sum, l) => sum + Number(l.amount), 0);
 
