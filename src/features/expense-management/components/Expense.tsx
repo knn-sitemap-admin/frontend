@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DataTablePageLayout,
   DataTablePageHeader,
@@ -17,7 +17,12 @@ import { Table } from "@/features/table";
 import { Button } from "@/components/atoms/Button/Button";
 import { Wallet, Calendar, Plus } from "lucide-react";
 import { formatCurrency } from "@/components/contract-management/utils/contractUtils";
-import { getExpenseSummary, getExpenseList } from "../api/expense";
+import {
+  getExpenseSummary,
+  getExpenseList,
+  createExpense,
+  deleteExpense,
+} from "../api/expense";
 import { ExpenseAddModal, type ExpenseFormData } from "./ExpenseAddModal";
 import {
   buildExpenseFilterQuery,
@@ -86,22 +91,53 @@ export function Expense() {
     [expenseList, filterQuery]
   );
 
+  const { mutate: createMutate } = useMutation({
+    mutationFn: createExpense,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expense-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-list"] });
+      toast({
+        title: "지출 등록 완료",
+        description: "지출 내역이 성공적으로 등록되었습니다.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "등록 실패",
+        description: "지출 내역 등록 중 오류가 발생했습니다.",
+      });
+    },
+  });
+
+  const { mutate: deleteMutate } = useMutation({
+    mutationFn: deleteExpense,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expense-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["expense-list"] });
+      toast({
+        title: "삭제 완료",
+        description: "지출 내역이 삭제되었습니다.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "삭제 실패",
+        description: "지출 내역 삭제 중 오류가 발생했습니다.",
+      });
+    },
+  });
+
   const handleAddExpense = async (data: ExpenseFormData) => {
-    const newItem = {
-      id: `exp-${Date.now()}`,
-      date: data.date,
-      itemName: data.itemName,
-      amount: data.amount,
-      memo: data.memo ?? "",
-    };
-    queryClient.setQueryData(["expense-list"], (prev: typeof expenseList) => [
-      ...(prev ?? []),
-      newItem,
-    ]);
-    toast({
-      title: "지출 등록 완료",
-      description: `${data.itemName} ${formatCurrency(data.amount)}가 등록되었습니다.`,
-    });
+    createMutate(data);
+    setAddModalOpen(false);
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    if (confirm("정말로 삭제하시겠습니까?")) {
+      deleteMutate(id);
+    }
   };
 
   if (error) {
@@ -179,7 +215,7 @@ export function Expense() {
           <Table
             data={tableData}
             columns={[
-              { key: "date", label: "날짜", sortable: true, width: "20%" },
+              { key: "date", label: "날짜", sortable: true, width: "15%" },
               {
                 key: "itemName",
                 label: "품목명",
@@ -190,14 +226,29 @@ export function Expense() {
                 key: "amount",
                 label: "금액",
                 sortable: true,
-                width: "20%",
+                width: "15%",
                 render: (value) => (
                   <span className="font-semibold text-gray-900">
                     {formatCurrency(value)}
                   </span>
                 ),
               },
-              { key: "memo", label: "메모", sortable: false, width: "40%" },
+              { key: "memo", label: "메모", sortable: false, width: "35%" },
+              {
+                key: "actions",
+                label: "관리",
+                width: "15%",
+                render: (_, item: any) => (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleDeleteExpense(item.id)}
+                  >
+                    삭제
+                  </Button>
+                ),
+              },
             ]}
             loading={isLoadingList}
             emptyMessage="등록된 지출 내역이 없습니다."
