@@ -68,6 +68,7 @@ const MyTeamPage = () => {
               members: Array<{
                 teamMemberId: string;
                 accountId: string;
+                credentialId: string;
                 name: string | null;
                 phone: string | null;
                 positionRank: string | null;

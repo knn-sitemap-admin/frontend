@@ -59,6 +59,7 @@ export async function getTeams(): Promise<CreateTeamResponse[]> {
 export type TeamMemberDetail = {
   teamMemberId: string;
   accountId: string;
+  credentialId: string;
   name: string | null;
   phone: string | null;
   positionRank: string | null;
