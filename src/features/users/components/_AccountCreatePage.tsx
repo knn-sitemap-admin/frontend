@@ -351,6 +351,7 @@ export default function AccountCreatePage({
           docUrlResidentAbstract: v.resident_extract_url || null,
           docUrlIdCard: v.id_photo_url || null,
           docUrlFamilyRelation: v.family_relation_url || null,
+          teamId: v.team?.teamId,
         },
       };
 

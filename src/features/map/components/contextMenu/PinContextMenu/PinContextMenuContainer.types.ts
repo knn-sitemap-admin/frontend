@@ -28,6 +28,7 @@ export type ReserveRequestPayload =
       /** 기존 예정 핀(서버/로컬)의 식별자 */
       visitId: string | number;
       dateISO?: string;
+      assigneeId?: number;
     } & { kind: "visit" })
   | ({
       /** 좌표로 바로 예약 리스트에 추가 */
@@ -37,6 +38,7 @@ export type ReserveRequestPayload =
       roadAddress?: string | null;
       jibunAddress?: string | null;
       dateISO?: string;
+      assigneeId?: number;
     } & { kind: "coords" });
 
 // 어떤 모드로 생성모달을 열었는지 구분용

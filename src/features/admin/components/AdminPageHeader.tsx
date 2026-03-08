@@ -23,6 +23,7 @@ export function AdminPageHeader({ className }: AdminPageHeaderProps) {
     { key: "accounts", label: "계정목록", href: "/admin/accounts" },
     { key: "contracts", label: "계약관리", href: "/admin/contracts" },
     { key: "performance", label: "실적확인", href: "/admin/performance" },
+    { key: "expense-management", label: "가계부", href: "/admin/expense-management" },
     { key: "notices", label: "공지사항", href: "/admin/notices" },
   ];
 
@@ -50,7 +51,8 @@ export function AdminPageHeader({ className }: AdminPageHeaderProps) {
             alt="로고"
             width={120}
             height={40}
-            className="h-10 w-auto"
+            className="h-10 w-[120px]"
+            priority
           />
         </Link>
       </div>

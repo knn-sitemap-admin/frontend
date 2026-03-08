@@ -11,7 +11,7 @@ import { buildAreaGroups } from "@/features/properties/lib/area";
 import type { CreatePinAreaGroupDto } from "@/features/properties/types/area-group-dto";
 import { PinKind } from "@/features/pins/types";
 
-import { toNum, toIntOrNullLocal, s } from "./numeric";
+import { toNum, toIntOrNullLocal, toNumOrNullLocal, s } from "./numeric";
 import { normalizeUnits } from "./normalizeUnits";
 import { buildOptionsForServer } from "./options";
 import { buildImages } from "./images";
@@ -43,6 +43,7 @@ export function buildCreatePayload(args: BuildArgs) {
 
     parkingGrade,
     parkingType,
+    parkingTypes,
     totalParkingSlots,
     completionDate,
 
@@ -65,6 +66,7 @@ export function buildCreatePayload(args: BuildArgs) {
     remainingHouseholds,
 
     buildingType,
+    buildingTypes,
     registrationTypeId,
 
     options,
@@ -166,7 +168,6 @@ export function buildCreatePayload(args: BuildArgs) {
     const src =
       Array.isArray(unitLines) && unitLines[idx] ? unitLines[idx] : ({} as any);
 
-    // 금액
     const rawMin =
       (src as any).primary ?? (src as any).minPrice ?? (src as any).min ?? null;
     const rawMax =
@@ -174,9 +175,9 @@ export function buildCreatePayload(args: BuildArgs) {
       (src as any).maxPrice ??
       (src as any).max ??
       null;
-
-    const minPrice = toIntOrNullLocal(rawMin);
-    const maxPrice = toIntOrNullLocal(rawMax);
+    /** 구조별 입력(백만원) → sanitizeUnits에서 무조건 × 1000000 적용 */
+    const minPrice = toNumOrNullLocal(rawMin);
+    const maxPrice = toNumOrNullLocal(rawMax);
 
     // 복층/테라스 → hasLoft/hasTerrace로 강제 매핑
     const rawLoft =
@@ -198,7 +199,7 @@ export function buildCreatePayload(args: BuildArgs) {
   // 옵션: 배열만 받아서 서버 DTO(CreatePinOptionsDto)에 맞게 변환
   //    - buildOptionsForServer 내부에서 extraOptionsText까지 구성
   const optionsForServerBase = buildOptionsForServer(options ?? []);
-  
+
   const optionsForServer: any = {
     ...optionsForServerBase,
     // Nullable Enum 4개 (별도 관리)
@@ -279,7 +280,16 @@ export function buildCreatePayload(args: BuildArgs) {
     ...(directions ? { directions } : {}),
 
     // 주차 유형: 값 있을 때만 전송 (trim 후)
-    ...(s(parkingType) ? { parkingType: s(parkingType) } : {}),
+    // 주차 유형: 배열 우선, 레거시 단일 값 폴백
+    ...(Array.isArray(parkingTypes) && parkingTypes.length > 0
+      ? {
+          parkingTypes: parkingTypes
+            .map((x) => String(x ?? "").trim())
+            .filter(Boolean),
+        }
+      : s(parkingType)
+      ? { parkingTypes: [s(parkingType)] }
+      : {}),
 
     // 총 주차 대수: null 제외(0 허용)
     ...(normalizedTotalParkingSlots === null
@@ -368,8 +378,16 @@ export function buildCreatePayload(args: BuildArgs) {
     areaSetTitle: baseAreaTitle,
     areaSetTitles: extraAreaTitles,
 
-    /* 분류/ID */
-    ...(s(buildingType) ? { buildingType: s(buildingType) } : {}),
+    /* 분류/ID: buildingTypes 배열 (다중선택) — "buildingTypes": ["APT", "OP"] */
+    ...(Array.isArray(buildingTypes) && buildingTypes.length > 0
+      ? {
+          buildingTypes: buildingTypes
+            .map((x) => String(x ?? "").trim())
+            .filter(Boolean),
+        }
+      : s(buildingType)
+        ? { buildingTypes: [s(buildingType)] }
+        : {}),
     ...(toNum(registrationTypeId) !== undefined
       ? { registrationTypeId: toNum(registrationTypeId)! }
       : {}),

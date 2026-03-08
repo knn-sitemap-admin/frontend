@@ -71,6 +71,8 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
 
   /** ✅ 주차유형: string | null 로 관리 */
   const [parkingType, setParkingType] = useState<string | null>(null);
+  /** ✅ 주차유형 다중 선택 */
+  const [parkingTypes, setParkingTypes] = useState<string[]>([]);
 
   const [totalParkingSlots, setTotalParkingSlots] = useState<string>("");
   const [completionDate, setCompletionDate] = useState("");
@@ -136,6 +138,8 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
 
   /** ✅ buildingType: initialData 기반으로 초기값 세팅 */
   const [buildingType, setBuildingType] = useState<BuildingType | null>(null);
+  /** ✅ buildingTypes 다중 선택 */
+  const [buildingTypes, setBuildingTypes] = useState<string[]>([]);
 
   /* ========== reset ========== */
   const reset = useCallback(() => {
@@ -156,6 +160,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
     setAspects(EMPTY_ASPECTS);
     setParkingGrade("");
     setParkingType(null);
+    setParkingTypes([]);
     setTotalParkingSlots("");
     setCompletionDate("");
     setSalePrice("");
@@ -192,6 +197,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
     setLivingRoomView(null);
     setUnitLines([]);
     setBuildingType(null);
+    setBuildingTypes([]);
     setRebateText("");
   }, [
     aspectsTouchedRef,
@@ -222,6 +228,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
     // 평가/주차
     setParkingGrade,
     setParkingType,
+    setParkingTypes,
     setTotalParkingSlots,
     setCompletionDate,
     setSalePrice,
@@ -250,6 +257,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
     // 유닛/빌딩
     setUnitLines,
     setBuildingType,
+    setBuildingTypes,
     setAspects,
     // 리베이트
     setRebateText,
@@ -298,6 +306,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       aspects,
       parkingGrade,
       parkingType,
+      parkingTypes,
       totalParkingSlots,
       completionDate,
       salePrice: salePriceRaw,
@@ -322,6 +331,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       livingRoomView,
       unitLines,
       buildingType,
+      buildingTypes,
       buildingGrade,
       aspectsTouched,
       rebateText,
@@ -344,6 +354,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       aspects,
       parkingGrade,
       parkingType,
+      parkingTypes,
       totalParkingSlots,
       completionDate,
       salePriceRaw,
@@ -368,6 +379,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       livingRoomView,
       unitLines,
       buildingType,
+      buildingTypes,
       buildingGrade,
       aspectsTouched,
       rebateText,
@@ -394,6 +406,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       setAspects,
       setParkingGrade,
       setParkingType,
+      setParkingTypes,
       setTotalParkingSlots,
       setCompletionDate,
       setSalePrice,
@@ -423,6 +436,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       removeLine,
       reset,
       setBuildingType,
+      setBuildingTypes,
       setBuildingGrade,
       setRebateText,
       // 🔥 HeaderForm용 alias

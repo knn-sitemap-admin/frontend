@@ -30,6 +30,9 @@ export type CreatePinDto = {
   pinDraftId?: number | string | null;
 
   completionDate?: string | null;
+  
+  /** @deprecated buildingTypes \ubc30\uc5f4\uc744 \uc0ac\uc6a9\ud558\uc138\uc694. \ub808\uac70\uc2dc \ud3f4\ubc31\uc6a9\uc73c\ub85c\ub9cc \uc720\uc9c0. */
+  // 레거시 폴백 (일부 오래된 데이터 대비) 경고용
   buildingType?: string | null;
 
   /** 단지/주택 수 */
@@ -48,6 +51,12 @@ export type CreatePinDto = {
 
   /** 주차유형 문자열 (백엔드 DTO에도 존재) */
   parkingType?: string | null;
+
+  /** 주차유형 배열 (다중 선택) — parkingTypes: ["직렬", "기계식"] */
+  parkingTypes?: string[];
+
+  /** 건물유형 배열 (다중 선택) — buildingTypes: ["APT", "OP"] */
+  buildingTypes?: string[];
 
   /** ✅ 서버 전달 시 "1"~"5" 문자열 또는 null 권장 (입력은 number|string|null 수용) */
   parkingGrade?: number | string | null;
@@ -86,6 +95,7 @@ export type CreatePinDto = {
   rebateText?: string | null;
 
   pinKind?: PinKind | null;
+  isCompleted?: boolean;
 };
 
 export type UpdatePinDto = Partial<CreatePinDto> & {
@@ -108,8 +118,10 @@ export type CreatePinDraftDto = {
   addressLine: string | null | undefined;
   name?: string | null;
 
-  /** 분양사무실 전화번호 */
+  /** 분양사무실 대표번호 */
   contactMainPhone?: string | null;
+  /** 분양사무실 추가번호(선택) — UI "추가번호 (선택)" ↔ contactSubPhone */
+  contactSubPhone?: string | null;
 };
 
 export type PinDraftDetail = {
@@ -119,6 +131,7 @@ export type PinDraftDetail = {
   addressLine: string | null;
   name?: string | null;
   contactMainPhone?: string | null;
+  contactSubPhone?: string | null;
 };
 
 export type DeletePinRes = {

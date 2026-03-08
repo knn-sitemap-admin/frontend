@@ -12,10 +12,10 @@ const DEV_FAKE_MODE = process.env.NEXT_PUBLIC_DEV_FAKE_MODE === "true";
 /* ────────────────────────────────────────────────────────────
    Axios 인스턴스 (배포/로컬 백엔드로 직접 요청)
    ──────────────────────────────────────────────────────────── */
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3050";
+const API_BASE = process.env.NEXT_PUBLIC_IS_DEV === "true" ? "http://localhost:3050" : (process.env.NEXT_PUBLIC_API_BASE || "");
 // 예: .env.local 에서
 // NEXT_PUBLIC_API_BASE="https://배포-백엔드-도메인"
-
+  
 export const api = axios.create({
   baseURL: API_BASE, // ✅ 항상 백엔드 주소 기준으로 요청
   withCredentials: true, // 세션 쿠키 포함
@@ -77,7 +77,7 @@ function keyOf(url: string, params?: any) {
 /* ────────────────────────────────────────────────────────────
    GET single-flight: 동일 url+params 병합 호출
    ──────────────────────────────────────────────────────────── */
-async function getOnce<T = any>(
+export async function getOnce<T = any>(
   url: string,
   config?: { params?: any; signal?: AbortSignal }
 ): Promise<AxiosResponse<T>> {

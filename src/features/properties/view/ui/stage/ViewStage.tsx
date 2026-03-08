@@ -29,7 +29,11 @@ import ViewActionsBar from "../parts/ViewActionsBar";
 import AreaSetsViewContainer from "../containers/AreaSetsViewContainer";
 import AspectsViewContainer from "../containers/AspectsViewContainer";
 import { useMe } from "@/shared/api/auth/auth";
-import { getFavoriteGroups, upsertFavoriteItem, deleteFavoriteItem } from "@/features/favorites/api/favorites";
+import {
+  getFavoriteGroups,
+  upsertFavoriteItem,
+  deleteFavoriteItem,
+} from "@/features/favorites/api/favorites";
 import FavGroupModal from "@/features/sidebar/components/FavGroupModal";
 import type { FavorateListItem } from "@/features/sidebar/types/sidebar";
 
@@ -88,8 +92,12 @@ export default function ViewStage({
   // ✅ 즐겨찾기 관련 상태
   const [favoriteGroups, setFavoriteGroups] = useState<FavorateListItem[]>([]);
   const [favModalOpen, setFavModalOpen] = useState(false);
-  const [favoriteIndex, setFavoriteIndex] = useState<Record<string, { groupId: string; itemId: string }>>({});
-  const favoriteIndexRef = useRef<Record<string, { groupId: string; itemId: string }>>({});
+  const [favoriteIndex, setFavoriteIndex] = useState<
+    Record<string, { groupId: string; itemId: string }>
+  >({});
+  const favoriteIndexRef = useRef<
+    Record<string, { groupId: string; itemId: string }>
+  >({});
   const pinId = useMemo(() => String(data?.id ?? "").trim(), [data?.id]);
   const isFavorited = useMemo(() => {
     return !!favoriteIndexRef.current[pinId];
@@ -100,7 +108,7 @@ export default function ViewStage({
     try {
       const groups = await getFavoriteGroups(true);
       const index: Record<string, { groupId: string; itemId: string }> = {};
-      
+
       groups.forEach((group) => {
         (group.items || []).forEach((item) => {
           index[item.pinId] = { groupId: group.id, itemId: item.itemId };
@@ -183,7 +191,9 @@ export default function ViewStage({
         await loadFavorites();
         toast({
           title: "즐겨찾기 추가 완료",
-          description: `${data?.title || "매물"}이(가) 즐겨찾기에 추가되었습니다.`,
+          description: `${
+            data?.title || "매물"
+          }이(가) 즐겨찾기에 추가되었습니다.`,
         });
         setFavModalOpen(false);
       } catch (error: any) {
@@ -195,7 +205,7 @@ export default function ViewStage({
         });
       }
     },
-    [pinId, data?.title, loadFavorites, toast]
+    [pinId, data?.title, loadFavorites, toast],
   );
 
   // 새 그룹 생성 및 추가
@@ -218,7 +228,9 @@ export default function ViewStage({
         await loadFavorites();
         toast({
           title: "즐겨찾기 추가 완료",
-          description: `${data?.title || "매물"}이(가) 즐겨찾기에 추가되었습니다.`,
+          description: `${
+            data?.title || "매물"
+          }이(가) 즐겨찾기에 추가되었습니다.`,
         });
         setFavModalOpen(false);
       } catch (error: any) {
@@ -230,13 +242,13 @@ export default function ViewStage({
         });
       }
     },
-    [pinId, data?.title, loadFavorites, toast]
+    [pinId, data?.title, loadFavorites, toast],
   );
 
   const hasData = !!data;
   const formInput = useMemo(
     () => ({ open: true, data: data ?? ({} as PropertyViewDetails) }),
-    [data]
+    [data],
   );
   const f = useViewForm(formInput);
 
@@ -256,14 +268,20 @@ export default function ViewStage({
     return fromView ?? fromForm ?? fromMetaRoot ?? fromRaw ?? null;
   }, [data, f, metaDetails]);
 
-  /** ✅ parkingType도 여러 소스에서 안전하게 합쳐서 사용 */
-  const parkingTypeResolved = useMemo(() => {
-    const fromForm = (f as any)?.parkingType;
-    const fromView = (data as any)?.parkingType;
-    const fromMetaRoot = (metaDetails as any)?.parkingType;
-    const fromRaw = (metaDetails as any)?.raw?.parkingType;
-
-    return fromForm ?? fromView ?? fromMetaRoot ?? fromRaw ?? null;
+  /** ✅ parkingTypes/parkingType 여러 소스에서 안전하게 합쳐서 사용 */
+  const parkingTypesResolved = useMemo(() => {
+    const fromForm = (f as any)?.parkingTypes;
+    const fromView = (data as any)?.parkingTypes;
+    const fromMetaRoot = (metaDetails as any)?.parkingTypes;
+    const fromRaw = (metaDetails as any)?.raw?.parkingTypes;
+    const arr = fromForm ?? fromView ?? fromMetaRoot ?? fromRaw;
+    if (Array.isArray(arr) && arr.length > 0) return arr;
+    const single =
+      (f as any)?.parkingType ??
+      (data as any)?.parkingType ??
+      (metaDetails as any)?.parkingType ??
+      (metaDetails as any)?.raw?.parkingType;
+    return single ? [single] : undefined;
   }, [f, data, metaDetails]);
 
   /** ✅ 옵션 직접입력(기타) 텍스트도 여러 소스에서 합쳐서 사용 */
@@ -321,7 +339,7 @@ export default function ViewStage({
       eat(e);
       onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   // ✨ 콘텐츠 패널에만 버블 단계 전파 차단 (포털 모드에서만 사용)
@@ -384,12 +402,12 @@ export default function ViewStage({
   const panelClass = cn(
     "bg-white shadow-xl overflow-hidden flex flex-col",
     "w-screen h-screen max-w-none max-h-none rounded-none",
-    "md:w-[1100px] md:max-w-[95vw] md:max-h-[92vh] md:rounded-2xl"
+    "md:w-[1100px] md:max-w-[95vw] md:max-h-[92vh] md:rounded-2xl",
   );
 
   const positionedPanelClass = cn(
     "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-    panelClass
+    panelClass,
   );
 
   if (loading && !hasData) {
@@ -470,7 +488,7 @@ export default function ViewStage({
               "flex-1 min_h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain",
               "px-4 py-4 md:px-5 md:py-4",
               "grid gap-4 md:gap-6",
-              "grid-cols-1 md:grid-cols-[300px_1fr]"
+              "grid-cols-1 md:grid-cols-[300px_1fr]",
             )}
           >
             <div className="space-y-4">
@@ -494,7 +512,8 @@ export default function ViewStage({
                 remainingHouseholds={f.remainingHouseholds}
               />
               <ParkingViewContainer
-                parkingType={parkingTypeResolved}
+                parkingType={parkingTypesResolved?.[0]}
+                parkingTypes={parkingTypesResolved}
                 totalParkingSlots={
                   (f as any).totalParkingSlots ??
                   (data as any)?.totalParkingSlots ??
@@ -543,7 +562,6 @@ export default function ViewStage({
                 publicMemo={isPublicMemoMode ? f.publicMemo : undefined}
                 secretMemo={!isPublicMemoMode ? f.secretMemo : undefined}
               />
-
               {/* 👇 생성자/답사자/수정자 메타 정보 (메모 밑) */}
               <MetaInfoContainer details={metaDetails} />
 

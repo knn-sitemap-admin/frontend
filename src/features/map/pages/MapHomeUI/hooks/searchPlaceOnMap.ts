@@ -18,6 +18,8 @@ import { getDisplayPinKind } from "@/features/pins/lib/getDisplayPinKind";
 import { distM } from "@/features/map/poi/lib/geometry";
 import { hideLabelsAround } from "@/features/map/engine/overlays/labelRegistry";
 
+import { isTooBroadKeyword, getBroadKeywordZoomLevel } from "@/features/map/shared/utils/isTooBroadKeyword";
+
 type SearchDeps = {
   kakaoSDK: any;
   mapInstance: any;
@@ -71,6 +73,29 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
   }
 
   onSubmitSearch?.(query);
+
+  // 0) 광역 키워드인 경우: 주소 검색만 수행하여 레벨 조정 후 바로 return (마커 및 상세메뉴 처리 안함)
+  if (isTooBroadKeyword(query)) {
+    const geocoder = new kakaoSDK.maps.services.Geocoder();
+    geocoder.addressSearch(query, (res: any[], status: string) => {
+      if (status === kakaoSDK.maps.services.Status.OK && res?.[0]) {
+        const r0 = res[0];
+        const lat = Number(r0.y);
+        const lng = Number(r0.x);
+        const coords = new kakaoSDK.maps.LatLng(lat, lng);
+        const zoomLevel = getBroadKeywordZoomLevel(query);
+        mapInstance.setCenter(coords);
+        mapInstance.setLevel(zoomLevel);
+        
+        // 광역일 때는 이전 임시 핀 제거 및 선택 해제 유지
+        clearTempMarkers?.();
+        onChangeHideLabelForId?.(undefined);
+      } else {
+        console.warn("[searchPlaceOnMap] failed to geo-locate broad keyword", query);
+      }
+    });
+    return;
+  }
 
   const setCenterOnly = (lat: number, lng: number) => {
     console.log("[searchPlaceOnMap] setCenterOnly", { lat, lng, query });
@@ -154,7 +179,7 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
 
       // ✅ 실제 매물핀
       (effectiveServerPoints ?? []).forEach((p: any) => {
-        const baseKind = mapBadgeToPinKind(p.badge);
+        const baseKind = mapBadgeToPinKind(p.badge, p.isCompleted);
         const displayKind = getDisplayPinKind(baseKind, p.ageType ?? null);
         const kind = (displayKind ?? baseKind ?? "1room") as PinKind;
 
@@ -298,7 +323,7 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
       return;
     }
 
-    // 🔹 근처에 실제 핀이 없으면 __search__ 임시핀을 만들고 메뉴 열기
+    // 🔹 근처에 실제 핀이 없으면 메뉴만 열기 (핀은 저장 시에만 생성)
     clearTempMarkers();
 
     lastSearchCenterRef.current = { lat, lng };
@@ -306,22 +331,13 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
     const id = "__search__";
 
     if (process.env.NODE_ENV !== "production") {
-      console.log("[searchPlaceOnMap] create __search__ marker", {
+      console.log("[searchPlaceOnMap] open menu only (no pin)", {
         id,
         lat,
         lng,
         label,
       });
     }
-
-    upsertDraftMarker({
-      id,
-      lat,
-      lng,
-      address: label ?? query,
-      source: "search",
-      kind: "question",
-    });
 
     const openMenu = () => {
       onOpenMenu?.({

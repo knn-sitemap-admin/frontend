@@ -6,7 +6,18 @@ export function useParkingForm(form: any) {
   return useMemo(
     () => ({
       parkingType: form.parkingType ?? null,
-      setParkingType: (v: string | null) => form.setParkingType(v ?? ""),
+      setParkingType: (v: string | null) => {
+        if (typeof form.setParkingType === "function") {
+          form.setParkingType(v);
+        }
+      },
+
+      parkingTypes: Array.isArray(form.parkingTypes) ? form.parkingTypes : [],
+      setParkingTypes: (v: string[]) => {
+        if (typeof form.setParkingTypes === "function") {
+          form.setParkingTypes(v);
+        }
+      },
 
       totalParkingSlots:
         form.totalParkingSlots == null ? null : String(form.totalParkingSlots),

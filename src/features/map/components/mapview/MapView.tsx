@@ -9,6 +9,8 @@ import React, {
 import useKakaoMap from "../../engine/hooks/useKakaoMap/useKakaoMap";
 import { useClustererWithLabels } from "../../engine/clusterer/useClustererWithLabels";
 import { useDistrictOverlay } from "../../engine/hooks/useDistrictOverlay";
+import { useRegionClusters } from "../../engine/clusterer/hooks/useRegionClusters";
+import { RegionClustererLayer } from "../../engine/clusterer/components/RegionClustererLayer";
 import type { MapViewProps } from "./mapView.types";
 import { PoiKind } from "../../engine/overlays/poiOverlays";
 import usePoiLayer from "../../poi/hooks/usePoiLayer";
@@ -32,7 +34,7 @@ export type MapViewHandle = {
   panTo: (p: { lat: number; lng: number }) => void;
 };
 
-const MapView = React.forwardRef<MapViewHandle, Props>(function MapView(
+const MapView = React.memo(React.forwardRef<MapViewHandle, Props>(function MapView(
   {
     appKey,
     center,
@@ -65,6 +67,7 @@ const MapView = React.forwardRef<MapViewHandle, Props>(function MapView(
     center,
     level,
     fitKoreaBounds: true,
+    maxLevel: 12, // 최대 축소 레벨 (1=가장 확대, 12=가장 축소)
     viewportDebounceMs: 500,
     onMapReady,
     onViewportChange, // 그대로 전달 (훅이 디바운스 처리)
@@ -81,6 +84,16 @@ const MapView = React.forwardRef<MapViewHandle, Props>(function MapView(
     }),
     [searchPlace, panTo]
   );
+
+  // 현재 지도 레벨 추적 (지역 클러스터링 용도)
+  const currentZoomLevel = map?.getLevel?.() ?? level;
+
+  // 지역별 클러스터링 계산 (V3 계층형: 레벨 9 이상 활성화)
+  const { isRegionClusteringActive, regionClusters } = useRegionClusters({
+    markers,
+    zoomLevel: currentZoomLevel,
+    triggerLevel: 9,
+  });
 
   // 마우스 클릭 화면 좌표 보관 (주소 모달 위치용)
   const lastClickPointRef = useRef({ x: 0, y: 0 });
@@ -157,7 +170,7 @@ const MapView = React.forwardRef<MapViewHandle, Props>(function MapView(
         try {
           map.setLevel(PIN_MENU_MAX_LEVEL);
         } catch {
-          /* noop */
+          /* 동작 없음 */
         }
       }
 
@@ -200,7 +213,19 @@ const MapView = React.forwardRef<MapViewHandle, Props>(function MapView(
     fitToMarkers,
     hideLabelForId,
     enableDebug: true,
+    // 지역 단위 클러스터링이 활성화되면 Kakao 기본 클러스터 등 개별 마커 숨김
+    forceHideAll: isRegionClusteringActive,
   });
+
+  const handleRegionClick = useCallback((regionName: string, centerPos: { lat: number, lng: number }) => {
+    if (!map) return;
+    const level = map.getLevel();
+    // V3 계층형 대응: 시/도(11+)에서는 10레벨(시군구 보임)로, 시/군/구(8-10)에서는 7레벨(마커 보임)로 줌인
+    const nextLevel = level >= 11 ? 10 : 7;
+    const moveLatLon = new kakao.maps.LatLng(centerPos.lat, centerPos.lng);
+    map.setLevel(nextLevel);
+    map.panTo(moveLatLon);
+  }, [map, kakao]);
 
   return (
     <div className="relative w-full h-full">
@@ -221,8 +246,18 @@ const MapView = React.forwardRef<MapViewHandle, Props>(function MapView(
           lastClickPointRef.current = { x: e.clientX, y: e.clientY };
         }}
       />
+      {isRegionClusteringActive && (
+        <React.Suspense fallback={null}>
+          <RegionClustererLayer
+            kakao={kakao!}
+            map={map!}
+            clusters={regionClusters}
+            onRegionClick={handleRegionClick}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
-});
+}));
 
 export default MapView;

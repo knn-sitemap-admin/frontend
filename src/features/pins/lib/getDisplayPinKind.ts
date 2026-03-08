@@ -11,6 +11,11 @@ export function getDisplayPinKind(
 ): PinKind | undefined {
   if (!basePinKind) return basePinKind;
 
+  // 입주완료나 답사예정은 구옥 전용 아이콘이 없으므로 접두사 제외
+  if (basePinKind === "completed" || basePinKind === "question") {
+    return basePinKind;
+  }
+
   // ageType이 OLD면 old- prefix 붙이기
   if (ageType === "OLD") {
     if (basePinKind.startsWith("old-")) return basePinKind;

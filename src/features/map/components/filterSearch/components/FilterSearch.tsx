@@ -10,6 +10,7 @@ import {
   formatNumberWithCommas,
   formatKoreanCurrency,
   convertPriceToWon,
+  convertSalePriceToWon,
 } from "../utils/formatters";
 
 import Portal from "@/components/Portal";
@@ -109,8 +110,8 @@ export default function FilterSearch({
   const areaMinLabel = `${formatNumberWithCommas(String(areaMinM2 ?? 0))}㎡`;
   const areaMaxLabel = `${formatNumberWithCommas(String(areaMaxM2 ?? 0))}㎡`;
 
-  const priceMinWon = convertPriceToWon(filters.priceMin);
-  const priceMaxWon = convertPriceToWon(filters.priceMax);
+  const priceMinWon = convertSalePriceToWon(filters.priceMin);
+  const priceMaxWon = convertSalePriceToWon(filters.priceMax);
   const priceMinLabel =
     filters.priceMin && filters.priceMin !== "0"
       ? formatKoreanCurrency(priceMinWon)

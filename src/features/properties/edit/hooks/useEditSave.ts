@@ -229,20 +229,30 @@ export function useEditSave({
         delete (dto as any).hasElevator;
       }
 
-      // 🔥 buildingType diff
-      const initialBuildingType: BuildingType | null =
-        (bridgedInitial as any)?.buildingType ??
-        (bridgedInitial as any)?.initialBuildingType ??
-        null;
-
-      const nextBuildingType = f.buildingType as BuildingType | null;
-
-      if (nextBuildingType === initialBuildingType) {
+      // 🔥 buildingTypes 배열 우선 (백엔드 배열 형식)
+      const btArr = (f as any).buildingTypes;
+      if (Array.isArray(btArr)) {
+        const initArr = (bridgedInitial as any)?.buildingTypes ?? [];
+        const same = JSON.stringify(btArr) === JSON.stringify(initArr);
+        if (same) {
+          delete (dto as any).buildingTypes;
+        }
+        // buildingType 은 레거시, 배열 사용 시 제거
         delete (dto as any).buildingType;
-      } else if (nextBuildingType != null) {
-        (dto as any).buildingType = nextBuildingType;
       } else {
-        delete (dto as any).buildingType;
+        const initialBuildingType: BuildingType | null =
+          (bridgedInitial as any)?.buildingType ??
+          (bridgedInitial as any)?.initialBuildingType ??
+          null;
+        const nextBuildingType = f.buildingType as BuildingType | null;
+        if (nextBuildingType === initialBuildingType) {
+          delete (dto as any).buildingType;
+        } else if (nextBuildingType != null) {
+          (dto as any).buildingTypes = [nextBuildingType];
+          delete (dto as any).buildingType;
+        } else {
+          delete (dto as any).buildingType;
+        }
       }
 
       // 🔥 특정 필드는 “현재 bridgedInitial 값과 같으면” 강제로 잘라낸다
@@ -269,6 +279,7 @@ export function useEditSave({
       removeIfSameAsInitial("name");
       removeIfSameAsInitial("hasElevator");
       removeIfSameAsInitial("buildingType");
+      removeIfSameAsInitial("buildingTypes");
       removeIfSameAsInitial("areaGroups");
       removeIfSameAsInitial("privateMemo");
 
@@ -367,17 +378,9 @@ export function useEditSave({
             String(a.title ?? "").localeCompare(String(b.title ?? ""))
         );
 
-      // 1) imageFolders에 서버 그룹 title을 덮어쓴 뷰용 스냅샷
-      const imageFoldersForPayload = (imageFolders ?? []).map(
-        (folder: any, idx: number) => {
-          const g = horizGroupsForView[idx];
-          const groupTitle = typeof g?.title === "string" ? g.title.trim() : "";
-
-          return {
-            ...folder,
-            title: groupTitle || folder?.title || "",
-          };
-        }
+      // 1) imageFolders는 ImageItem[][] 유지 (buildUpdatePayload가 for..of 로 순회)
+      const imageFoldersForPayload = (imageFolders ?? []).map((folder: any) =>
+        Array.isArray(folder) ? folder : []
       );
 
       // 2) 향/면적 등 현재 폼 스냅샷 얻기

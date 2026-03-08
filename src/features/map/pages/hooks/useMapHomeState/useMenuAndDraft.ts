@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { PropertyItem } from "@/features/properties/types/propertyItem";
 import type { LatLng } from "@/lib/geo/types";
 
@@ -20,6 +20,8 @@ type UseMenuAndDraftArgs = {
     pos: LatLng
   ) => Promise<{ road?: string | null; jibun?: string | null }>;
   panToWithOffset: (pos: LatLng, yOffset: number) => void;
+  /** 하단 메뉴 카드 높이 측정용 ref — 동적 pan 오프셋 계산용 */
+  bottomCardHeightRef?: React.RefObject<number>;
   /** 답사예정 등록/삭제 후 서버 핀을 다시 불러오는 함수 (usePinsMap.refetch) */
   refetchPins?: () => void;
 };
@@ -32,8 +34,16 @@ export function useMenuAndDraft({
   toast,
   resolveAddress,
   panToWithOffset,
+  bottomCardHeightRef,
   refetchPins,
 }: UseMenuAndDraftArgs) {
+  // 동적 pan 오프셋: 하단 메뉴 카드 높이/2, 없으면 기본값 120px
+  const calcPanOffset = useCallback(() => {
+    const h = bottomCardHeightRef?.current;
+    if (typeof h === 'number' && h > 0) return Math.round(h / 2);
+    return 120;
+  }, [bottomCardHeightRef]);
+
   // 라벨 숨김 (지금은 항상 null 로 관리)
   const [hideLabelForId, setHideLabelForId] = useState<string | null>(null);
   const onChangeHideLabelForId = useCallback((id: string | null) => {
@@ -137,7 +147,7 @@ export function useMenuAndDraft({
       }
 
       if (!opts?.skipPan) {
-        panToWithOffset(p, 180);
+        panToWithOffset(p, calcPanOffset());
       }
 
       requestAnimationFrame(() => {
@@ -194,7 +204,7 @@ export function useMenuAndDraft({
         });
       }
 
-      panToWithOffset(p, 180);
+      panToWithOffset(p, calcPanOffset());
 
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => resolve())
@@ -231,7 +241,7 @@ export function useMenuAndDraft({
         map.setLevel(targetLevel, { animate: true });
       }
 
-      panToWithOffset(p, 180);
+      panToWithOffset(p, calcPanOffset());
 
       if (opts?.openMenu) {
         await focusAndOpenAt(

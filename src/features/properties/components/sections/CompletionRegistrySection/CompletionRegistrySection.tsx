@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Field from "@/components/atoms/Field/Field";
 import { Input } from "@/components/atoms/Input/Input";
 import PillRadioGroup from "@/components/atoms/PillRadioGroup";
+import PillCheckboxGroup from "@/components/atoms/PillCheckboxGroup";
 import type {
   Grade,
   BuildingType,
@@ -19,13 +20,17 @@ type GradeLiteral = (typeof GRADES)[number];
 const UI_BUILDING_TYPES = ["주택", "APT", "OP", "도/생", "근/생"] as const;
 type UIBuildingType = (typeof UI_BUILDING_TYPES)[number];
 
-/** 라벨 ↔ 백엔드 enum 매핑 */
+/** 라벨 → 백엔드 enum (단일) */
 const mapLabelToBackend = (v?: UIBuildingType | null): BuildingType | null => {
   if (!v) return null;
   if (v === "근/생") return "근생";
   if (v === "도/생") return "도생";
   return v as unknown as BuildingType;
 };
+
+/** 라벨 배열 → 백엔드 배열 */
+const labelsToBackend = (arr: UIBuildingType[]): string[] =>
+  arr.map((v) => (v === "근/생" ? "근생" : v === "도/생" ? "도생" : v));
 
 const mapBackendToLabel = (v?: string | null): UIBuildingType | undefined => {
   if (!v) return undefined;
@@ -52,6 +57,11 @@ const mapBackendToLabel = (v?: string | null): UIBuildingType | undefined => {
 
   return undefined;
 };
+
+const backendToLabels = (arr?: (string | null)[] | null): UIBuildingType[] =>
+  (Array.isArray(arr) ? arr : [])
+    .map(mapBackendToLabel)
+    .filter((x): x is UIBuildingType => !!x);
 
 /** ───────── 유틸 ───────── */
 const toYmd = (s?: string | null) =>
@@ -88,6 +98,8 @@ export default function CompletionRegistrySection({
   setStructureGrade,
   buildingType,
   setBuildingType,
+  buildingTypes,
+  setBuildingTypes,
   elevator,
   setElevator,
   /** ✅ 답사예정 핀 여부 */
@@ -112,10 +124,9 @@ export default function CompletionRegistrySection({
     setLocalDate(toYmd(v));
   }, [localDate, setCompletionDate]);
 
-  /** ── 건물유형 (등기) ── */
-  const uiBuildingType = mapBackendToLabel(
-    (buildingType as BuildingType | null) ?? null
-  );
+  /** ── 건물유형 (등기) 다중 선택 ── */
+  const arr = buildingTypes ?? (buildingType ? [buildingType] : []);
+  const uiSelected = backendToLabels(arr);
 
   /** ── 최저실입 ── */
   const initialPrice = String(minRealMoveInCost ?? salePrice ?? "");
@@ -192,6 +203,9 @@ export default function CompletionRegistrySection({
       if (typeof setBuildingType === "function") {
         setBuildingType(null);
       }
+      if (typeof setBuildingTypes === "function") {
+        setBuildingTypes([]);
+      }
     }
 
     prevIsVisitRef.current = isVisitPlanPin;
@@ -201,6 +215,7 @@ export default function CompletionRegistrySection({
     setMinRealMoveInCost,
     setSalePrice,
     setBuildingType,
+    setBuildingTypes,
     setRebateText,
   ]);
 
@@ -257,15 +272,20 @@ export default function CompletionRegistrySection({
         </Field>
 
         <Field label="등기" align="center">
-          <PillRadioGroup
-            name="buildingType"
+          <PillCheckboxGroup
+            name="buildingTypes"
             options={UI_BUILDING_TYPES}
-            value={uiBuildingType}
-            onChange={(v) => {
-              const next = mapLabelToBackend(v as UIBuildingType);
-              setBuildingType?.(next);
+            value={uiSelected}
+            onChange={(next) => {
+              const backend = labelsToBackend(next);
+              if (setBuildingTypes) {
+                setBuildingTypes(backend);
+              } else {
+                setBuildingType?.(
+                  backend[0] ? (backend[0] as BuildingType) : null
+                );
+              }
             }}
-            allowUnset
           />
         </Field>
       </div>

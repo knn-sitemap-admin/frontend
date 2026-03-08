@@ -1,4 +1,4 @@
-import { api } from "@/shared/api/api";
+import { api, getOnce } from "@/shared/api/api";
 
 export type CreateTeamRequest = {
   name: string;
@@ -43,7 +43,7 @@ export async function createTeam(
 // DB에서 팀 목록 조회 API
 export async function getTeams(): Promise<CreateTeamResponse[]> {
   try {
-    const response = await api.get<{
+    const response = await getOnce<{
       message: string;
       data: CreateTeamResponse[];
     }>("/dashboard/accounts/teams");
@@ -59,6 +59,7 @@ export async function getTeams(): Promise<CreateTeamResponse[]> {
 export type TeamMemberDetail = {
   teamMemberId: string;
   accountId: string;
+  credentialId: string;
   name: string | null;
   phone: string | null;
   positionRank: string | null;

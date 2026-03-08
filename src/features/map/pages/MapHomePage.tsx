@@ -200,6 +200,17 @@ export default function MapHomePage() {
           null
         );
 
+      // 1️⃣ 즉각적인 낙관적 업데이트 (지연 0초)
+      const tempId = `temp-${Date.now()}`;
+      (s as any).upsertDraftMarker?.({
+        id: tempId,
+        lat: payload.lat,
+        lng: payload.lng,
+        title: payload.name || "답사예정",
+        addressLine,
+        draftState: "SCHEDULED",
+      });
+
       const { id: draftId } = await createPinDraft({
         lat: payload.lat,
         lng: payload.lng,
@@ -212,6 +223,9 @@ export default function MapHomePage() {
       if (draftId == null)
         throw new Error("Draft 생성에 실패했습니다. (id 없음)");
 
+      // 2️⃣ 임시 ID를 실제 ID로 교체
+      (s as any).replaceTempByRealId?.(tempId, draftId);
+
       await reserveVisitPlan(String(draftId), {
         reservedDate: payload.reservedDate ?? payload.dateISO,
         dateISO: payload.dateISO,
@@ -219,8 +233,6 @@ export default function MapHomePage() {
 
       try {
         (s as any).refetchPins?.({ draftState: "all" });
-        (s as any).reloadPins?.();
-        (s as any).onViewportChange?.(s.mapInstance);
       } catch {
         /* noop */
       }
@@ -259,6 +271,8 @@ export default function MapHomePage() {
       useSidebar: s.useSidebar,
       setUseSidebar: s.setUseSidebar,
       useDistrict: s.useDistrict,
+      distanceMeasureVisible: s.distanceMeasureVisible,
+      onToggleDistanceMeasure: s.toggleDistanceMeasure,
 
       poiKinds: s.poiKinds,
       onChangePoiKinds,
@@ -300,6 +314,7 @@ export default function MapHomePage() {
       onOpenMenu: handleOpenMenu,
       onChangeHideLabelForId,
       onReserveFromMenu,
+      deletePinLocally: s.deletePinLocally,
 
       createFromDraftId: s.createFromDraftId,
       createPinKind: (s as any).createPinKind ?? null,
@@ -307,6 +322,10 @@ export default function MapHomePage() {
 
       /** ✅ ModalsHost까지 전달할 draft numeric id */
       pinDraftId: (s as any).pinDraftId,
+      refetchPins: (s as any).refetchPins,
+
+      /** 하단 카드 높이 ref (동적 pan 오프셋용) */
+      bottomCardHeightRef: (s as any).bottomCardHeightRef,
     }),
     [
       KAKAO_MAP_KEY,

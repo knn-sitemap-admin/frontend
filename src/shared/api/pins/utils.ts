@@ -30,6 +30,13 @@ export const toIntOrNull = (v: any): number | null => {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 };
 
+/* 숫자 정규화: 소수 유지 (units minPrice/maxPrice 등). null/빈값 → null */
+export const toNumOrNull = (v: any): number | null => {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
 /* 🔐 parkingGrade 정규화(문자열로 보냄): 1~5 → "1".."5", null 유지, 그 외는 undefined(필드 제외) */
 export function normalizeParkingGradeStr(
   v: unknown,
@@ -201,7 +208,7 @@ export function sanitizeDirections(
   return out.length ? out : undefined;
 }
 
-/* ✅ areaGroups sanitize: 전용 min/max는 필수, 실제 min/max는 없으면 전용값으로 대체 */
+/* areaGroups sanitize: 전용 min/max는 필수, 실제 min/max는 없으면 전용값으로 대체 */
 export function sanitizeAreaGroups(
   list?: CreatePinAreaGroupDto[] | null
 ): CreatePinAreaGroupDto[] | undefined {
@@ -214,22 +221,22 @@ export function sanitizeAreaGroups(
     const title = String(g.title ?? "").trim();
     if (!title) return;
 
-    // ▶ 전용(㎡) — 필수
+    // 전용(㎡) — 필수
     const exMin = Number(g.exclusiveMinM2);
     const exMax = Number(g.exclusiveMaxM2);
     if (!Number.isFinite(exMin) || !Number.isFinite(exMax)) return;
     if (exMin > exMax) return; // 역전 방지 (같은 값 허용)
 
-    // ▶ 실제(㎡) — 필수 스펙: 없으면 전용값으로 대체
+    // 실제(㎡) — 선택 (미입력 시 null)
     const hasActMin =
       g.actualMinM2 != null && Number.isFinite(Number(g.actualMinM2));
     const hasActMax =
       g.actualMaxM2 != null && Number.isFinite(Number(g.actualMaxM2));
 
-    const actMin = hasActMin ? Number(g.actualMinM2) : exMin;
-    const actMax = hasActMax ? Number(g.actualMaxM2) : exMax;
+    const actMin = hasActMin ? Number(g.actualMinM2) : null;
+    const actMax = hasActMax ? Number(g.actualMaxM2) : null;
 
-    if (actMin > actMax) return; // 역전 방지 (같은 값 허용)
+    if (actMin != null && actMax != null && actMin > actMax) return; // 역전 방지 (같은 값 허용)
 
     out.push({
       title: title.slice(0, 50),
@@ -247,7 +254,7 @@ export function sanitizeAreaGroups(
   return out;
 }
 
-/* ✅ units sanitize: 정수/boolean 캐스팅 + 음수 0 가드, 빈배열 → [] */
+/* units sanitize: 정수/boolean 캐스팅 + 음수 0 가드, 빈배열 → [] */
 export function sanitizeUnits(
   list?: UnitsItemDto[] | null
 ): UnitsItemDto[] | undefined {
@@ -255,14 +262,18 @@ export function sanitizeUnits(
 
   const nz = (n: number | null) => (n != null && n < 0 ? 0 : n);
 
-  const mapped = list.map((u) => ({
-    rooms: nz(toIntOrNull(u?.rooms)),
-    baths: nz(toIntOrNull(u?.baths)),
-    hasLoft: !!u?.hasLoft,
-    hasTerrace: !!u?.hasTerrace,
-    minPrice: nz(toIntOrNull(u?.minPrice)),
-    maxPrice: nz(toIntOrNull(u?.maxPrice)),
-  }));
+  const mapped = list.map((u) => {
+    const minP = toNumOrNull(u?.minPrice);
+    const maxP = toNumOrNull(u?.maxPrice);
+    return {
+      rooms: nz(toIntOrNull(u?.rooms)),
+      baths: nz(toIntOrNull(u?.baths)),
+      hasLoft: !!u?.hasLoft,
+      hasTerrace: !!u?.hasTerrace,
+      minPrice: minP,
+      maxPrice: maxP,
+    };
+  });
 
   return mapped;
 }

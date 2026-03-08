@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 
 import { useSidebar as useSidebarCtx, Sidebar } from "@/features/sidebar";
 
@@ -33,9 +33,14 @@ import { TopRegion } from "./components/TopRegion";
 import usePlaceSearchOnMap from "./hooks/usePlaceSearchOnMap";
 import ContextMenuHost from "../../components/contextMenu/ContextMenuHost";
 import { AddressModal } from "../../components/AddressModal";
+import { MapDistanceMeasure } from "../../components/MapDistanceMeasure/MapDistanceMeasure";
 import { hideLabelsAround } from "../../engine/overlays/labelRegistry";
 import { useBounds } from "../../hooks/viewport/useBounds";
 import { useBoundsRaw } from "../../hooks/viewport/useBoundsRaw";
+import { type Bounds } from "../../shared/types/bounds.type";
+import { distM } from "../../poi/lib/geometry";
+import { Viewport } from "../hooks/useMapHomeState/mapHome.types";
+
 
 export function MapHomeUI(props: MapHomeUIProps) {
   const {
@@ -51,6 +56,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
     onSubmitSearch,
     useSidebar,
     setUseSidebar,
+    distanceMeasureVisible = false,
+    onToggleDistanceMeasure,
     poiKinds,
     onChangePoiKinds,
     menuOpen,
@@ -85,10 +92,16 @@ export function MapHomeUI(props: MapHomeUIProps) {
     closeView,
     /** ✅ 숫자로 내려오는 draft id */
     pinDraftId,
+    /** ✅ 부모(MapHomeState)에서 내려온 강제 리로드 */
+    refetchPins: refetchFromParent,
+    /** 하단 카드 높이 ref */
+    bottomCardHeightRef,
   } = props;
 
   const getBoundsLLB = useBounds(kakaoSDK, mapInstance);
   const getBoundsRaw = useBoundsRaw(kakaoSDK, mapInstance);
+
+  const [bounds, setBounds] = useState<(Bounds & { zoom: number }) | null>(null);
 
   // 🔭 로드뷰
   const {
@@ -124,6 +137,19 @@ export function MapHomeUI(props: MapHomeUIProps) {
     closeRoadview: close,
   });
 
+  // 하단 메뉴 카드 ref — ResizeObserver로 실제 높이 측정 (동적 pan 오프셋용)
+  const contextMenuWrapRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = contextMenuWrapRef.current;
+    if (!el || !bottomCardHeightRef) return;
+    const obs = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect?.height ?? 0;
+      (bottomCardHeightRef as React.MutableRefObject<number>).current = h;
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [bottomCardHeightRef]);
+
   // 지도 빈 곳 클릭 → 주소 모달 (클릭 위치에 띄움)
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [addressModalPosition, setAddressModalPosition] = useState<{
@@ -139,11 +165,15 @@ export function MapHomeUI(props: MapHomeUIProps) {
       pos: { lat: number; lng: number },
       point?: { x: number; y: number }
     ) => {
+      // 레벨 3 초과(약 500m 이상)면 주소 모달 안 열기 — 100m(레벨 3) 이하에서만 동작
+      const level = mapInstance?.getLevel?.();
+      if (typeof level === "number" && level > 3) return;
+
       setAddressModalPosition(pos);
       setAddressModalPoint(point ?? null);
       setAddressModalOpen(true);
     },
-    []
+    [mapInstance]
   );
 
   // 🔍 필터 검색 상태/로직 (API + bounds 맞추기)
@@ -168,7 +198,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
     effectiveServerDrafts,
     reloadPins, // ✅ /map 다시 치는 훅
   } = useViewportPinsForMapHome({
-    mapInstance,
+    bounds, // mapInstance 대신 bounds 전달
+    zoom: bounds?.zoom,
     filter: filter as MapMenuKey,
     searchRes,
   });
@@ -199,14 +230,14 @@ export function MapHomeUI(props: MapHomeUIProps) {
     upsertDraftMarker,
     replaceTempByRealId,
     handleSubmitSearch,
-    handleViewportChangeInternal,
+    clearSearchMarkers,
+    lastSearchCenterRef,
   } = usePlaceSearchOnMap({
     kakaoSDK,
     mapInstance,
     effectiveServerPoints,
     effectiveServerDrafts,
     onSubmitSearch,
-    onViewportChange,
     onOpenMenu: handleOpenMenuInternal,
     onChangeHideLabelForId,
     menuOpen,
@@ -214,6 +245,64 @@ export function MapHomeUI(props: MapHomeUIProps) {
     hideLabelForId: hideLabelForId ?? undefined,
     onMarkerClick,
   });
+
+  // --- 뷰포트 변경 처리 ---
+  const lastViewportRef = useRef<Viewport | null>(null);
+
+  const isSameViewport = (a: Viewport, b: Viewport) => {
+    if (!a || !b) return false;
+    const EPS = 1e-6;
+
+    const diff =
+      Math.abs(a.leftTop.lat - b.leftTop.lat) +
+      Math.abs(a.leftTop.lng - b.leftTop.lng) +
+      Math.abs(a.rightBottom.lat - b.rightBottom.lat) +
+      Math.abs(a.rightBottom.lng - b.rightBottom.lng);
+
+    return diff < EPS;
+  };
+
+  const handleViewportChange = useCallback((v: Viewport) => {
+    if (!v) return;
+
+    if (lastViewportRef.current && isSameViewport(lastViewportRef.current, v))
+      return;
+
+    lastViewportRef.current = v;
+
+    // 데이터 조회를 위한 영역(bounds) 업데이트
+    setBounds({
+      swLat: v.leftBottom.lat,
+      swLng: v.leftBottom.lng,
+      neLat: v.rightTop.lat,
+      neLng: v.rightTop.lng,
+      zoom: v.zoomLevel,
+    });
+
+    // usePlaceSearchOnMap의 기존 로직 유지
+    if (lastSearchCenterRef.current) {
+      const centerLat = (v.leftTop.lat + v.rightBottom.lat) / 2;
+      const centerLng = (v.leftTop.lng + v.rightBottom.lng) / 2;
+
+      const d = distM(
+        centerLat,
+        centerLng,
+        lastSearchCenterRef.current.lat,
+        lastSearchCenterRef.current.lng
+      );
+
+      const THRESHOLD_M = 300;
+      if (d > THRESHOLD_M) {
+        clearSearchMarkers();
+        lastSearchCenterRef.current = null;
+      }
+    }
+
+    // 기존 prop 호출 유지
+    onViewportChange?.(v);
+
+  }, [onViewportChange, clearSearchMarkers, lastSearchCenterRef]);
+  // --- 뷰포트 변경 처리 종료 ---
 
   // 서버핀 + 로컬 임시핀 merge
   const { mergedWithTempDraft, mergedMeta } = useMergedMarkers({
@@ -243,25 +332,17 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
   const toggleRoadview = useCallback(() => {
     if (roadviewVisible) {
+      // 로드뷰 패널 닫기 + 오버레이도 끄기
       close();
+      if (roadviewRoadOn) toggleRoadviewRoad();
       return;
     }
 
-    const anchor =
-      selectedPos ?? // 선택된 매물 위치
-      menuAnchor ?? // 컨텍스트 메뉴 앵커
-      draftPin ?? // 임시핀
-      (mapInstance?.getCenter
-        ? {
-            lat: mapInstance.getCenter().getLat(),
-            lng: mapInstance.getCenter().getLng(),
-          }
-        : null);
-
-    if (anchor) {
-      openAt(anchor, { face: anchor });
-    } else {
-      openAtCenter();
+    // 로드뷰 패널이 닫혀있을 때:
+    // 오버레이(파란 도로선)가 꺼져있으면 활성화만 하고 대기
+    // → 사용자가 파란 도로를 클릭하면 handleRoadviewClickOnMap에서 열림
+    if (!roadviewRoadOn) {
+      toggleRoadviewRoad();
     }
 
     if (isDistrictOn) {
@@ -270,12 +351,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
   }, [
     roadviewVisible,
     close,
-    openAt,
-    openAtCenter,
-    selectedPos,
-    menuAnchor,
-    draftPin,
-    mapInstance,
+    roadviewRoadOn,
+    toggleRoadviewRoad,
     isDistrictOn,
     handleSetDistrictOn,
   ]);
@@ -292,6 +369,58 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
   const activeMenu = (filter as MapMenuKey) ?? "all";
 
+  // --- 마커 컬링 (Slack Culling) ---
+  // 메모리에 캐시된 수천 개의 마커 중, 현재 가시 영역(+ 여유분) 내에 있는 것만 필터링합니다.
+  // 지도가 미세하게 움직일 때는 필터링을 다시 하지 않아 렌더링 성능을 확보합니다.
+  const [culledMarkers, setCulledMarkers] = useState<typeof mergedWithTempDraft>([]);
+  const lastCullingBoundsRef = useRef<typeof bounds>(null);
+
+  useEffect(() => {
+    if (!bounds) {
+      setCulledMarkers(mergedWithTempDraft);
+      return;
+    }
+
+    // 1) [V5 최적화] 지역 클러스터링 모드(줌 8 이상)일 때는 UI 단의 필터링을 생략(Bypass)합니다.
+    // 이를 통해 드래그 시 CPU 부하를 제거하고, 클러스터 숫자가 지역 전체 합계로 나오게 합니다.
+    if (bounds.zoom >= 8) {
+      setCulledMarkers(mergedWithTempDraft);
+      lastCullingBoundsRef.current = bounds;
+      return;
+    }
+
+    // 2) 일반 마커 모드(줌 7 이하)에서는 기존 Slack Culling 로직을 수행합니다.
+    const { swLat, swLng, neLat, neLng } = bounds;
+    const last = lastCullingBoundsRef.current;
+
+    const latSpan = neLat - swLat;
+    const lngSpan = neLng - swLng;
+
+    const shouldUpdate = !last ||
+      Math.abs(swLat - last.swLat) > latSpan * 0.05 ||
+      Math.abs(swLng - last.swLng) > lngSpan * 0.05 ||
+      Math.abs(latSpan - (last.neLat - last.swLat)) > latSpan * 0.1 ||
+      last.zoom >= 8; // 모드 전환 시 즉시 업데이트
+
+    if (shouldUpdate || culledMarkers.length === 0) {
+      const latMargin = latSpan * 0.1;
+      const lngMargin = lngSpan * 0.1;
+
+      const minLat = swLat - latMargin;
+      const maxLat = neLat + latMargin;
+      const minLng = swLng - lngMargin;
+      const maxLng = neLng + lngMargin;
+
+      const filtered = mergedWithTempDraft.filter((m) => {
+        const { lat, lng } = m.position;
+        return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
+      });
+
+      setCulledMarkers(filtered);
+      lastCullingBoundsRef.current = bounds;
+    }
+  }, [mergedWithTempDraft, bounds]);
+
   // ✅ 메뉴가 열려 있으면 menuTargetId 기준으로 라벨 숨김 강제
   const effectiveHideLabelForId = useMemo(() => {
     if (menuOpen && menuTargetId != null) {
@@ -300,11 +429,6 @@ export function MapHomeUI(props: MapHomeUIProps) {
     return hideLabelForId ?? undefined;
   }, [menuOpen, menuTargetId, hideLabelForId]);
 
-  const visibleMarkers = useMemo(
-    () => mergedWithTempDraft,
-    [mergedWithTempDraft]
-  );
-
   // 🔄 메뉴가 열린 상태에서 마커 세트가 바뀌면 앵커 주변 라벨 다시 숨기기
   useEffect(() => {
     if (!menuOpen || !menuAnchor) return;
@@ -312,13 +436,14 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
     try {
       hideLabelsAround(mapInstance, menuAnchor.lat, menuAnchor.lng, 56);
-    } catch (e) {}
-  }, [menuOpen, menuAnchor, visibleMarkers, kakaoSDK, mapInstance]);
+    } catch (e) { }
+  }, [menuOpen, menuAnchor, culledMarkers, kakaoSDK, mapInstance]);
 
   // 🔄 /map 다시 치도록 하는 함수: 이제는 훅의 reloadPins 사용
-  const refreshViewportPins = useCallback(() => {
-    reloadPins?.();
-  }, [reloadPins]);
+  const refreshViewportPins = useCallback(async () => {
+    await reloadPins?.();
+    await refetchFromParent?.({ draftState: "all" });
+  }, [reloadPins, refetchFromParent]);
 
   const {
     viewOpenLocal,
@@ -375,7 +500,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
         appKey={appKey}
         kakaoSDK={kakaoSDK}
         mapInstance={mapInstance}
-        markers={visibleMarkers}
+        markers={culledMarkers}
         fitAllOnce={didInit ? fitAllOnce : undefined}
         poiKinds={poiKinds}
         pinsLoading={pinsLoading || searchLoading}
@@ -387,11 +512,19 @@ export function MapHomeUI(props: MapHomeUIProps) {
         onOpenMenu={handleOpenMenuInternal}
         onChangeHideLabelForId={onChangeHideLabelForId}
         onMapReady={handleMapReady}
-        onViewportChange={handleViewportChangeInternal}
+        onViewportChange={handleViewportChange}
         isDistrictOn={isDistrictOn}
         showRoadviewOverlay={roadviewRoadOn}
         onRoadviewClick={roadviewRoadOn ? handleRoadviewClickOnMap : undefined}
-        onMapClick={handleMapClickForAddress}
+        onMapClick={
+          distanceMeasureVisible ? undefined : handleMapClickForAddress
+        }
+      />
+
+      <MapDistanceMeasure
+        visible={distanceMeasureVisible}
+        kakaoSDK={kakaoSDK}
+        mapInstance={mapInstance}
       />
 
       <AddressModal
@@ -400,40 +533,52 @@ export function MapHomeUI(props: MapHomeUIProps) {
         position={addressModalPosition}
         anchorPoint={addressModalPoint}
         kakaoSDK={kakaoSDK}
+        onCreateDraft={() => {
+          if (!addressModalPosition) return;
+          setAddressModalOpen(false); // 주소 모달 닫기
+          handleOpenMenuInternal({
+            position: addressModalPosition,
+            propertyId: "__draft__",
+            propertyTitle: "선택 위치",
+            pin: { kind: "question", isFav: false },
+          });
+        }}
       />
 
-      <ContextMenuHost
-        open={menuOpen}
-        kakaoSDK={kakaoSDK}
-        mapInstance={mapInstance}
-        menuAnchor={menuAnchor}
-        menuTargetId={menuTargetId}
-        menuTitle={menuTitle}
-        menuRoadAddr={menuRoadAddr}
-        menuJibunAddr={menuJibunAddr}
-        visibleMarkers={visibleMarkers}
-        mergedMeta={mergedMeta}
-        favById={favById}
-        siteReservations={siteReservations}
-        onCloseMenu={onCloseMenu}
-        onViewFromMenu={(id) => handleViewFromMenu(String(id))}
-        onCreateFromMenu={onCreateFromMenu}
-        onPlanFromMenu={onPlanFromMenu}
-        onReserveFromMenu={onReserveFromMenu}
-        onAddFav={onAddFav}
-        onChangeHideLabelForId={onChangeHideLabelForId}
-        upsertDraftMarker={(m) =>
-          upsertDraftMarker({
-            id: m.id,
-            lat: m.lat,
-            lng: m.lng,
-            address: m.address ?? null,
-            source: (m as any).source,
-            kind: (m as any).kind as PinKind | undefined,
-          })
-        }
-        refreshViewportPins={refreshViewportPins}
-      />
+      <div ref={contextMenuWrapRef}>
+        <ContextMenuHost
+          open={menuOpen}
+          kakaoSDK={kakaoSDK}
+          mapInstance={mapInstance}
+          menuAnchor={menuAnchor}
+          menuTargetId={menuTargetId}
+          menuTitle={menuTitle}
+          menuRoadAddr={menuRoadAddr}
+          menuJibunAddr={menuJibunAddr}
+          visibleMarkers={culledMarkers}
+          mergedMeta={mergedMeta}
+          favById={favById}
+          siteReservations={siteReservations}
+          onCloseMenu={onCloseMenu}
+          onViewFromMenu={(id) => handleViewFromMenu(String(id))}
+          onCreateFromMenu={onCreateFromMenu}
+          onPlanFromMenu={onPlanFromMenu}
+          onReserveFromMenu={onReserveFromMenu}
+          onAddFav={onAddFav}
+          onChangeHideLabelForId={onChangeHideLabelForId}
+          upsertDraftMarker={(m) =>
+            upsertDraftMarker({
+              id: m.id,
+              lat: m.lat,
+              lng: m.lng,
+              address: m.address ?? null,
+              source: (m as any).source,
+              kind: (m as any).kind as PinKind | undefined,
+            })
+          }
+          refreshViewportPins={refreshViewportPins}
+        />
+      </div>
 
       {/* 상단 검색 + 필터 + 토글 */}
       <TopRegion
@@ -452,6 +597,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
         onChangePoiKinds={onChangePoiKinds}
         roadviewVisible={roadviewVisible}
         onToggleRoadview={toggleRoadview}
+        distanceMeasureVisible={distanceMeasureVisible}
+        onToggleDistanceMeasure={onToggleDistanceMeasure ?? (() => { })}
         rightOpen={rightOpen}
         setRightOpen={handleSetRightOpen}
         sidebarOpen={useSidebar}
@@ -485,7 +632,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
               console.warn("[MapHomeUI] 현재 위치 가져오기 실패:", err);
             },
             {
-              enableHighAccuracy: false,
+              enableHighAccuracy: true,
               timeout: 5000,
               maximumAge: 60_000,
             }

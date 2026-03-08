@@ -54,6 +54,8 @@ export function useMergedMarkers(params: {
     pinKind?: PinKind | null;
     /** 🔹 서버에서 내려주는 신축/구옥 정보 */
     ageType?: "NEW" | "OLD" | null;
+    address?: string | null; // 🔹 추가: 주소
+    isCompleted?: boolean;
   }>;
   serverDrafts?: Array<{
     id: string | number;
@@ -63,6 +65,8 @@ export function useMergedMarkers(params: {
     lng: number;
     draftState?: "BEFORE" | "SCHEDULED";
     badge?: string | null;
+    address?: string | null; // 🔹 추가: 주소
+    isCompleted?: boolean;
   }>;
   menuOpen: boolean;
   menuAnchor?: { lat: number; lng: number } | null;
@@ -160,7 +164,7 @@ export function useMergedMarkers(params: {
       // 🔥 여기서 **항상 서버 응답 기준**으로 kind 결정
       const baseFromServer =
         (p.pinKind as PinKind | null | undefined) ??
-        (mapBadgeToPinKind(p.badge) as PinKind | null | undefined);
+        (mapBadgeToPinKind(p.badge, p.isCompleted) as PinKind | null | undefined);
 
       const baseKind: PinKind = (baseFromServer ?? "1room") as PinKind;
       const displayKind = getDisplayPinKind(baseKind, p.ageType ?? null);
@@ -175,6 +179,9 @@ export function useMergedMarkers(params: {
         title, // ✅ 주소/부제는 title 에만
         position: { lat: p.lat, lng: p.lng },
         kind, // ✅ 최신 badge/ageType 반영된 pinKind
+        address: (p as any).addressLine ?? p.address ?? undefined, // 🔹 지역 클러스터링을 위해 주소 추가
+        badge: p.badge,
+        isCompleted: p.isCompleted,
       };
     });
 
@@ -193,6 +200,9 @@ export function useMergedMarkers(params: {
         title: title || label,
         position: { lat: d.lat, lng: d.lng },
         kind,
+        address: (d as any).addressLine ?? d.address ?? undefined, // 🔹 지역 클러스터링을 위해 주소 추가
+        badge: d.badge,
+        isCompleted: d.isCompleted,
       };
     });
 
@@ -244,6 +254,11 @@ export function useMergedMarkers(params: {
       targetIdStr !== "__draft__" &&
       targetIdStr !== "__search__"
     ) {
+      return mergedMarkers;
+    }
+
+    // 🔹 검색(__search__)으로 연 메뉴는 핀 없음. 저장 시에만 핀 생성.
+    if (targetIdStr === "__search__") {
       return mergedMarkers;
     }
 
@@ -318,6 +333,7 @@ export function useMergedMarkers(params: {
         title: "선택 위치",
         position: { lat: menuAnchor.lat, lng: menuAnchor.lng },
         kind: "question" as PinKind,
+        address: undefined, // 임시핀은 주소 없음
       },
     ];
   }, [mergedMarkers, menuOpen, menuAnchor, menuTargetId]);

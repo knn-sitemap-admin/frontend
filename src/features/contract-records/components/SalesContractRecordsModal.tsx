@@ -73,8 +73,9 @@ const defaultData: SalesContractData = {
     vatStatus: "vat-included",
     totalBrokerageFee: 0,
     totalRebate: 0,
-    taxStatus: "taxable",
+    taxStatus: "tax-free",
     totalSupportAmount: 0,
+    supportCashAmount: 0,
     customerAccountNumber: "",
     customerBank: "",
     supportContent: "",
@@ -110,7 +111,7 @@ export function SalesContractRecordsModal({
   onDataChange,
 }: SalesContractViewModalProps) {
   const [data, setData] = useState<SalesContractData>(
-    initialData || defaultData
+    initialData || defaultData,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(!initialData); // 초기 데이터가 없으면 편집 모드 (신규 생성)
@@ -145,14 +146,21 @@ export function SalesContractRecordsModal({
         // 팀 목록 가져오기 (상태 코드 로깅용 api.get 사용)
         let teams: Array<{ id: number | string; name: string }> = [];
         try {
-          const teamsRes = await api.get<{ message: string; data: Array<{ id: number | string; name: string }> }>(
-            "/dashboard/accounts/teams"
-          );
+          const teamsRes = await api.get<{
+            message: string;
+            data: Array<{ id: number | string; name: string }>;
+          }>("/dashboard/accounts/teams");
           teams = teamsRes.data.data ?? [];
-          log("getTeams 요청: 성공", { status: teamsRes.status, 팀수: teams.length });
+          log("getTeams 요청: 성공", {
+            status: teamsRes.status,
+            팀수: teams.length,
+          });
         } catch (err: any) {
           const status = err?.response?.status;
-          log("getTeams 요청: 실패", { status: status ?? "network/기타", error: err?.message });
+          log("getTeams 요청: 실패", {
+            status: status ?? "network/기타",
+            error: err?.message,
+          });
           return [];
         }
 
@@ -169,15 +177,23 @@ export function SalesContractRecordsModal({
               data: {
                 id: string;
                 name: string;
-                members: Array<{ accountId: string; name: string | null }>;
+                members: Array<{
+                  accountId: string;
+                  name: string | null;
+                  positionRank?: string | null;
+                  teamRole?: "manager" | "staff" | null;
+                }>;
               };
             }>(`/dashboard/accounts/teams/${team.id}`);
 
             const status = teamDetailResponse.status;
-            log(`teams/${team.id} 요청: 성공`, { status: status ?? 200, 멤버수: teamDetailResponse.data.data.members.length });
+            log(`teams/${team.id} 요청: 성공`, {
+              status: status ?? 200,
+              멤버수: teamDetailResponse.data.data.members.length,
+            });
 
             const isMyTeam = teamDetailResponse.data.data.members.some(
-              (member) => String(member.accountId) === String(accountId)
+              (member) => String(member.accountId) === String(accountId),
             );
 
             if (isMyTeam) {
@@ -187,7 +203,10 @@ export function SalesContractRecordsModal({
             }
           } catch (err: any) {
             const status = err?.response?.status;
-            log(`teams/${team.id} 요청: 실패`, { status: status ?? "network/기타", error: err?.message });
+            log(`teams/${team.id} 요청: 실패`, {
+              status: status ?? "network/기타",
+              error: err?.message,
+            });
             continue;
           }
         }
@@ -196,7 +215,10 @@ export function SalesContractRecordsModal({
         return [];
       } catch (error: any) {
         const status = error?.response?.status;
-        console.error("[담당자목록] 팀 멤버 조회 실패", { status: status ?? "network/기타", error: error?.message });
+        console.error("[담당자목록] 팀 멤버 조회 실패", {
+          status: status ?? "network/기타",
+          error: error?.message,
+        });
         return [];
       }
     },
@@ -204,16 +226,35 @@ export function SalesContractRecordsModal({
     staleTime: 10 * 60 * 1000, // 10분
   });
 
-  // 초기 데이터가 변경되면 상태 업데이트
+  // 초기 데이터 또는 팀 멤버 목록이 바뀌면 staffAllocations에 isTeamLeader 반영
   useEffect(() => {
+    const enrichAllocations = (base: typeof defaultData) => {
+      if (!myTeamMembers || myTeamMembers.length === 0) return base;
+      return {
+        ...base,
+        staffAllocations: base.staffAllocations.map((staff) => {
+          if (staff.type !== "employee" || !staff.accountId) return staff;
+          const member = myTeamMembers.find(
+            (m) => String(m.accountId) === String(staff.accountId),
+          );
+          if (!member) return staff;
+          return {
+            ...staff,
+            positionRank: (member as any).positionRank ?? staff.positionRank,
+            isTeamLeader: (member as any).teamRole === "manager",
+          };
+        }),
+      };
+    };
+
     if (initialData) {
-      setData(initialData);
-      setIsEditMode(false); // 초기 데이터가 있으면 읽기 전용 모드
+      setData(enrichAllocations(initialData));
+      setIsEditMode(false);
     } else {
-      setData(defaultData);
-      setIsEditMode(true); // 초기 데이터가 없으면 편집 모드 (신규 생성)
+      setData(enrichAllocations(defaultData));
+      setIsEditMode(true);
     }
-  }, [initialData]);
+  }, [initialData, myTeamMembers]);
 
   // 프로필 정보가 로드되면 담당자 정보 자동 채우기
   useEffect(() => {
@@ -236,6 +277,25 @@ export function SalesContractRecordsModal({
     }
   };
 
+  // 재사용 가능한 내부 계산 함수
+  const recalculateTotal = (
+    financialInfo: SalesContractData["financialInfo"],
+    currentStatus: SalesContractData["status"],
+  ) => {
+    const isInvalidStatus =
+      currentStatus === "rejected" || currentStatus === "cancelled";
+    if (isInvalidStatus) return 0;
+
+    const brokerageAndVat = Number(financialInfo.totalBrokerageFee) || 0;
+    const totalRebate = Number(financialInfo.totalRebate) || 0;
+    const totalSupportAmount = Number(financialInfo.totalSupportAmount) || 0;
+    const supportCashAmount = Number(financialInfo.supportCashAmount) || 0;
+    const rebateMinusSupport =
+      totalRebate - totalSupportAmount;
+    const multiplier = financialInfo.taxStatus === "taxable" ? 0.967 : 1;
+    return brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
+  };
+
   // 인적 정보 변경 핸들러
   const handleCustomerInfoChange = (customerInfo: any) => {
     handleDataChange({ ...data, customerInfo });
@@ -255,7 +315,7 @@ export function SalesContractRecordsModal({
     // 부가세 자동 계산 (부가세 선택시 10%, 미부가세 선택시 0%)
     const vat = calculateVAT(
       financialInfo.brokerageFee,
-      financialInfo.vatStatus
+      financialInfo.vatStatus,
     );
 
     // 중개보수금합계 자동 계산
@@ -270,13 +330,11 @@ export function SalesContractRecordsModal({
     // 총 계산 자동 업데이트
     // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-지원금액)×0.967)
     // 비과세시 (중개수수료+부가세)+(리베이트-지원금액)
-    const brokerageAndVat = Number(totalBrokerageFee) || 0;
-    const totalRebate = Number(updatedFinancialInfo.totalRebate) || 0;
-    const totalSupportAmount =
-      Number(updatedFinancialInfo.totalSupportAmount) || 0;
-    const rebateMinusSupport = totalRebate - totalSupportAmount;
-    const multiplier = updatedFinancialInfo.taxStatus === "taxable" ? 0.967 : 1;
-    const totalCalculation = brokerageAndVat + rebateMinusSupport * multiplier;
+    // 부결, 해약 시에는 0 처리
+    const totalCalculation = recalculateTotal(
+      updatedFinancialInfo,
+      data.status,
+    );
 
     handleDataChange({
       ...data,
@@ -413,7 +471,9 @@ export function SalesContractRecordsModal({
       });
       return;
     }
-    if (data.totalCalculation <= 0) {
+    const isInvalidStatus =
+      data.status === "rejected" || data.status === "cancelled";
+    if (!isInvalidStatus && data.totalCalculation <= 0) {
       toast({
         title: "입력 오류",
         description: "계약금액을 확인해주세요.",
@@ -432,7 +492,7 @@ export function SalesContractRecordsModal({
         const contractId = Number(data.id);
         const updateRequest = transformSalesContractToUpdateRequest(
           data,
-          profile
+          profile,
         );
         console.log("변환된 수정 요청 데이터:", updateRequest);
         const result = await updateContract(contractId, updateRequest);
@@ -455,7 +515,7 @@ export function SalesContractRecordsModal({
         // 백엔드 API 형식으로 변환
         const requestData = transformSalesContractToCreateRequest(
           data,
-          profile
+          profile,
         );
         console.log("변환된 요청 데이터:", requestData);
 
@@ -714,13 +774,20 @@ export function SalesContractRecordsModal({
                     <Select
                       value={data.status || "ongoing"}
                       onValueChange={(value) => {
+                        const newStatus = value as
+                          | "ongoing"
+                          | "rejected"
+                          | "cancelled"
+                          | "completed";
+                        const newTotal = recalculateTotal(
+                          data.financialInfo,
+                          newStatus,
+                        );
+
                         handleDataChange({
                           ...data,
-                          status: value as
-                            | "ongoing"
-                            | "rejected"
-                            | "cancelled"
-                            | "completed",
+                          status: newStatus,
+                          totalCalculation: newTotal,
                         });
                       }}
                       disabled={!isEditMode}

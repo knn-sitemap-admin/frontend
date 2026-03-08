@@ -21,7 +21,6 @@ import { Label } from "@/components/atoms/Label/Label";
 import { TeamMemberDetail } from "../api/teams";
 import { useToast } from "@/hooks/use-toast";
 import { useReplaceTeamManager } from "../hooks/useTeams";
-import { getCredentialIdFromAccountId } from "@/features/users/api/account";
 
 interface AssignManagerModalProps {
   open: boolean;
@@ -62,8 +61,9 @@ export function AssignManagerModal({
     }
 
     try {
-      // accountId를 credentialId로 변환
-      const credentialId = await getCredentialIdFromAccountId(selectedAccountId);
+      // members 목록에서 선택된 계정의 credentialId를 직접 가져옴
+      const member = members.find((m) => m.accountId === selectedAccountId);
+      const credentialId = member?.credentialId;
 
       if (!credentialId) {
         toast({

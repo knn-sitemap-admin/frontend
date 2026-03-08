@@ -152,6 +152,8 @@ export function applyPatchToItem(
       // ✅ 건물유형 & 리베이트 텍스트도 반영
       buildingType:
         (patch as any).buildingType ?? (p as any).view?.buildingType,
+      buildingTypes:
+        (patch as any).buildingTypes ?? (p as any).view?.buildingTypes,
       rebateText: (patch as any).rebateText ?? (p as any).view?.rebateText,
     },
   };

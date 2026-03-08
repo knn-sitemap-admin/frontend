@@ -242,6 +242,33 @@ export function FinancialInfoSection({
               <span className="text-xs text-muted-foreground">원</span>
             </div>
           </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">현금지원금액</Label>
+            <div className="flex items-center gap-1">
+              <Input
+                type="text"
+                value={
+                  financialInfo.supportCashAmount === 0 || !financialInfo.supportCashAmount
+                    ? ""
+                    : formatNumberWithCommas(
+                        financialInfo.supportCashAmount.toString()
+                      )
+                }
+                onChange={(e) =>
+                  handleFormattedInputChange(
+                    "supportCashAmount",
+                    e.target.value
+                  )
+                }
+                className="h-7 text-xs min-w-24 w-auto"
+                placeholder="0"
+                readOnly={readOnly}
+                disabled={readOnly}
+              />
+              <span className="text-xs text-muted-foreground">원</span>
+            </div>
+          </div>
         </div>
 
         {/* 고객 계좌 정보 */}
@@ -282,7 +309,7 @@ export function FinancialInfoSection({
 
         {/* 지원 내용 */}
         <div className="mt-4 space-y-2">
-          <Label className="text-sm font-medium text-gray-700">지원 내용</Label>
+          <Label className="text-sm font-medium text-gray-700">지원 내용 ( 기타 입력 )</Label>
           <Textarea
             value={financialInfo.supportContent || ""}
             onChange={(e) =>
@@ -300,49 +327,55 @@ export function FinancialInfoSection({
           <div className="text-xs text-muted-foreground space-y-1">
             <div>계산 공식:</div>
             <div>
-              • (중개수수료 + 부가세) + ((리베이트 - 지원금액){" "}
-              {financialInfo.taxStatus === "taxable" ? "× 0.967" : ""}) ={""}
+              • (중개수수료 + 부가세) + ((리베이트 - 영수지원금){" "}
+              {financialInfo.taxStatus === "taxable" ? "× 0.967" : ""}) - 현금지원금 ={""}
               {(() => {
-                // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-지원금액)×0.967)
-                // 비과세시 (중개수수료+부가세)+(리베이트-지원금액)
+                // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금)×0.967)-현금지원금
+                // 비과세시 (중개수수료+부가세)+(리베이트-영수지원금)-현금지원금
                 const brokerageAndVat =
                   Number(financialInfo.totalBrokerageFee) || 0;
                 const totalRebate = Number(financialInfo.totalRebate) || 0;
                 const totalSupportAmount =
                   Number(financialInfo.totalSupportAmount) || 0;
-                const rebateMinusSupport = totalRebate - totalSupportAmount;
+                const supportCashAmount =
+                  Number(financialInfo.supportCashAmount) || 0;
+                const rebateMinusSupport =
+                  totalRebate - totalSupportAmount;
                 const multiplier =
                   financialInfo.taxStatus === "taxable" ? 0.967 : 1;
                 const finalTotal =
-                  brokerageAndVat + rebateMinusSupport * multiplier;
+                  brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
                 return formatCurrency(finalTotal);
               })()}
               원
             </div>
             <div className="text-xs text-gray-500">
               {financialInfo.taxStatus === "taxable"
-                ? "• 과세 적용 (리베이트-지원금액에 0.967 곱함)"
+                ? "• 과세 적용 (리베이트 - 지원금 총합에 0.967 곱함)"
                 : "• 비과세 적용"}
             </div>
           </div>
 
           {/* 총 합계 */}
           <div className="p-2 bg-primary/10 rounded-lg">
-            <div className="text-sm font-medium mb-1">총 합계</div>
+            <div className="text-sm font-medium mb-1">총 금액</div>
             <div className="text-lg font-bold text-primary">
               {(() => {
-                // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-지원금액)×0.967)
-                // 비과세시 (중개수수료+부가세)+(리베이트-지원금액)
+                // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금)×0.967)-현금지원금
+                // 비과세시 (중개수수료+부가세)+(리베이트-영수지원금)-현금지원금
                 const brokerageAndVat =
                   Number(financialInfo.totalBrokerageFee) || 0;
                 const totalRebate = Number(financialInfo.totalRebate) || 0;
                 const totalSupportAmount =
                   Number(financialInfo.totalSupportAmount) || 0;
-                const rebateMinusSupport = totalRebate - totalSupportAmount;
+                const supportCashAmount =
+                  Number(financialInfo.supportCashAmount) || 0;
+                const rebateMinusSupport =
+                  totalRebate - totalSupportAmount;
                 const multiplier =
                   financialInfo.taxStatus === "taxable" ? 0.967 : 1;
                 const finalTotal =
-                  brokerageAndVat + rebateMinusSupport * multiplier;
+                  brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
                 return formatCurrency(finalTotal);
               })()}
               원

@@ -104,6 +104,8 @@ type Normalized = {
   parkingGrade: StarStr;
   /** 주차 유형 (문자열) */
   parkingType: string | null;
+  /** 주차 유형 다중 선택 */
+  parkingTypes: string[];
   totalParkingSlots: string;
   completionDate: string;
   salePrice: string;
@@ -130,6 +132,8 @@ type Normalized = {
 
   aspects: AspectRowLite[];
   buildingType: BuildingType | null;
+  /** 건물유형 다중 선택 */
+  buildingTypes: string[];
 
   /** 리베이트(만원 단위 텍스트) */
   rebateText: string;
@@ -212,6 +216,14 @@ export function normalizeInitialData(initialData: any | null): Normalized {
   ).trim();
   const parkingType: string | null = rawParkingType ? rawParkingType : null;
 
+  const parkingTypes: string[] = Array.isArray(d.parkingTypes)
+    ? (d.parkingTypes as string[])
+        .map((x) => String(x ?? "").trim())
+        .filter(Boolean)
+    : parkingType
+    ? [parkingType]
+    : [];
+
   const totalParkingSlots = asStr(
     d.totalParkingSlots ?? d.parking?.totalSlots ?? ""
   );
@@ -227,18 +239,29 @@ export function normalizeInitialData(initialData: any | null): Normalized {
         ? String(listingStars)
         : "") as StarStr);
 
-  // ───────── units → unitLines ─────────
+  // ───────── units → unitLines (DB 값 ÷ 1000000 → 백만원 단위로 표시, 등록과 동일) ─────────
+  // toViewDetailsFromApi에서 이미 ×1,000,000이 적용된 값이므로 ÷1,000,000하여 백만원 단위로 폼에 세팅
+  const toMillionUnit = (v: any): string => {
+    if (v == null || v === "") return "";
+    const n = Number(v);
+    return Number.isFinite(n) ? String(Math.round(n / 1_000_000)) : "";
+  };
   const unitLines: UnitLine[] = Array.isArray(d.units)
-    ? (d.units as any[]).map((u) => ({
-        rooms: asNum(u?.rooms ?? 0, 0),
-        baths: asNum(u?.baths ?? 0, 0),
-        duplex: !!u?.hasLoft,
-        terrace: !!u?.hasTerrace,
-        primary:
-          u?.minPrice == null || u?.minPrice === "" ? "" : String(u.minPrice),
-        secondary:
-          u?.maxPrice == null || u?.maxPrice === "" ? "" : String(u.maxPrice),
-      }))
+    ? (d.units as any[]).map((u) => {
+        const minVal = u?.minPrice;
+        const maxVal = u?.maxPrice;
+        const primary = toMillionUnit(minVal);
+        const secondary = toMillionUnit(maxVal);
+        return {
+          rooms: asNum(u?.rooms ?? 0, 0),
+          baths: asNum(u?.baths ?? 0, 0),
+          duplex: !!u?.hasLoft,
+          terrace: !!u?.hasTerrace,
+          primary,
+          secondary,
+          note: u?.note ?? "",
+        };
+      })
     : Array.isArray(d.unitLines)
     ? (d.unitLines as UnitLine[])
     : [];
@@ -247,6 +270,13 @@ export function normalizeInitialData(initialData: any | null): Normalized {
   const buildingTypeSource = d.buildingType ?? d.propertyType ?? d.type ?? null;
   const buildingType: BuildingType | null =
     normalizeBuildingType(buildingTypeSource);
+
+  // building_type 무시, building_types만 사용
+  const buildingTypes: string[] = Array.isArray(d.buildingTypes)
+    ? (d.buildingTypes as string[])
+        .map((x) => String(x ?? "").trim())
+        .filter(Boolean)
+    : [];
 
   /* ───────── 옵션/직접입력/리베이트 ───────── */
 
@@ -257,10 +287,18 @@ export function normalizeInitialData(initialData: any | null): Normalized {
   if (Array.isArray(optionsFromServer)) {
     // 예전 형식이면 그대로 (뷰에서 Enum 필드가 포함될 수 있으므로 필터링)
     const enumLabels = new Set([
-      "주방구조 ㄱ", "주방구조 ㄷ", "주방구조 일자",
-      "냉장고자리 1", "냉장고자리 2", "냉장고자리 3",
-      "쇼파 2인", "쇼파 3인", "쇼파 4인",
-      "뻥뷰", "평범", "막힘",
+      "주방구조 ㄱ",
+      "주방구조 ㄷ",
+      "주방구조 일자",
+      "냉장고자리 1",
+      "냉장고자리 2",
+      "냉장고자리 3",
+      "쇼파 2인",
+      "쇼파 3인",
+      "쇼파 4인",
+      "뻥뷰",
+      "평범",
+      "막힘",
     ]);
     options = optionsFromServer
       .map(asStr)
@@ -323,6 +361,7 @@ export function normalizeInitialData(initialData: any | null): Normalized {
     listingStars,
     parkingGrade,
     parkingType,
+    parkingTypes,
     totalParkingSlots,
     completionDate: asYMD(d.completionDate),
     salePrice: asStr(d.salePrice ?? d.minRealMoveInCost),
@@ -356,6 +395,7 @@ export function normalizeInitialData(initialData: any | null): Normalized {
 
     // 빌딩 타입
     buildingType,
+    buildingTypes,
 
     // 리베이트
     rebateText,

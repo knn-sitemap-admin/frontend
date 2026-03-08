@@ -1,21 +1,24 @@
-"use client";
-
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MapMarker } from "@/features/map/shared/types/mapMarker.type";
 import {
-  getPinsInBounds,
-  type PinsMapPoint,
-  type PinsMapDraft,
+  getMapPins,
 } from "@/shared/api/pins/queries/getPinsInBounds";
+import { Bounds } from "../../shared/types/bounds.type";
 
-type UsePinsOpts = {
-  map?: kakao.maps.Map | null;
-  debounceMs?: number;
+export type UsePinsOpts = {
+  bounds: (Bounds & { zoom: number }) | null;
+  zoom?: number;
   draftState?: "before" | "scheduled" | "all";
   isNew?: boolean;
   isOld?: boolean;
+  favoriteOnly?: boolean;
 };
+
+// 세션별 글로벌 캐시: 전체 로딩(Full Fetch) 시 모든 데이터를 여기에 저장하여 중복 요청을 방지합니다.
+const globalPinCache = new Map<string, any>();
+const globalDraftCache = new Map<string, any>();
+let lastFilterHash: string | null = null;
+let isFetchingAll = false;
 
 /** 🔹 그룹핑/매칭 전용 키 (표시·클러스터 용) */
 function toPosKey(lat?: number, lng?: number) {
@@ -38,141 +41,115 @@ function pickDisplayName(p: any): string {
   );
 }
 
-/** PinsMapPoint/PinsMapDraft -> MapMarker 변환 */
+/** 데이터 객체를 MapMarker로 변환 */
 function pinPointToMarker(
-  p: PinsMapPoint | PinsMapDraft,
+  p: any,
   source: "pin" | "draft"
 ): MapMarker {
-  const lat = Number((p as any).lat ?? (p as any).y);
-  const lng = Number((p as any).lng ?? (p as any).x);
+  const lat = Number(p.lat);
+  const lng = Number(p.lng);
   const displayName = String(pickDisplayName(p)).trim();
 
   return {
-    id: String(p.id),
+    id: source === "draft" ? `__visit__${String(p.id)}` : String(p.id),
     position: { lat, lng },
     name: displayName,
     title: displayName,
-    address: (p as any).addressLine ?? (p as any).address ?? undefined,
-    kind: ((p as any).pinKind ?? "1room") as any,
+    address: p.addressLine ?? p.address ?? undefined,
+    kind: (p.pinKind ?? (source === "draft" ? "question" : "1room")) as any,
     source,
-    pinDraftId: (p as any).draftId ?? (p as any).pin_draft_id ?? undefined,
+    pinDraftId: p.draftId ?? p.pin_draft_id ?? undefined,
     posKey: toPosKey(lat, lng),
-    isNew: (p as any).isNew ?? undefined,
+    isNew: p.isNew ?? undefined,
   };
 }
 
-type BBox = {
-  swLat: number;
-  swLng: number;
-  neLat: number;
-  neLng: number;
-};
+/**
+ * usePinsFromViewport (전체 로딩 버전)
+ * - 복잡한 타일 로직을 제거하고, 필터가 바뀔 때마다 전체 데이터를 1회 가져옵니다.
+ * - 데이터 규모(1만 개 이하)를 고려하여 지도 이동 시 추가 네트워크 요청을 발생시키지 않습니다.
+ */
+export function usePinsFromViewport(opts: UsePinsOpts) {
+  const { isOld, isNew, favoriteOnly } = opts;
 
-/** 🔍 BBox 거의 같은지 비교 (애니메이션 중 미세한 오차 방지용) */
-function isSameBBox(a: BBox | null, b: BBox | null) {
-  if (!a || !b) return false;
-  const EPS = 1e-6;
-  return (
-    Math.abs(a.swLat - b.swLat) +
-      Math.abs(a.swLng - b.swLng) +
-      Math.abs(a.neLat - b.neLat) +
-      Math.abs(a.neLng - b.neLng) <
-    EPS
-  );
-}
-
-export function usePinsFromViewport({
-  map,
-  debounceMs = 250,
-  draftState,
-  isNew,
-  isOld,
-}: UsePinsOpts) {
   const [loading, setLoading] = useState(false);
-  const [points, setPoints] = useState<PinsMapPoint[]>([]);
-  const [drafts, setDrafts] = useState<PinsMapDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [updateTick, setUpdateTick] = useState(0); // 캐시 갱신 반영용
+  
+  // 현재 필터 상태를 해시화하여 변경 여부 판단
+  const filterHash = `${isOld}|${isNew}|${favoriteOnly}`;
 
-  // 🔒 마지막으로 호출한 BBox
-  const lastBBoxRef = useRef<BBox | null>(null);
-
-  // 필터 바뀌면 “다음 BBox는 무조건 다시 호출”
+  // 🔄 핀 데이터 로드 (전체 로딩 전략)
   useEffect(() => {
-    lastBBoxRef.current = null;
-  }, [draftState, isNew, isOld]);
+    // 이미 같은 필터로 데이터를 받았거나 현재 가져오는 중이면 스킵
+    if (lastFilterHash === filterHash || isFetchingAll) return;
 
-  const load = useCallback(async () => {
-    if (!map) return;
-    try {
-      // 현재 BBox 계산
-      const b = map.getBounds();
-      const curBBox: BBox = {
-        swLat: b.getSouthWest().getLat(),
-        swLng: b.getSouthWest().getLng(),
-        neLat: b.getNorthEast().getLat(),
-        neLng: b.getNorthEast().getLng(),
-      };
-
-      // ✅ 같은 BBox로 이미 호출했다면 /map 재요청 스킵
-      if (isSameBBox(lastBBoxRef.current, curBBox)) {
-        return;
-      }
-
-      lastBBoxRef.current = curBBox;
-
+    const loadAllPins = async () => {
+      isFetchingAll = true;
       setLoading(true);
       setError(null);
 
-      const res = await getPinsInBounds({
-        ...curBBox,
-        draftState,
-        ...(typeof isNew === "boolean" ? { isNew } : {}),
-        ...(typeof isOld === "boolean" ? { isOld } : {}),
-      });
+      try {
+        // 영역(bounds) 없이 요청을 보내 전 영역의 모든 핀을 가져옵니다.
+        const resp = await getMapPins({
+          isOld,
+          isNew,
+          favoriteOnly,
+        });
 
-      setPoints(res.points ?? []);
-      setDrafts(res.drafts ?? []);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to load pins");
-    } finally {
-      setLoading(false);
-    }
-  }, [map, draftState, isNew, isOld]);
+        if (resp) {
+          const { points = [], drafts = [] } = resp;
 
-  // 🔁 지도 idle 시 자동 로드 + 디바운스
-  useEffect(() => {
-    if (!map) return;
+          // 캐시 초기화 (필터가 바뀌었으므로)
+          globalPinCache.clear();
+          globalDraftCache.clear();
 
-    const schedule = () => {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(load, debounceMs);
+          // 새로운 데이터 캐싱
+          points.forEach((p: any) => globalPinCache.set(String(p.id), p));
+          drafts.forEach((d: any) => globalDraftCache.set(String(d.id), d));
+
+          lastFilterHash = filterHash;
+          setUpdateTick(t => t + 1);
+        }
+      } catch (err: any) {
+        console.error("Full Fetch Error:", err);
+        setError(err.message || "데이터를 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+        isFetchingAll = false;
+      }
     };
 
-    kakao.maps.event.addListener(map, "idle", schedule);
-    schedule();
+    loadAllPins();
+  }, [filterHash, isOld, isNew, favoriteOnly]);
 
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-      kakao.maps.event.removeListener(map, "idle", schedule);
+  // 🏠 캐시에서 데이터 추출
+  const { points, drafts, markers } = useMemo(() => {
+    const pList = Array.from(globalPinCache.values());
+    const dList = Array.from(globalDraftCache.values());
+    
+    const pMarkers = pList.map(p => pinPointToMarker(p, "pin"));
+    const dMarkers = dList.map(d => pinPointToMarker(d, "draft"));
+
+    return {
+      points: pList,
+      drafts: dList,
+      markers: [...pMarkers, ...dMarkers],
     };
-  }, [map, load, debounceMs]);
+  }, [updateTick, loading]);
 
-  const markers: MapMarker[] = useMemo(() => {
-    const live = (points ?? []).map((p) => pinPointToMarker(p, "pin"));
-    const draftMarkers = (drafts ?? []).map((p) =>
-      pinPointToMarker(p, "draft")
-    );
-    return [...live, ...draftMarkers];
-  }, [points, drafts]);
-
-  /** 🧼 수정 모달 등에서 강제로 다시 불러오고 싶을 때 사용
-   *  - lastBBoxRef를 초기화해서, 같은 BBox여도 다음 load에서 다시 GET 나가도록 함
-   */
+  // 강제 새로고침 (캐시 비우고 재요청)
   const reload = useCallback(() => {
-    lastBBoxRef.current = null;
-    return load();
-  }, [load]);
+    lastFilterHash = null;
+    setUpdateTick(t => t + 1);
+  }, []);
 
-  return { loading, points, drafts, markers, error, reload };
+  return {
+    points,
+    drafts,
+    markers,
+    loading,
+    error,
+    reload,
+  };
 }

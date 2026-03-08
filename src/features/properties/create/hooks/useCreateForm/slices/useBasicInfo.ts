@@ -20,6 +20,8 @@ export function useBasicInfo({ initialAddress }: { initialAddress?: string }) {
 
   /** ✅ 건물유형(백엔드 enum: "APT" | "OP" | "주택" | "근생") */
   const [buildingType, setBuildingType] = useState<string | null>(null);
+  /** ✅ 건물유형 다중 선택 — buildingTypes: ["APT", "OP"] */
+  const [buildingTypes, setBuildingTypes] = useState<string[]>([]);
 
   /** ✅ 준공일 기본값: 오늘(KST, YYYY-MM-DD) — 비워두는 정책이 아니라면 유지 */
   const [completionDate, setCompletionDate] = useState<string>(todayYmdKST());
@@ -44,6 +46,7 @@ export function useBasicInfo({ initialAddress }: { initialAddress?: string }) {
       roomNo,
       structure,
       buildingType,
+      buildingTypes,
       completionDate,
 
       // ⬇️ 추가
@@ -61,6 +64,7 @@ export function useBasicInfo({ initialAddress }: { initialAddress?: string }) {
       roomNo,
       structure,
       buildingType,
+      buildingTypes,
       completionDate,
       buildingGrade,
       isNew,
@@ -79,6 +83,7 @@ export function useBasicInfo({ initialAddress }: { initialAddress?: string }) {
       setRoomNo,
       setStructure,
       setBuildingType,
+      setBuildingTypes,
       setCompletionDate,
       setBuildingGrade,
     }),
@@ -92,6 +97,7 @@ export function useBasicInfo({ initialAddress }: { initialAddress?: string }) {
       setRoomNo,
       setStructure,
       setBuildingType,
+      setBuildingTypes,
       setCompletionDate,
       setBuildingGrade,
     ]

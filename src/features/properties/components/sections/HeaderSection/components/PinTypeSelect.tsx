@@ -1,45 +1,12 @@
 "use client";
 
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import SafeSelect from "@/shared/components/safe/SafeSelect";
-
-import oneRoom from "@/../public/pins/1room-pin.svg";
-import oneRoomTerrace from "@/../public/pins/1room-terrace-pin.svg";
-import twoRoom from "@/../public/pins/2room-pin.svg";
-import twoRoomTerrace from "@/../public/pins/2room-terrace-pin.svg";
-import threeRoom from "@/../public/pins/3room-pin.svg";
-import threeRoomTerrace from "@/../public/pins/3room-terrace-pin.svg";
-import fourRoom from "@/../public/pins/4room-pin.svg";
-import fourRoomTerrace from "@/../public/pins/4room-terrace-pin.svg";
-import completed from "@/../public/pins/completed-pin.svg";
-import duplex from "@/../public/pins/duplex-pin.svg";
-import duplexTerrace from "@/../public/pins/duplex-terrace-pin.svg"; // 🔹 복층 테라스
-import question from "@/../public/pins/question-pin.svg";
-import townhouse from "@/../public/pins/townhouse-pin.svg";
-
-// 🔹 구옥용 아이콘들
-import oldOneRoom from "@/../public/pins/old-1room-pin.svg";
-import oldOneRoomTerrace from "@/../public/pins/old-1room-terrace-pin.svg";
-
-import oldTwoRoom from "@/../public/pins/old-2room-pin.svg";
-import oldTwoRoomTerrace from "@/../public/pins/old-2room-terrace-pin.svg";
-
-import oldThreeRoom from "@/../public/pins/old-3room-pin.svg";
-import oldThreeRoomTerrace from "@/../public/pins/old-3room-terrace-pin.svg";
-
-import oldFourRoom from "@/../public/pins/old-4room-pin.svg";
-import oldFourRoomTerrace from "@/../public/pins/old-4room-terrace-pin.svg";
-
-import oldDuplex from "@/../public/pins/old-duplex-pin.svg";
-import oldDuplexTerrace from "@/../public/pins/old-duplex-terrace-pin.svg";
-
-import oldTownhouse from "@/../public/pins/old-townhouse-pin.svg";
 
 import type { PinKind } from "@/features/pins/types";
 import type { BuildingGrade } from "@/features/properties/types/building-grade";
-
-/** next/image src 타입 보조 */
-type IconSrc = string | StaticImageData;
+import { getDisplayPinKind } from "@/features/pins/lib/getDisplayPinKind";
+import { getPinUrl } from "@/features/pins/lib/assets";
 
 /**
  * 🔸 PinKind 타입과 1:1로 맞춘 기본 옵션
@@ -67,65 +34,10 @@ function isPinKind(v: unknown): v is PinKind {
   );
 }
 
-/** 🔧 신축/구옥에 따라 아이콘 선택 */
-function getIconFor(
-  value: PinKind,
-  buildingGrade: BuildingGrade | null
-): IconSrc {
-  const isOld = buildingGrade === "old";
-
-  switch (value) {
-    // 1룸 계열
-    case "1room":
-      return isOld ? oldOneRoom : oneRoom;
-    case "1room-terrace":
-      // 🔹 구옥: 1룸 테라스 전용 아이콘
-      return isOld ? oldOneRoomTerrace : oneRoomTerrace;
-
-    // 2룸 계열
-    case "2room":
-      return isOld ? oldTwoRoom : twoRoom;
-    case "2room-terrace":
-      // 🔹 구옥: 2룸 테라스 전용 아이콘
-      return isOld ? oldTwoRoomTerrace : twoRoomTerrace;
-
-    // 3룸 계열
-    case "3room":
-      return isOld ? oldThreeRoom : threeRoom;
-    case "3room-terrace":
-      // 🔹 구옥: 3룸 테라스 전용 아이콘
-      return isOld ? oldThreeRoomTerrace : threeRoomTerrace;
-
-    // 4룸 계열
-    case "4room":
-      return isOld ? oldFourRoom : fourRoom;
-    case "4room-terrace":
-      // 🔹 구옥: 4룸 테라스 전용 아이콘
-      return isOld ? oldFourRoomTerrace : fourRoomTerrace;
-
-    // 복층 계열
-    case "duplex":
-      return isOld ? oldDuplex : duplex;
-    case "duplex-terrace":
-      // 🔹 구옥: 복층 테라스 전용 아이콘
-      return isOld ? oldDuplexTerrace : duplexTerrace;
-
-    // 타운하우스
-    case "townhouse":
-      return isOld ? oldTownhouse : townhouse;
-
-    // 답사예정 / 입주완료는 공용
-    case "question":
-      return question;
-    case "completed":
-      return completed;
-  }
-}
-
-function PinOptionView({ icon, label }: { icon: IconSrc; label: string }) {
+function PinOptionView({ iconUrl, label }: { iconUrl: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <Image src={icon} alt="" width={18} height={18} />
+      <Image src={iconUrl} alt="" width={18} height={18} unoptimized />
       <span className="text-sm">{label}</span>
     </div>
   );
@@ -146,10 +58,14 @@ export default function PinTypeSelect({
   buildingGrade?: BuildingGrade | null;
 }) {
   const items = PIN_OPTION_BASE.map((o) => {
-    const icon = getIconFor(o.value as PinKind, buildingGrade ?? null);
+    // 🔧 신축/구옥에 따라 아이콘 결정
+    const ageType = buildingGrade === "old" ? "OLD" : "NEW";
+    const displayKind = getDisplayPinKind(o.value as PinKind, ageType);
+    const iconUrl = getPinUrl(displayKind as PinKind);
+
     return {
       value: o.value,
-      label: <PinOptionView icon={icon} label={o.label} />,
+      label: <PinOptionView iconUrl={iconUrl} label={o.label} />,
     };
   });
 

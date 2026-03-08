@@ -7,7 +7,7 @@ import MapView from "@/features/map/components/mapview/MapView";
 import { attachLabelRegistryGlobalHandlers } from "@/features/map/engine/overlays/labelRegistry";
 import { PoiKind } from "@/features/map/poi/lib/poiTypes";
 
-export default function MapCanvas(props: {
+const MapCanvas = React.memo(function MapCanvas(props: {
   appKey: string;
   kakaoSDK: any;
   mapInstance: any;
@@ -213,4 +213,6 @@ export default function MapCanvas(props: {
       )}
     </div>
   );
-}
+});
+
+export default MapCanvas;

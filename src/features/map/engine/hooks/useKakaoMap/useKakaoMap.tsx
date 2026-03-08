@@ -81,6 +81,9 @@ const useKakaoMap = ({
   // center prop → map.panTo 동기화 시 첫 호출은 스킵
   const firstCenterSyncRef = useRef(true);
 
+  // 자동 이동 중일 때 bound 제한 로직을 우회하기 위한 플래그
+  const isProgrammaticPanRef = useRef(false);
+
   // ─────────────────────────────────────────────
   // 1) 지도 초기화: 최초 1회만 생성
   // ─────────────────────────────────────────────
@@ -125,10 +128,6 @@ const useKakaoMap = ({
           geocoderRef.current = new kakao.maps.services.Geocoder();
           placesRef.current = new kakao.maps.services.Places();
 
-          // 축소 상한
-          maxLevelRef.current = maxLevel;
-          map.setMaxLevel(maxLevelRef.current);
-
           // 전국 보기 옵션 (초기 1회)
           if (fitKoreaBounds) {
             const bounds = new kakao.maps.LatLngBounds(
@@ -136,10 +135,11 @@ const useKakaoMap = ({
               new kakao.maps.LatLng(KOREA_BOUNDS.ne.lat, KOREA_BOUNDS.ne.lng)
             );
             map.setBounds(bounds);
-            const lv = map.getLevel();
-            maxLevelRef.current = lv;
-            map.setMaxLevel(lv);
           }
+
+          // 축소 상한 설정 (fitKoreaBounds와 별개로 설정)
+          maxLevelRef.current = maxLevel;
+          map.setMaxLevel(maxLevelRef.current);
 
           // 로드뷰 도로 오버레이 인스턴스만 생성 (초기엔 꺼둔다)
           try {
@@ -157,6 +157,8 @@ const useKakaoMap = ({
 
           // 현재 위치 중심 이동 옵션
           if (useCurrentLocationOnInit && "geolocation" in navigator) {
+            // 위치 가져오는 중임을 표시하여 center prop 동기화를 막음
+            (mapRef.current as any).__isLocating__ = true;
             navigator.geolocation.getCurrentPosition(
               (pos) => {
                 const { latitude, longitude } = pos.coords;
@@ -168,13 +170,21 @@ const useKakaoMap = ({
                   cur.getLat() !== next.getLat() ||
                   cur.getLng() !== next.getLng()
                 ) {
-                  map.setCenter(next);
+                  isProgrammaticPanRef.current = true;
                   const safeLevel = 4;
                   map.setLevel(safeLevel);
+                  map.setCenter(next);
+                  setTimeout(() => {
+                    isProgrammaticPanRef.current = false;
+                    (mapRef.current as any).__isLocating__ = false;
+                  }, 500);
+                } else {
+                  (mapRef.current as any).__isLocating__ = false;
                 }
               },
               (err) => {
                 console.warn("[useKakaoMap] 현재 위치 가져오기 실패:", err);
+                (mapRef.current as any).__isLocating__ = false;
 
                 // 위치 실패/거부 시 전국 한눈에 보기 강제
                 try {
@@ -197,7 +207,7 @@ const useKakaoMap = ({
                 }
               },
               {
-                enableHighAccuracy: false,
+                enableHighAccuracy: true,
                 timeout: 5000,
                 maximumAge: 60_000,
               }
@@ -249,12 +259,12 @@ const useKakaoMap = ({
           roadviewOverlayRef.current.setMap(null);
           roadviewOverlayRef.current = null;
         }
-      } catch {}
+      } catch { }
 
       // https 패치 옵저버 해제
       try {
         (map as any)?.__detachHttpsPatch__?.();
-      } catch {}
+      } catch { }
 
       if (
         typeof window !== "undefined" &&
@@ -321,6 +331,58 @@ const useKakaoMap = ({
       kakao.maps.event.addListener(map, "idle", onIdle);
       idleListenerRef.current = onIdle;
     }
+
+    // 영역 이탈 방지 + 축소 시 중앙 정렬 (viewport span 고려)
+    const restrictBounds = () => {
+      if (isProgrammaticPanRef.current) return;
+
+      const bounds = map.getBounds();
+      const center = map.getCenter();
+      if (!bounds || !center) return;
+
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+
+      const viewLatSpan = ne.getLat() - sw.getLat();
+      const viewLngSpan = ne.getLng() - sw.getLng();
+
+      let minLat = KOREA_BOUNDS.sw.lat + viewLatSpan / 2;
+      let maxLat = KOREA_BOUNDS.ne.lat - viewLatSpan / 2;
+      
+      let minLng = KOREA_BOUNDS.sw.lng + viewLngSpan / 2;
+      let maxLng = KOREA_BOUNDS.ne.lng - viewLngSpan / 2;
+
+      let lat = center.getLat();
+      let lng = center.getLng();
+      let isChanged = false;
+
+      // viewport가 KOREA_BOUNDS보다 크면 강하게 중심을 잡지 않고 여유를 줌으로써
+      // 상하 통통 튀는 무한 바운스를 방지합니다 (단, 한반도 좌표 안에만 머물게 느슨한 제한 추가)
+      if (minLat > maxLat) {
+        minLat = KOREA_BOUNDS.sw.lat;
+        maxLat = KOREA_BOUNDS.ne.lat;
+      }
+      if (minLng > maxLng) {
+        minLng = KOREA_BOUNDS.sw.lng;
+        maxLng = KOREA_BOUNDS.ne.lng;
+      }
+
+      if (lat < minLat - 0.0001) { lat = minLat; isChanged = true; }
+      else if (lat > maxLat + 0.0001) { lat = maxLat; isChanged = true; }
+
+      if (lng < minLng - 0.0001) { lng = minLng; isChanged = true; }
+      else if (lng > maxLng + 0.0001) { lng = maxLng; isChanged = true; }
+
+      if (isChanged) {
+        map.setCenter(new kakao.maps.LatLng(lat, lng));
+      }
+    };
+
+    kakao.maps.event.addListener(map, "center_changed", restrictBounds);
+
+    return () => {
+      kakao.maps.event.removeListener(map, "center_changed", restrictBounds);
+    };
   }, [ready, viewportDebounceMs, onViewportChangeRef]);
 
   // 3) center prop → panTo 동기화
@@ -328,6 +390,9 @@ const useKakaoMap = ({
     const kakao = kakaoRef.current;
     const map = mapRef.current;
     if (!ready || !kakao || !map || disableAutoPan) return;
+
+    // 위치 추적 중일 때는 center prop 동기화를 무시함
+    if ((map as any).__isLocating__) return;
 
     if (firstCenterSyncRef.current) {
       firstCenterSyncRef.current = false;
@@ -346,7 +411,11 @@ const useKakaoMap = ({
     }
 
     const raf = requestAnimationFrame(() => {
+      isProgrammaticPanRef.current = true;
       map.panTo(next);
+      setTimeout(() => {
+        isProgrammaticPanRef.current = false;
+      }, 500);
     });
     return () => cancelAnimationFrame(raf);
   }, [center.lat, center.lng, disableAutoPan, ready]);
@@ -381,7 +450,11 @@ const useKakaoMap = ({
       cur.getLat() !== next.getLat() ||
       cur.getLng() !== next.getLng()
     ) {
+      isProgrammaticPanRef.current = true;
       map.panTo(next);
+      setTimeout(() => {
+        isProgrammaticPanRef.current = false;
+      }, 500);
     }
   }, []);
 
@@ -391,7 +464,11 @@ const useKakaoMap = ({
     if (!kakao || !map || !points?.length) return;
     const b = new kakao.maps.LatLngBounds();
     points.forEach((p) => b.extend(new kakao.maps.LatLng(p.lat, p.lng)));
+    isProgrammaticPanRef.current = true;
     map.setBounds(b);
+    setTimeout(() => {
+      isProgrammaticPanRef.current = false;
+    }, 500);
   }, []);
 
   const setMaxLevel = useCallback((maxLv: number) => {

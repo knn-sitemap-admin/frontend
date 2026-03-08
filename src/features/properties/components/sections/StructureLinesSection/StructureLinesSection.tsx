@@ -74,9 +74,12 @@ export default function StructureLinesSection({
               gap-x-2 gap-y-1 md:gap-x-2
               grid-cols-[44px_max-content_max-content_minmax(0,1fr)_40px]
               md:grid-cols-[64px_max-content_max-content_minmax(240px,1fr)_40px]
+              pb-2 border-b border-gray-100 last:border-0 last:pb-0
             `}
           >
-            {/* 구조 */}
+            {/* 첫 번째 줄 (구조, 복층, 테라스, 가격, 삭제) */}
+            <div className="col-span-full grid grid-cols-subgrid items-center">
+              {/* 구조 */}
             <Input
               value={`${line.rooms || ""}/${line.baths || ""}`}
               onChange={(e) => {
@@ -133,7 +136,7 @@ export default function StructureLinesSection({
                   aria-required="true"
                 />
                 <span className="text-[11px] md:text-xs text-gray-500 shrink-0 leading-none">
-                  만원
+                  백만원
                 </span>
               </div>
 
@@ -154,7 +157,7 @@ export default function StructureLinesSection({
                   aria-required="true"
                 />
                 <span className="text-[11px] md:text-xs text-gray-500 shrink-0 leading-none">
-                  만원
+                  백만원
                 </span>
               </div>
             </div>
@@ -170,6 +173,17 @@ export default function StructureLinesSection({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
+            </div>
+
+            {/* 구조 메모 (새 줄 전체) */}
+            <div className="col-span-full mt-1">
+              <Input
+                value={line.note || ""}
+                onChange={(e) => onUpdate(idx, { note: e.target.value })}
+                placeholder="해당 구조에 대한 특이사항 입력 (예: 확장, 근생, 대물 등의 구조적 특이성 메모)"
+                className="h-8 md:h-9 text-xs"
+              />
+            </div>
           </div>
         ))}
       </div>

@@ -24,6 +24,7 @@ export function normalizeUnits(lines: UnitLine[] | undefined | null) {
 
     if (u.type !== undefined) out.type = s(u.type);
     if (u.label !== undefined) out.label = s(u.label);
+    if (u.note !== undefined) out.note = s(u.note);
 
     return out;
   });

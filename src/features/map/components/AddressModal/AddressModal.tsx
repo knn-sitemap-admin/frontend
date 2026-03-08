@@ -12,6 +12,8 @@ export type AddressModalProps = {
   /** 마우스 클릭 화면 좌표 (있으면 이 위치 기준 우측 대각선 위에 모달 표시) */
   anchorPoint?: { x: number; y: number } | null;
   kakaoSDK: any;
+  /** 임시 핀 생성 이벤트 */
+  onCreateDraft?: () => void;
 };
 
 /** 클릭 위치 기준 우측 대각선 위로 배치 (마진 없이) */
@@ -24,6 +26,7 @@ export function AddressModal({
   position,
   anchorPoint,
   kakaoSDK,
+  onCreateDraft,
 }: AddressModalProps) {
   const [road, setRoad] = React.useState<string | null>(null);
   const [jibun, setJibun] = React.useState<string | null>(null);
@@ -115,6 +118,17 @@ export function AddressModal({
               )}
             </div>
           )}
+          
+          <button
+            type="button"
+            className="mt-2 w-full rounded bg-black px-2 py-1.5 text-[11px] font-medium text-white hover:bg-gray-800 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateDraft?.();
+            }}
+          >
+            여기에 임시핀 생성
+          </button>
         </div>
       </div>
     </div>

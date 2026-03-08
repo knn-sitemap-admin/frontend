@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction, RefObject } from "react";
 import { PropertyItem } from "@/features/properties/types/propertyItem";
 import { LatLng } from "@/lib/geo/types";
 import { CreatePayload } from "@/features/properties/types/property-dto";
@@ -42,6 +42,9 @@ export type MapHomeUIProps = {
   useSidebar: boolean;
   setUseSidebar: Dispatch<SetStateAction<boolean>>;
   useDistrict: boolean;
+  /** 거리재기 도구 켜기/끄기 */
+  distanceMeasureVisible?: boolean;
+  onToggleDistanceMeasure?: () => void;
 
   // ⭐ POI
   poiKinds: ReadonlyArray<PoiKind>;
@@ -143,4 +146,10 @@ export type MapHomeUIProps = {
 
   /** ✅ pin-drafts/{id} 조회용 numeric id */
   pinDraftId?: number;
+
+  /** ✅ 부모(MapHomeState) 강제 갱신용 */
+  refetchPins?: (args?: { draftState?: "all" | "before" | "scheduled" }) => void | Promise<void>;
+
+  /** 하단 메뉴 카드 높이 측정용 ref — 동적 pan 오프셋 계산용 */
+  bottomCardHeightRef?: React.RefObject<number>;
 };

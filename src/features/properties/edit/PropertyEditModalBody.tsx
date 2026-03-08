@@ -144,7 +144,7 @@ export default function PropertyEditModalBody({
     }
 
     const initPinKind =
-      src?.pinKind ?? (src?.badge ? mapBadgeToPinKind(src.badge) : undefined);
+      src?.pinKind ?? (src?.badge ? mapBadgeToPinKind(src.badge, src.isCompleted) : undefined);
 
     const out: any = {
       ...src,
@@ -399,7 +399,7 @@ export default function PropertyEditModalBody({
     const src = bridgedInitial as any;
     const initialLabel = (src?.title ?? src?.name ?? "").trim();
     const initialPinKind =
-      src?.pinKind ?? (src?.badge ? mapBadgeToPinKind(src.badge) : undefined);
+      src?.pinKind ?? (src?.badge ? mapBadgeToPinKind(src.badge, src.isCompleted) : undefined);
 
     initialVisualRef.current = {
       label: initialLabel,

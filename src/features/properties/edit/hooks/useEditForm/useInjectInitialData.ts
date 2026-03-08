@@ -25,6 +25,8 @@ export type InitialForPatch = {
   /** ✅ diff 에서 직접 쓰는 키들 */
   hasElevator?: boolean | null;
   buildingType?: BuildingType | null;
+  buildingTypes?: string[];
+  parkingTypes?: string[];
 
   /** ✅ 참고/디버깅용(초기 상태 보존) */
   initialHasElevator?: boolean | null;
@@ -76,6 +78,8 @@ export function useInjectInitialData({
     unitLines: [],
     hasElevator: null,
     buildingType: null,
+    buildingTypes: [],
+    parkingTypes: [],
     initialHasElevator: null,
     initialBuildingType: null,
   });
@@ -115,6 +119,11 @@ export function useInjectInitialData({
       (normalized as any).parkingType != null
         ? (normalized as any).parkingType
         : null
+    );
+    api.setParkingTypes?.(
+      Array.isArray((normalized as any).parkingTypes)
+        ? (normalized as any).parkingTypes
+        : []
     );
 
     api.setTotalParkingSlots(
@@ -351,6 +360,12 @@ export function useInjectInitialData({
       api.setBuildingType(resolvedBt);
     }
 
+    api.setBuildingTypes?.(
+      Array.isArray((normalized as any).buildingTypes)
+        ? (normalized as any).buildingTypes
+        : []
+    );
+
     // 🔥 initialForPatch 스냅샷 (buildUpdatePayload 에서 diff 기준으로 사용)
     const initialHasElevator: boolean | null =
       (normalized as any).hasElevator ??
@@ -378,6 +393,8 @@ export function useInjectInitialData({
       // ✅ buildUpdatePayload 가 직접 참조하는 키
       hasElevator: initialHasElevator,
       buildingType: initialBuildingType,
+      buildingTypes: (normalized as any).buildingTypes ?? [],
+      parkingTypes: (normalized as any).parkingTypes ?? [],
 
       // ✅ 참고용(이름은 그대로 유지)
       initialHasElevator: initialHasElevator,

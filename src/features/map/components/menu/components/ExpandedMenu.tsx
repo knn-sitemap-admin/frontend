@@ -21,6 +21,7 @@ import type { MapMenuKey } from "../types/mapMenu.types";
 import { FilterSection } from "./FilterSection";
 import RoadviewToggleButton from "./RoadviewToggleButton";
 import DistrictToggleButton from "./DistrictToggleButton";
+import DistanceMeasureToggleButton from "./DistanceMeasureToggleButton";
 import { POI_LABEL } from "../../../engine/overlays/poiOverlays";
 import { PoiKind } from "@/features/map/poi/lib/poiTypes";
 import {
@@ -50,7 +51,12 @@ interface ExpandedMenuProps {
 
   // 로드뷰
   roadviewVisible: boolean;
+  roadviewRoadOn: boolean;
   onToggleRoadview: () => void;
+
+  // 거리재기
+  distanceMeasureVisible: boolean;
+  onToggleDistanceMeasure: () => void;
 }
 
 export type PoiCategoryKey = (typeof POI_CATEGORY_KEYS)[number];
@@ -82,7 +88,10 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
     poiKinds,
     onChangePoiKinds,
     roadviewVisible,
+    roadviewRoadOn,
     onToggleRoadview,
+    distanceMeasureVisible,
+    onToggleDistanceMeasure,
     onToggle,
   }) {
     // ✅ 주변시설 카테고리 탭 상태
@@ -92,6 +101,7 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
     // ✅ 드래그해서 닫기 상태
     const [dragY, setDragY] = React.useState(0);
     const [isDragging, setIsDragging] = React.useState(false);
+    const dragHandleRef = React.useRef<HTMLDivElement>(null);
     const startYRef = React.useRef<number | null>(null);
 
     const handleClose = React.useCallback(() => {
@@ -104,16 +114,20 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
       return e.clientY ?? 0;
     };
 
-    const handleDragStart = (e: React.TouchEvent | React.MouseEvent) => {
-      e.stopPropagation();
+    const handleDragStart = React.useCallback((e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent) => {
+      // 🛑 stopPropagation은 React 이벤트와 네이티브 이벤트 모두에서 작동하도록 처리
+      if ('stopPropagation' in e) e.stopPropagation();
       const y = getClientY(e);
       startYRef.current = y;
       setIsDragging(true);
-    };
+    }, []);
 
-    const handleDragMove = (e: React.TouchEvent | React.MouseEvent) => {
-      if (!isDragging || startYRef.current == null) return;
-      e.stopPropagation();
+    const handleDragMove = React.useCallback((e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent) => {
+      // isDragging 상태를 ref나 functional update 등으로 체크할 수도 있으나, 
+      // 여기서는 useEffect 가 latest handler를 참조하도록 하거나 state를 dependency에 넣음
+      // 여기서는 간단하게 state dependency 포함 useCallback 사용
+      if (startYRef.current == null) return;
+      if ('stopPropagation' in e) e.stopPropagation();
       const y = getClientY(e);
       const delta = y - startYRef.current;
       if (delta > 0) {
@@ -121,19 +135,57 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
       } else {
         setDragY(0);
       }
-    };
+    }, []);
 
-    const handleDragEnd = () => {
-      if (!isDragging) return;
-      const threshold = 80; // ✅ 이 이상 내려가면 닫기
-      if (dragY > threshold) {
-        handleClose();
-      } else {
-        setDragY(0); // 원위치로 복귀
-      }
-      setIsDragging(false);
+    const handleDragEnd = React.useCallback(() => {
       startYRef.current = null;
-    };
+      setIsDragging((prevDragging) => {
+        if (!prevDragging) return false;
+        
+        // dragY가 threshold(80)를 넘었는지 체크하기 위해 
+        // functional update 대신 클로저의 dragY를 쓰면 stale할 수 있으므로
+        // 여기서는 ref로 관리하거나 그냥 클로저를 따름 (useEffect에서 갱신됨)
+        return false;
+      });
+
+      // dragY 체크 및 처리 (이 부분은 state version 보다는 ref version 이나 
+      // useEffect cleanup + re-bind 가 안전함)
+      setDragY((currY) => {
+        if (currY > 80) {
+          handleClose();
+        }
+        return 0;
+      });
+    }, [handleClose]);
+
+    // ✅ 모바일에서 preventDefault()를 쓰기 위해 non-passive 리스너 수동 등록
+    React.useEffect(() => {
+      const el = dragHandleRef.current;
+      if (!el) return;
+
+      const onTouchMove = (e: TouchEvent) => {
+        // passive: false 인 경우에만 허용됨
+        if (startYRef.current !== null) {
+          e.preventDefault();
+          handleDragMove(e);
+        }
+      };
+
+      const onTouchStart = (e: TouchEvent) => handleDragStart(e);
+      const onTouchEnd = () => handleDragEnd();
+
+      el.addEventListener("touchstart", onTouchStart);
+      el.addEventListener("touchmove", onTouchMove, { passive: false });
+      el.addEventListener("touchend", onTouchEnd);
+      el.addEventListener("touchcancel", onTouchEnd);
+
+      return () => {
+        el.removeEventListener("touchstart", onTouchStart);
+        el.removeEventListener("touchmove", onTouchMove);
+        el.removeEventListener("touchend", onTouchEnd);
+        el.removeEventListener("touchcancel", onTouchEnd);
+      };
+    }, [handleDragStart, handleDragMove, handleDragEnd]);
 
     // ✅ POI 토글 핸들러
     const toggleKind = React.useCallback(
@@ -222,18 +274,13 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
       >
         {/* 📱 모바일 전용 드래그바 헤더 */}
         <div
+          ref={dragHandleRef}
           className="max-md:flex md:hidden items-center justify-center px-4 pt-2 pb-1 border-b"
           onMouseDown={handleDragStart}
           onMouseMove={handleDragMove}
           onMouseUp={handleDragEnd}
           onMouseLeave={handleDragEnd}
-          onTouchStart={handleDragStart}
-          onTouchMove={(e) => {
-            e.preventDefault();
-            handleDragMove(e);
-          }}
-          onTouchEnd={handleDragEnd}
-          onTouchCancel={handleDragEnd}
+          // onTouchStart, onTouchMove 등은 useEffect에서 수동 등록 (passive: false를 위해)
         >
           <div className="h-1 w-10 rounded-full bg-gray-300" />
         </div>
@@ -252,7 +299,7 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
             <div className="mb-2 text-xs font-semibold text-gray-600">
               지도 도구
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <DistrictToggleButton
                 pressed={isDistrictOn}
                 onPress={onToggleDistrict}
@@ -260,8 +307,14 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
               />
 
               <RoadviewToggleButton
-                pressed={roadviewVisible}
+                pressed={roadviewVisible || roadviewRoadOn}
                 onPress={onToggleRoadview}
+                showLabel
+              />
+
+              <DistanceMeasureToggleButton
+                pressed={distanceMeasureVisible}
+                onPress={onToggleDistanceMeasure}
                 showLabel
               />
             </div>

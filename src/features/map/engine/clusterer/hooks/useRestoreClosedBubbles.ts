@@ -8,15 +8,16 @@ export function useRestoreClosedBubbles(
   selectedKey: string | null,
   safeLabelMax: number,
   labelOvRef: React.MutableRefObject<Record<string, any>>,
-  hitboxOvRef: React.MutableRefObject<Record<string, any>>
+  hitboxOvRef: React.MutableRefObject<Record<string, any>>,
+  forceHideAll: boolean
 ) {
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || forceHideAll) return;
     if (selectedKey != null) return;
     const level = map.getLevel();
     if (level > safeLabelMax) return;
 
     Object.values(labelOvRef.current).forEach((ov: any) => ov.setMap(map));
     Object.values(hitboxOvRef.current).forEach((ov: any) => ov.setMap(map));
-  }, [isReady, map, selectedKey, safeLabelMax]);
+  }, [isReady, map, selectedKey, safeLabelMax, forceHideAll]);
 }

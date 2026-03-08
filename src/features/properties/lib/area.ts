@@ -141,17 +141,25 @@ function normalizeAreaGroup(s?: AreaSet): CreatePinAreaGroupDto | null {
     realMax !== undefined;
   if (!hasAny) return null;
 
-  // 전용/실평 최소·최대 모두 필수 (스펙 반영)
+  // 전용(㎡) 최소·최대 필수, 실평(㎡)는 선택 (서버 null 허용)
   if (exMin === undefined || exMax === undefined) return null;
-  if (realMin === undefined || realMax === undefined) return null;
 
   const exLo = Math.min(exMin, exMax);
   const exHi = Math.max(exMin, exMax);
-  const acLo = Math.min(realMin, realMax);
-  const acHi = Math.max(realMin, realMax);
+  const acLo =
+    realMin !== undefined && realMax !== undefined
+      ? Math.min(realMin, realMax)
+      : null;
+  const acHi =
+    realMin !== undefined && realMax !== undefined
+      ? Math.max(realMin, realMax)
+      : null;
 
   // 개별 평수 정규화 (units 필드가 있는 경우)
-  const units: Array<{ exclusiveM2?: number | null; realM2?: number | null }> | null =
+  const units: Array<{
+    exclusiveM2?: number | null;
+    realM2?: number | null;
+  }> | null =
     Array.isArray((s as any).units) && (s as any).units.length > 0
       ? (s as any).units
           .map((u: any) => {
@@ -164,15 +172,20 @@ function normalizeAreaGroup(s?: AreaSet): CreatePinAreaGroupDto | null {
               realM2: reM2 ?? null,
             };
           })
-          .filter((u: any): u is { exclusiveM2?: number | null; realM2?: number | null } => u !== null)
+          .filter(
+            (
+              u: any
+            ): u is { exclusiveM2?: number | null; realM2?: number | null } =>
+              u !== null
+          )
       : null;
 
   return {
     title,
     exclusiveMinM2: Math.max(0, exLo),
     exclusiveMaxM2: Math.max(0, exHi),
-    actualMinM2: Math.max(0, acLo),
-    actualMaxM2: Math.max(0, acHi),
+    actualMinM2: acLo != null ? Math.max(0, acLo) : null,
+    actualMaxM2: acHi != null ? Math.max(0, acHi) : null,
     ...(units && units.length > 0 ? { units } : {}),
   };
 }

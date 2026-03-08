@@ -22,6 +22,7 @@ type Args = {
   draftHeaderPrefill?: {
     title?: string;
     officePhone?: string;
+    officePhone2?: string;
   } | null;
 };
 
@@ -81,6 +82,9 @@ export function useCreateForm({
 
         const name = String(draft.name ?? "").trim();
         const phone = String(draft.contactMainPhone ?? "").trim();
+        const phone2 = String(
+          (draft as { contactSubPhone?: string }).contactSubPhone ?? ""
+        ).trim();
         const addressLine = String(
           draft.addressLine ?? draft.address ?? ""
         ).trim();
@@ -91,6 +95,10 @@ export function useCreateForm({
 
         if (phone && typeof basicActions.setOfficePhone === "function") {
           basicActions.setOfficePhone(phone);
+        }
+
+        if (phone2 && typeof basicActions.setOfficePhone2 === "function") {
+          basicActions.setOfficePhone2(phone2);
         }
 
         if (addressLine && typeof basicActions.setAddress === "function") {
@@ -165,6 +173,9 @@ export function useCreateForm({
 
     const buildingType = (basic.state as any).buildingType ?? null;
     const setBuildingType = (basic.actions as any).setBuildingType ?? noopLocal;
+    const buildingTypes = (basic.state as any).buildingTypes ?? [];
+    const setBuildingTypes =
+      (basic.actions as any).setBuildingTypes ?? noopLocal;
 
     const registrationTypeId =
       (parking.state as any).registrationTypeId ?? null;
@@ -196,6 +207,8 @@ export function useCreateForm({
 
       buildingType,
       setBuildingType,
+      buildingTypes,
+      setBuildingTypes,
       registrationTypeId,
       setRegistrationTypeId,
 

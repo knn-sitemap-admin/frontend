@@ -16,6 +16,7 @@ import {
   createHitboxOverlay,
   createLabelOverlay,
   createMarker,
+  updateMarkerIcon,
 } from "../overlays/pinOverlays";
 import { DRAFT_ID, SELECTED_Z } from "../overlays/overlayStyles";
 
@@ -41,6 +42,7 @@ type Args = {
   hitboxOvRef: React.MutableRefObject<Record<string, any>>;
   clustererRef: React.MutableRefObject<any>;
   onMarkerClickRef: React.MutableRefObject<((id: string) => void) | undefined>;
+  forceHideAll: boolean;
 };
 
 export function useRebuildScene(args: Args) {
@@ -64,6 +66,7 @@ export function useRebuildScene(args: Args) {
     hitboxOvRef,
     clustererRef,
     onMarkerClickRef,
+    forceHideAll,
   } = args;
 
   const sceneKey = useMemo(() => buildSceneKey(markers), [markers]);
@@ -71,31 +74,39 @@ export function useRebuildScene(args: Args) {
   useEffect(() => {
     if (!isReady) return;
 
-    // ── cleanup old ─────────────────────────────────────────────
-    Object.entries(markerClickHandlersRef.current).forEach(([id, handler]) => {
-      const mk = markerObjsRef.current[id];
-      if (mk && handler) kakao.maps.event.removeListener(mk, "click", handler);
-    });
-    markerClickHandlersRef.current = {};
-    Object.values(labelOvRef.current).forEach((ov: any) => ov.setMap(null));
-    labelOvRef.current = {};
-    Object.values(hitboxOvRef.current).forEach((ov: any) => ov.setMap(null));
-    hitboxOvRef.current = {};
-    clustererRef.current?.clear?.();
-    Object.values(markerObjsRef.current).forEach((mk: any) => mk.setMap(null));
-    markerObjsRef.current = {};
+    // ⑤ 지도 상태에 따른 가시성 제어 및 가드 로직
+    const level = map.getLevel();
 
-    // ① enrich
+    // [V4 최적화] 지역 클러스터링 모드(forceHideAll)일 때 개별 마커 루프를 스킵하여 성능 확보
+    if (forceHideAll) {
+       clustererRef.current?.clear?.();
+       Object.keys(markerObjsRef.current).forEach((key) => {
+         const mk = markerObjsRef.current[key];
+         const handler = markerClickHandlersRef.current[key];
+         if (mk && handler) kakao.maps.event.removeListener(mk, "click", handler);
+         mk?.setMap(null);
+         labelOvRef.current[key]?.setMap(null);
+         hitboxOvRef.current[key]?.setMap(null);
+       });
+       markerObjsRef.current = {};
+       markerClickHandlersRef.current = {};
+       labelOvRef.current = {};
+       hitboxOvRef.current = {};
+       return; // 루프를 더 이상 돌지 않고 조기 종료
+    }
+
+    // ── Diffing 로직 시작 ──────────────────────────────────────
+    const nextKeys = new Set<string>();
+
+    // ① enriched 단계 수행
     const enriched: EnrichedMarker[] = enrichMarkers(
       markers,
       reservationOrderMap,
       reservationOrderByPosKey
     );
 
-    // ② posKey 단위로 라벨 1개만 유지
-    const labelByPos: Record<string, { ov: any; isPlan: boolean }> = {};
-
-    // ③ 렌더 순서: 일반 → plan 나중
+    // ② posKey 단위로 라벨 1개만 유지하기 위한 준비
+    const labelByPos: Record<string, { key: string; isPlan: boolean }> = {};
     const ordered = enriched.sort((a, b) =>
       a.isPlan === b.isPlan ? 0 : a.isPlan ? 1 : -1
     );
@@ -112,36 +123,10 @@ export function useRebuildScene(args: Args) {
       return 2 * R * Math.asin(Math.sqrt(a));
     };
 
-    const hideLabelsByPosKey = (pk: string) => {
-      Object.entries(labelOvRef.current).forEach(([k, ov]: any) => {
-        try {
-          const el = ov?.getContent?.();
-          if (el?.dataset?.posKey === pk) {
-            ov.setMap?.(null);
-            delete labelOvRef.current[k];
-          }
-        } catch {}
-      });
-    };
-
-    const hideLabelsNear = (lat: number, lng: number, thresholdM = 20) => {
-      Object.entries(labelOvRef.current).forEach(([k, ov]: any) => {
-        try {
-          const el = ov?.getContent?.();
-          const plat = parseFloat(el?.dataset?.posLat ?? "NaN");
-          const plng = parseFloat(el?.dataset?.posLng ?? "NaN");
-          if (Number.isFinite(plat) && Number.isFinite(plng)) {
-            if (distM(lat, lng, plat, plng) <= thresholdM) {
-              ov.setMap?.(null);
-              delete labelOvRef.current[k];
-            }
-          }
-        } catch {}
-      });
-    };
-
+    // ③ 개별 마커 처리 (Diffing)
     ordered.forEach(
       ({ m, key, order, isDraft, isPlan, isAddressOnly, posKey }) => {
+        nextKeys.add(key);
         const pos = new kakao.maps.LatLng(m.position.lat, m.position.lng);
 
         const primaryName =
@@ -164,145 +149,98 @@ export function useRebuildScene(args: Args) {
 
         const planText = m.regionLabel;
         const planDisplayName = displayName || planText;
-
-        // ── marker 생성 ──────────────────────────────
-        const mk = createMarker(kakao, pos, {
-          isDraft,
-          key,
-          kind: (m.kind ?? defaultPinKind) as PinKind,
-          title: isPlan ? planDisplayName : displayName,
-        });
-        markerObjsRef.current[key] = mk;
-
-        if (
-          key === "__draft__" ||
-          key === DRAFT_ID ||
-          key.startsWith("__visit__")
-        ) {
-          mk.setZIndex(-99999);
-        }
-
-        const handler = () => onMarkerClickRef.current?.(key);
-        kakao.maps.event.addListener(mk, "click", handler);
-        markerClickHandlersRef.current[key] = handler;
-
-        if (isAddressOnly) {
-          const hitOv = createHitboxOverlay(kakao, pos, hitboxSizePx, () =>
-            onMarkerClickRef.current?.(key)
-          );
-          hitboxOvRef.current[key] = hitOv;
-          return;
-        }
-
-        if (isPlan && posKey && labelByPos[posKey]?.isPlan === false) {
-          const hitOv = createHitboxOverlay(kakao, pos, hitboxSizePx, () =>
-            onMarkerClickRef.current?.(key)
-          );
-          hitboxOvRef.current[key] = hitOv;
-          return;
-        }
-
         const labelText = isPlan ? planDisplayName : displayName;
 
-        if (isPlan) {
-          if (posKey) hideLabelsByPosKey(posKey);
-          const lat = m.position?.lat;
-          const lng = m.position?.lng;
-          if (typeof lat === "number" && typeof lng === "number") {
-            hideLabelsNear(lat, lng, 20);
+        // ── marker 처리 ──
+        let mk = markerObjsRef.current[key];
+        if (mk) {
+          // 기존 마커 존재 시 위치 및 아이콘 업데이트
+          mk.setPosition(pos);
+          updateMarkerIcon(kakao, mk, {
+            isDraft,
+            key,
+            kind: (m.kind ?? defaultPinKind) as PinKind,
+            title: labelText,
+            badge: m.badge,
+            isCompleted: m.isCompleted,
+          });
+        } else {
+          // 신규 마커 생성
+          mk = createMarker(kakao, pos, {
+            isDraft,
+            key,
+            kind: (m.kind ?? defaultPinKind) as PinKind,
+            title: labelText,
+            badge: m.badge,
+            isCompleted: m.isCompleted,
+          });
+          markerObjsRef.current[key] = mk;
+
+          const handler = () => onMarkerClickRef.current?.(key);
+          kakao.maps.event.addListener(mk, "click", handler);
+          markerClickHandlersRef.current[key] = handler;
+
+          if (key === "__draft__" || key === DRAFT_ID || key.startsWith("__visit__")) {
+            mk.setZIndex(-99999);
           }
         }
 
-        const prev = labelOvRef.current[key];
-        if (prev) {
-          const el = prev.getContent?.() as HTMLElement | null;
-          const titleEl = el?.querySelector?.(
-            '[data-role="label-title"]'
-          ) as HTMLElement | null;
-
-          if (titleEl) {
-            titleEl.textContent = labelText;
-          } else if (el) {
-            el.textContent = labelText;
+        // ── label/hitbox 처리 ──
+        if (isAddressOnly) {
+           // 주소 전용은 라벨 생략 (필요시 히트박스만)
+        } else {
+          let lb = labelOvRef.current[key];
+          if (lb) {
+            lb.setPosition(pos);
+            const el = lb.getContent?.() as HTMLElement | null;
+            if (el) el.textContent = labelText;
+          } else {
+             lb = createLabelOverlay(kakao, pos, labelText, labelGapPx, order);
+             labelOvRef.current[key] = lb;
           }
-
-          prev.setPosition(pos);
-          prev.setMap(map);
-
-          return;
         }
 
-        if (isPlan && posKey && labelByPos[posKey]) {
-          try {
-            labelByPos[posKey].ov.setMap?.(null);
-          } catch {}
-          delete labelByPos[posKey];
+        let hb = hitboxOvRef.current[key];
+        if (hb) {
+          hb.setPosition(pos);
+        } else {
+          hb = createHitboxOverlay(kakao, pos, hitboxSizePx, () => onMarkerClickRef.current?.(key));
+          hitboxOvRef.current[key] = hb;
         }
-
-        const labelOv = createLabelOverlay(
-          kakao,
-          pos,
-          labelText,
-          labelGapPx,
-          typeof order === "number" ? order : undefined
-        );
-
-        try {
-          const el = labelOv.getContent?.() as HTMLDivElement | null;
-          if (el) {
-            (el as any).dataset = (el as any).dataset || {};
-            (el as any).dataset.rawLabel = labelText;
-            (el as any).dataset.posKey = posKey ?? "";
-            (el as any).dataset.posLat = String(m.position?.lat ?? "");
-            (el as any).dataset.posLng = String(m.position?.lng ?? "");
-            (el as any).dataset.labelType = isPlan ? "plan" : "property";
-          }
-        } catch {}
-
-        labelOvRef.current[key] = labelOv;
-        if (posKey) {
-          labelByPos[posKey] = { ov: labelOv, isPlan };
-        }
-
-        const hitOv = createHitboxOverlay(kakao, pos, hitboxSizePx, () =>
-          onMarkerClickRef.current?.(key)
-        );
-        hitboxOvRef.current[key] = hitOv;
       }
     );
 
-    const level = map.getLevel();
-    if (level <= safeLabelMax) {
-      clustererRef.current?.clear?.();
-      Object.values(markerObjsRef.current).forEach((mk: any) => mk.setMap(map));
-      const cleared = selectedKey == null;
-      Object.entries(labelOvRef.current).forEach(([id, ov]: any[]) =>
-        ov.setMap(!cleared && id === selectedKey ? null : map)
-      );
-      Object.entries(hitboxOvRef.current).forEach(([id, ov]: any[]) =>
-        ov.setMap(!cleared && id === selectedKey ? null : map)
-      );
-      if (!cleared) {
-        markerObjsRef.current[selectedKey!]?.setZIndex?.(SELECTED_Z);
+    // ④ 제거된 마커 정리 (Cleanup)
+    Object.keys(markerObjsRef.current).forEach((key) => {
+      if (!nextKeys.has(key)) {
+        const mk = markerObjsRef.current[key];
+        const handler = markerClickHandlersRef.current[key];
+        if (mk && handler) kakao.maps.event.removeListener(mk, "click", handler);
+        
+        mk?.setMap(null);
+        labelOvRef.current[key]?.setMap(null);
+        hitboxOvRef.current[key]?.setMap(null);
+
+        delete markerObjsRef.current[key];
+        delete markerClickHandlersRef.current[key];
+        delete labelOvRef.current[key];
+        delete hitboxOvRef.current[key];
       }
+    });
+
+    // ⑤ 가시성 업데이트
+    if (level <= safeLabelMax) {
+       clustererRef.current?.clear?.();
+       Object.values(markerObjsRef.current).forEach(m => m.setMap(map));
+       Object.entries(labelOvRef.current).forEach(([k, l]) => l.setMap(k === selectedKey ? null : map));
+       Object.values(hitboxOvRef.current).forEach(h => h.setMap(map));
     } else if (level >= clusterMinLevel) {
-      mountClusterMode(
-        { kakao, map },
-        {
-          markerObjsRef,
-          markerClickHandlersRef,
-          labelOvRef,
-          hitboxOvRef,
-          clustererRef,
-          onMarkerClickRef,
-        },
-        selectedKey
-      );
+      mountClusterMode({ kakao, map }, { markerObjsRef, markerClickHandlersRef, labelOvRef, hitboxOvRef, clustererRef, onMarkerClickRef }, selectedKey);
     } else {
-      Object.values(labelOvRef.current).forEach((ov: any) => ov.setMap(null));
-      clustererRef.current?.clear?.();
-      Object.values(markerObjsRef.current).forEach((mk: any) => mk.setMap(map));
-      Object.values(hitboxOvRef.current).forEach((ov: any) => ov.setMap(map));
+       Object.values(labelOvRef.current).forEach(l => l.setMap(null));
+       clustererRef.current?.clear?.();
+       Object.values(markerObjsRef.current).forEach(m => m.setMap(map));
+       Object.values(hitboxOvRef.current).forEach(h => h.setMap(map));
     }
 
     return () => {
@@ -339,5 +277,6 @@ export function useRebuildScene(args: Args) {
     safeLabelMax,
     clusterMinLevel,
     selectedKey,
+    forceHideAll,
   ]);
 }

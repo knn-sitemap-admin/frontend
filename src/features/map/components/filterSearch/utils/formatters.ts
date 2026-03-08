@@ -308,3 +308,13 @@ export const convertPriceToWon = (input: string): string => {
   // 만원 단위를 원 단위로 변환 (예: 200 → 2,000,000)
   return (num * 10000).toString();
 };
+
+// 매매가 입력값(백만원 단위)을 원 단위로 변환하는 함수 (200 → 200,000,000)
+// DB는 백만원 단위로 저장하므로 필터 라벨 표시 시 이 함수를 사용
+export const convertSalePriceToWon = (input: string): string => {
+  const num = Number(input.replace(/,/g, ""));
+  if (isNaN(num) || num === 0) return "0";
+
+  // 백만원 단위를 원 단위로 변환 (예: 200 → 200,000,000)
+  return (num * 1_000_000).toString();
+};

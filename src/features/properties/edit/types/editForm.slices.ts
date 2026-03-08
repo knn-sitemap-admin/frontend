@@ -101,6 +101,10 @@ export type CompletionRegistryFormSlice = {
   buildingType: BuildingType | null;
   setBuildingType: (v: BuildingType | null) => void;
 
+  /** 건물유형 다중 선택 */
+  buildingTypes?: string[];
+  setBuildingTypes?: (v: string[]) => void;
+
   /** ✅ 엘리베이터 O/X ("O" | "X" | null 정도로 사용) */
   elevator: "O" | "X" | null;
   setElevator: (v: "O" | "X" | null) => void;
@@ -115,6 +119,10 @@ export type ParkingFormSlice = {
   /** 주차 유형(자유 입력 문자열, 빈 값일 때 null 처리) */
   parkingType: string | null;
   setParkingType: (v: string | null) => void;
+
+  /** 주차 유형 다중 선택 */
+  parkingTypes?: string[];
+  setParkingTypes?: (v: string[]) => void;
 
   /** 전체 주차 대수 (문자열 입력, 저장 시 숫자로 파싱) */
   totalParkingSlots: string;

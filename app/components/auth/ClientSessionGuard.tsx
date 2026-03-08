@@ -10,7 +10,7 @@ import {
  * 백엔드 API base (마지막 슬래시 제거해서 안전하게 사용)
  */
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3050"
+  process.env.NEXT_PUBLIC_IS_DEV === "true" ? "http://localhost:3050" : (process.env.NEXT_PUBLIC_API_BASE || "")
 ).replace(/\/+$/, "");
 
 /** 세션 백업 폴링 주기 (ms) — 포커스 이벤트가 메인, 이건 서브 */
@@ -83,16 +83,18 @@ export default function ClientSessionGuard({
     let timerId: number | undefined;
     let channel: BroadcastChannel | undefined;
 
-    const handleForceLogout = async () => {
+    const handleForceLogout = async (skipApiCall = false) => {
       if (!mounted) return;
 
-      try {
-        await fetch(`${API_BASE}/auth/signout`, {
-          method: "POST",
-          credentials: "include",
-        });
-      } catch {
-        // ignore
+      if (!skipApiCall) {
+        try {
+          await fetch(`${API_BASE}/auth/signout`, {
+            method: "POST",
+            credentials: "include",
+          });
+        } catch {
+          // ignore
+        }
       }
 
       setReady(false);
@@ -107,7 +109,7 @@ export default function ClientSessionGuard({
       if (!mounted || destroyed) return;
 
       if (!ok) {
-        await handleForceLogout();
+        await handleForceLogout(true); // 이미 로그아웃된 상태라면 API 호출을 건너뛰고 리다이렉트
         return;
       }
 

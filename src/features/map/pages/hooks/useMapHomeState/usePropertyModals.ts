@@ -37,6 +37,7 @@ type UsePropertyModalsArgs = {
   refetch: () => void;
 
   closeMenu: () => void;
+  deletePinLocally?: (id: string | number) => void;
 };
 
 export function usePropertyModals({
@@ -53,6 +54,7 @@ export function usePropertyModals({
   hideDraft,
   refetch,
   closeMenu,
+  deletePinLocally,
 }: UsePropertyModalsArgs) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = useMemo(
@@ -83,10 +85,13 @@ export function usePropertyModals({
   );
 
   const onDeleteFromView = useCallback(async () => {
+    if (selectedId) {
+      deletePinLocally?.(selectedId);
+    }
     setItems((prev) => prev.filter((p) => p.id !== selectedId));
     setViewOpen(false);
     setSelectedId(null);
-  }, [selectedId, setItems]);
+  }, [selectedId, setItems, deletePinLocally]);
 
   const onSubmitEdit = useCallback(
     async (payload: CreatePayload) => {

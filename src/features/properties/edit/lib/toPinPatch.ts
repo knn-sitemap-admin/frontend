@@ -355,18 +355,30 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     }
   }
 
-  // --- 건물유형: 폼 buildingType 을 그대로 normalize 해서 전송 ---
+  // --- 건물유형: buildingTypes 배열 우선, buildingType 단일 폴백 ---
   {
-    const btNowUI = (f as any)?.buildingType ?? null;
-    const btNow = normalizeBuildingType(btNowUI);
-    const btInit = normalizeBuildingType(
-      (initial as any)?.buildingType ?? (initial as any)?.initialBuildingType
-    );
+    const btArrNow = (f as any)?.buildingTypes;
+    const btArrInit = (initial as any)?.buildingTypes ?? [];
 
-    // btNow === null → 선택 해제, null 전송
-    // btNow 가 undefined 이면(인식 못한 값) → 아무 것도 안 보냄
-    if (btNow !== undefined && !jsonEq2Local(btInit, btNow)) {
-      (patch as any).buildingType = btNow ?? null;
+    if (Array.isArray(btArrNow)) {
+      const arrNorm = btArrNow
+        .map((x: string) => String(x ?? "").trim())
+        .filter(Boolean);
+      const initNorm = (Array.isArray(btArrInit) ? btArrInit : [])
+        .map((x: string) => String(x ?? "").trim())
+        .filter(Boolean);
+      if (!jsonEq2Local(arrNorm, initNorm)) {
+        (patch as any).buildingTypes = arrNorm;
+      }
+    } else {
+      const btNowUI = (f as any)?.buildingType ?? null;
+      const btNow = normalizeBuildingType(btNowUI);
+      const btInit = normalizeBuildingType(
+        (initial as any)?.buildingType ?? (initial as any)?.initialBuildingType
+      );
+      if (btNow !== undefined && !jsonEq2Local(btInit, btNow)) {
+        (patch as any).buildingTypes = btNow ? [btNow] : [];
+      }
     }
   }
 
@@ -375,15 +387,20 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     const initPinKind =
       (initial as any)?.pinKind ??
       ((initial as any)?.badge
-        ? mapBadgeToPinKind((initial as any).badge)
+        ? mapBadgeToPinKind((initial as any).badge, (initial as any).isCompleted)
         : undefined);
     const nowPinKind = (f as any)?.pinKind;
     if (nowPinKind !== undefined && nowPinKind !== initPinKind) {
       (patch as any).pinKind = nowPinKind;
-      try {
-        const badge = mapPinKindToBadge?.(nowPinKind);
-        if (badge) (patch as any).badge = badge;
-      } catch {}
+      if (nowPinKind === "completed") {
+        (patch as any).isCompleted = true;
+      } else {
+        (patch as any).isCompleted = false;
+        try {
+          const badge = mapPinKindToBadge?.(nowPinKind);
+          if (badge) (patch as any).badge = badge;
+        } catch {}
+      }
     }
   }
 
@@ -414,17 +431,31 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     (patch as any).parkingGrade = pgNowNorm;
   }
 
-  // 2) parkingType 텍스트
+  // 2) parkingTypes 배열 우선, parkingType 단일 폴백
   {
-    const raw = (f as any).parkingType;
-    const trimmed = raw == null ? "" : String(raw).trim();
-    const value =
-      trimmed === "" || trimmed === "custom" ? null : trimmed.slice(0, 50);
+    const ptArrNow = (f as any)?.parkingTypes;
+    const ptArrInit = (initial as any)?.parkingTypes ?? [];
 
-    const initParkingType = (initial as any)?.parkingType ?? null; // 서버 초기값
-
-    if (value !== initParkingType) {
-      (patch as any).parkingType = value;
+    if (Array.isArray(ptArrNow)) {
+      const arrNorm = ptArrNow
+        .map((x: string) => String(x ?? "").trim())
+        .filter(Boolean)
+        .map((s: string) => s.slice(0, 50));
+      const initNorm = (Array.isArray(ptArrInit) ? ptArrInit : [])
+        .map((x: string) => String(x ?? "").trim())
+        .filter(Boolean);
+      if (!jsonEq2Local(arrNorm, initNorm)) {
+        (patch as any).parkingTypes = arrNorm;
+      }
+    } else {
+      const raw = (f as any).parkingType;
+      const trimmed = raw == null ? "" : String(raw).trim();
+      const value =
+        trimmed === "" || trimmed === "custom" ? null : trimmed.slice(0, 50);
+      const initParkingType = (initial as any)?.parkingType ?? null;
+      if (value !== initParkingType) {
+        (patch as any).parkingTypes = value ? [value] : [];
+      }
     }
   }
 
@@ -739,14 +770,16 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
           maxPrice: toNumOrNull(u?.maxPrice ?? u?.secondary),
           note: (u?.note ?? null) as string | null,
         };
-        const hasAny =
+        let hasAny =
           n.rooms != null ||
           n.baths != null ||
           n.hasLoft ||
           n.hasTerrace ||
           n.minPrice != null ||
-          n.maxPrice != null ||
-          (n.note ?? "") !== "";
+          n.maxPrice != null;
+          
+        hasAny = hasAny || (n.note ?? "") !== "";
+        
         return hasAny
           ? {
               rooms: n.rooms,
@@ -763,10 +796,15 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     (patch as any).units = units;
   }
 
+  console.log("[toPinPatch] 반환 patch buildingTypes/parkingTypes:", {
+    buildingTypes: (patch as any).buildingTypes,
+    parkingTypes: (patch as any).parkingTypes,
+    patchKeys: Object.keys(patch),
+  });
   return patch as UpdatePinDto;
 }
 
-/* 🔧 무의미한 null/빈값 제거: 초기 스냅샷 기준으로 noop이면 dto에서 삭제 */
+/* 무의미한 null/빈값 제거: 초기 스냅샷 기준으로 noop이면 dto에서 삭제 */
 export const stripNoopNulls = (dto: any, initial: any) => {
   const norm = (x: any) =>
     x === "" || x === null || x === undefined ? undefined : x;
@@ -785,9 +823,15 @@ export const stripNoopNulls = (dto: any, initial: any) => {
       continue;
     }
 
-    // ✅ directions / units 는 빈 배열이라도 보존
+    // directions / units / buildingTypes / parkingTypes 는 빈 배열이라도 보존 (등록과 동일)
     if (Array.isArray(v) && v.length === 0) {
-      if (k === "directions" || k === "units") continue;
+      if (
+        k === "directions" ||
+        k === "units" ||
+        k === "buildingTypes" ||
+        k === "parkingTypes"
+      )
+        continue;
       delete dto[k];
       continue;
     }

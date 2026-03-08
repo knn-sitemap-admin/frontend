@@ -14,6 +14,7 @@ import {
   validateAreaSets,
   validateUnitPriceRanges,
 } from "../useCreateValidation";
+import { isValidPhoneKR } from "@/features/properties/edit/lib/editValidation";
 import { computeCanSave } from "./helpers";
 import { buildCreatePayload } from "../../lib/buildCreatePayload";
 import type { PropertyCreateModalProps } from "../../lib/types";
@@ -112,6 +113,7 @@ export function useCreateSave({
         // 핀 종류는 옵셔널
 
         const addressLine = (f.address && f.address.trim()) || mainTitle;
+        const subPhone = (f.officePhone2 ?? "").trim();
 
         const draft = await createPinDraft({
           lat: latNum,
@@ -119,6 +121,7 @@ export function useCreateSave({
           addressLine,
           name: mainTitle,
           contactMainPhone: mainOfficePhone,
+          ...(subPhone !== "" ? { contactSubPhone: subPhone } : {}),
         });
 
         // ⭐ createPinDraft 결과에서 draftId 추출
@@ -167,7 +170,10 @@ export function useCreateSave({
       // 가격/면적 검증은 입력된 값이 있을 때만 체크 (옵셔널)
       const unitLinesArray = Array.isArray(f.unitLines) ? f.unitLines : [];
       if (unitLinesArray.length > 0) {
-        const priceError = validateUnitPriceRanges(unitLinesArray as any[], f.remainingHouseholds);
+        const priceError = validateUnitPriceRanges(
+          unitLinesArray as any[],
+          f.remainingHouseholds
+        );
         if (priceError) {
           alert(priceError);
           return;
@@ -190,8 +196,11 @@ export function useCreateSave({
         );
       };
 
-      const extraAreaSetsArray = Array.isArray(f.extraAreaSets) ? f.extraAreaSets : [];
-      const hasAnyAreaInput = hasAreaInput(f.baseAreaSet) || extraAreaSetsArray.some(hasAreaInput);
+      const extraAreaSetsArray = Array.isArray(f.extraAreaSets)
+        ? f.extraAreaSets
+        : [];
+      const hasAnyAreaInput =
+        hasAreaInput(f.baseAreaSet) || extraAreaSetsArray.some(hasAreaInput);
 
       if (hasAnyAreaInput) {
         const areaError = validateAreaSets(
@@ -217,6 +226,18 @@ export function useCreateSave({
       }
 
       const anyForm = f as any;
+      const parkingTypesForm = Array.isArray(anyForm.parkingTypes)
+        ? anyForm.parkingTypes.filter(Boolean)
+        : [];
+      const buildingTypesForm = Array.isArray(anyForm.buildingTypes)
+        ? anyForm.buildingTypes.filter(Boolean)
+        : [];
+      console.log(
+        "[CreateSave] parkingTypes:",
+        parkingTypesForm,
+        "buildingTypes:",
+        buildingTypesForm
+      );
 
       const rawMinRealMoveInCost =
         anyForm.minRealMoveInCost ??
@@ -303,6 +324,7 @@ export function useCreateSave({
 
         parkingGrade: f.parkingGrade,
         parkingType: f.parkingType ?? null,
+        parkingTypes: parkingTypesForm,
         totalParkingSlots: f.totalParkingSlots,
 
         completionDate: normalizedCompletion,
@@ -327,6 +349,7 @@ export function useCreateSave({
         remainingHouseholds: f.remainingHouseholds,
 
         buildingType: (f as any).buildingType ?? null,
+        buildingTypes: buildingTypesForm,
         registrationTypeId: (f as any).registrationTypeId ?? null,
 
         // ✅ 옵션 배열 + extraOptionsText 소스
@@ -432,37 +455,3 @@ export function useCreateSave({
 
   return { save, canSave, isSaving };
 }
-
-/* ── 전화번호 유틸 ── */
-const normalizePhone = (v: string) => v.replace(/[^\d]/g, "");
-const isValidPhoneKR = (raw?: string | null) => {
-  const s = (raw ?? "").trim();
-  
-  if (!s) return false;
-  
-  const v = normalizePhone(s);
-  
-  // 특수번호 체크 (1588, 1544, 1577, 1644 등)
-  if (/^1[5-9]\d{2}$/.test(v.slice(0, 4))) {
-    // 특수번호는 8자리 또는 10자리 허용
-    return v.length === 8 || v.length === 10;
-  }
-  
-  // 0으로 시작하는 일반 번호 체크
-  if (!v.startsWith("0")) return false;
-  
-  if (v.startsWith("02")) return v.length === 9 || v.length === 10;
-  
-  // 070, 050 등 인터넷전화 및 휴대폰 번호 (011자리)
-  if (v.startsWith("01") || v.startsWith("070") || v.startsWith("050")) {
-    return v.length === 10 || v.length === 11;
-  }
-  
-  // 기타 지역번호 (031, 032, 033, 041, 042, 043, 044, 051, 052, 053, 054, 055, 061, 062, 063, 064)
-  if (v.startsWith("03") || v.startsWith("04") || v.startsWith("05") || v.startsWith("06")) {
-    return v.length === 9 || v.length === 10 || v.length === 11;
-  }
-  
-  // 기본 체크: 10~11자리
-  return v.length >= 10 && v.length <= 11;
-};

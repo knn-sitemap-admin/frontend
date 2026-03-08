@@ -44,9 +44,11 @@ export default function CompletionRegistryContainer({
       setSlopeGrade={form.setSlopeGrade}
       structureGrade={form.structureGrade}
       setStructureGrade={form.setStructureGrade}
-      /* 건물유형(enum) 그대로 전달 */
+      /* 건물유형(enum) */
       buildingType={form.buildingType}
       setBuildingType={form.setBuildingType}
+      buildingTypes={form.buildingTypes}
+      setBuildingTypes={form.setBuildingTypes}
       /* ✅ 엘리베이터 */
       elevator={form.elevator}
       setElevator={form.setElevator}

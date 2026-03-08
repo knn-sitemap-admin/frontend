@@ -24,6 +24,7 @@ type CreateMarkerOpts = {
   kind: PinKind; // 기존 파라미터 유지
   title?: string | null;
   badge?: string | null; // ✅ 서버에서 온 배지(예: "R3", "R4_TERRACE")
+  isCompleted?: boolean;
 };
 
 export function createMarker(kakao: any, pos: any, opts: CreateMarkerOpts) {
@@ -34,7 +35,7 @@ export function createMarker(kakao: any, pos: any, opts: CreateMarkerOpts) {
   };
 
   // ✅ badge → PinKind 매핑(있으면 우선 사용)
-  const mappedKind = mapBadgeToPinKind(opts.badge);
+  const mappedKind = mapBadgeToPinKind(opts.badge, opts.isCompleted);
   const effectiveKind: PinKind = (mappedKind ?? opts.kind) as PinKind;
 
   // ✅ 항상 동일 규격의 Size/Offset을 강제
@@ -52,6 +53,25 @@ export function createMarker(kakao: any, pos: any, opts: CreateMarkerOpts) {
   });
 
   return new kakao.maps.Marker(mkOptions);
+}
+
+/** 마커 아이콘(이미지) 업데이트 유틸 */
+export function updateMarkerIcon(kakao: any, mk: any, opts: CreateMarkerOpts) {
+  const mappedKind = mapBadgeToPinKind(opts.badge, opts.isCompleted);
+  const effectiveKind: PinKind = (mappedKind ?? opts.kind) as PinKind;
+
+  const markerSize = new kakao.maps.Size(PIN_MARKER.size.w, PIN_MARKER.size.h);
+  const markerOffset = new kakao.maps.Point(
+    PIN_MARKER.offset.x,
+    PIN_MARKER.offset.y
+  );
+
+  const iconUrl = getPinUrl(effectiveKind) || TRANSPARENT_DOT;
+  mk.setImage(
+    new kakao.maps.MarkerImage(iconUrl, markerSize, {
+      offset: markerOffset,
+    })
+  );
 }
 
 /**

@@ -1,10 +1,10 @@
 import { api } from "../../api";
 
-type PinsMapQuery = {
-  swLat: number;
-  swLng: number;
-  neLat: number;
-  neLng: number;
+export type PinsMapQuery = {
+  swLat?: number;
+  swLng?: number;
+  neLat?: number;
+  neLng?: number;
   isOld?: boolean;
   isNew?: boolean;
   favoriteOnly?: boolean;
@@ -17,6 +17,8 @@ export type PinsMapPoint = {
   lng: number;
   badge: string | null;
   title?: string | null;
+  addressLine: string;
+  isCompleted: boolean;
 };
 
 export type PinsMapDraft = {
@@ -25,6 +27,7 @@ export type PinsMapDraft = {
   lng: number;
   draftState: "BEFORE" | "SCHEDULED";
   title?: string | null;
+  addressLine: string;
 };
 
 export type PinsMapResponse = {
@@ -39,8 +42,9 @@ export type PinsMapResponse = {
   statusCode?: number;
 };
 
-// 🔹 bounds 값 숫자 검증 + NaN/Infinity 방지
+// 🔹 bounds 값 숫자 검증 + NaN/Infinity 방지 (값이 있을 때만 체크)
 const toNum = (label: string, v: unknown) => {
+  if (v == null) return undefined;
   const n = Number(v);
   if (!Number.isFinite(n)) {
     throw new Error(
@@ -52,8 +56,11 @@ const toNum = (label: string, v: unknown) => {
   return n;
 };
 
+/**
+ * 지도 핀/임시핀 조회 API
+ */
 export async function getPinsInBounds(q: PinsMapQuery, signal?: AbortSignal) {
-  // 🔹 안전한 파라미터로 변환
+  // 🔹 안전한 파라미터로 변환 (값이 제공된 경우만)
   const safeParams: PinsMapQuery = {
     ...q,
     swLat: toNum("swLat", q.swLat),
@@ -73,13 +80,14 @@ export async function getPinsInBounds(q: PinsMapQuery, signal?: AbortSignal) {
     throw new Error(msg);
   }
 
-  const raw = data.data; // { mode:"point", points, drafts }
+  const raw = data.data;
 
-  // 🔹 응답 좌표도 number로 정규화 (string으로 와도 안전)
+  // 🔹 응답 좌표도 number로 정규화
   const points: PinsMapPoint[] = (raw.points ?? []).map((p) => ({
     ...p,
     lat: Number(p.lat),
     lng: Number(p.lng),
+    isCompleted: !!p.isCompleted,
   }));
 
   const drafts: PinsMapDraft[] = (raw.drafts ?? []).map((p) => ({
@@ -94,3 +102,6 @@ export async function getPinsInBounds(q: PinsMapQuery, signal?: AbortSignal) {
     drafts,
   };
 }
+
+/** 별칭: 백엔드 컨트롤러 명칭과 통일 */
+export const getMapPins = getPinsInBounds;

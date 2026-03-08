@@ -14,7 +14,9 @@ export type ApiPin = {
 
   ageType?: "NEW" | "OLD" | null;
 
-  buildingType?: "APT" | "OP" | "주택" | "근생" | string | null;
+  buildingType?: string | null; // 레거시 폴백 (일부 오래된 데이터 대비)
+  /** ✅ 건물유형 배열 (등기 표시용) */
+  buildingTypes?: string[] | null;
 
   /** ✅ 숫자 필드들 */
   totalBuildings?: number | null;
@@ -94,6 +96,7 @@ export type ApiPin = {
 
   /** 🔹 리베이트 텍스트(있다면) */
   rebateText?: string | null;
+  isCompleted?: boolean;
 };
 
 /* ───────────── 유틸 ───────────── */
@@ -149,7 +152,7 @@ function toOptionLabels(o?: ApiPin["options"]): string[] | undefined {
   if (o.hasKitchenWindow) labels.push("주방창");
   if (o.hasCityGas) labels.push("도시가스");
   if (o.hasInduction) labels.push("인덕션");
-  
+
   // ✅ Enum 필드들도 뱃지로 추가
   if (o.kitchenLayout === "G") labels.push("주방구조 ㄱ");
   if (o.kitchenLayout === "D") labels.push("주방구조 ㄷ");
@@ -163,7 +166,7 @@ function toOptionLabels(o?: ApiPin["options"]): string[] | undefined {
   if (o.livingRoomView === "OPEN") labels.push("뻥뷰");
   if (o.livingRoomView === "NORMAL") labels.push("평범");
   if (o.livingRoomView === "BLOCKED") labels.push("막힘");
-  
+
   return labels.length ? labels : undefined;
 }
 
@@ -237,6 +240,7 @@ function mapUnits(apiUnits?: ApiPin["units"]):
       hasTerrace: boolean;
       minPrice?: number | null;
       maxPrice?: number | null;
+      note?: string | null;
     }>
   | undefined {
   if (!Array.isArray(apiUnits) || apiUnits.length === 0) return undefined;
@@ -264,10 +268,10 @@ function mapUnits(apiUnits?: ApiPin["units"]):
     hasLoft: toBool(u?.hasLoft),
     hasTerrace: toBool(u?.hasTerrace),
     minPrice:
-      u?.minPrice == null ? undefined : toIntOrUndef(u?.minPrice) ?? null,
+      u?.minPrice == null ? undefined : (toIntOrUndef(u?.minPrice) ?? 0) * 1000000,
     maxPrice:
-      u?.maxPrice == null ? undefined : toIntOrUndef(u?.maxPrice) ?? null,
-    // note는 버림
+      u?.maxPrice == null ? undefined : (toIntOrUndef(u?.maxPrice) ?? 0) * 1000000,
+    note: u?.note ?? null,
   }));
 }
 
@@ -278,10 +282,16 @@ export function toViewDetailsFromApi(
   const orientations = toOrientationRows(api.directions);
   const area = mapAreaGroups(api);
 
+  // 등기: buildingTypes 배열 우선 (API 신규 표준), 레거시 buildingType 폴백 유지
   const registryLabel =
-    BUILDING_TYPE_LABEL[String(api.buildingType ?? "")] ??
-    api.buildingType ??
-    undefined;
+    Array.isArray(api.buildingTypes) && api.buildingTypes.length > 0
+      ? api.buildingTypes
+          .map((t) => BUILDING_TYPE_LABEL[String(t ?? "")] ?? t)
+          .filter(Boolean)
+          .join(", ")
+      : api.buildingType
+        ? BUILDING_TYPE_LABEL[String(api.buildingType)] ?? api.buildingType
+        : undefined;
 
   // ⭐ parkingGrade/별점 변환
   const pg = normalizeParkingGrade(api.parkingGrade);
@@ -301,7 +311,7 @@ export function toViewDetailsFromApi(
     id: String(api.id),
 
     /** ✅ 서버 badge → 핀 종류로 역매핑 (PinKind | undefined) */
-    pinKind: mapBadgeToPinKind(api.badge),
+    pinKind: mapBadgeToPinKind(api.badge, api.isCompleted),
 
     title: api.name ?? api.badge ?? undefined,
     address: api.addressLine ?? undefined,

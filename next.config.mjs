@@ -6,7 +6,7 @@ if (
 }
 
 // ✅ .env.local 의 NEXT_PUBLIC_API_BASE 사용
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3050";
+const API_ORIGIN = process.env.NEXT_PUBLIC_IS_DEV === "true" ? "http://localhost:3050" : process.env.NEXT_PUBLIC_API_BASE;
 
 // ✅ remotePatterns 구성 (placehold.co + 필요 시 API_ORIGIN)
 const remotePatterns = [
@@ -30,7 +30,7 @@ try {
 }
 
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true },
+  //   eslint: { ignoreDuringBuilds: true }, // ⛔️ Deprecated warning fix
   images: { remotePatterns }, // ⛔️ domains 대신 remotePatterns
   async rewrites() {
     return [

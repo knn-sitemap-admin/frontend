@@ -29,6 +29,9 @@ interface ExplorationItemProps {
 
   /** ✅ 아이템 클릭 시 지도 이동 등 상위에서 처리하고 싶을 때 */
   onFocusMap?: (item: ListItem) => void;
+
+  /** ✅ 표시할 순번 (1, 2, 3...) */
+  number?: number;
 }
 
 export function ExplorationItem({
@@ -42,6 +45,7 @@ export function ExplorationItem({
   onMoveItem,
   onDeleteItem,
   onFocusMap,
+  number,
 }: ExplorationItemProps) {
   const isDragging = draggedItem === item.id;
 
@@ -68,13 +72,20 @@ export function ExplorationItem({
         isDragging && "opacity-50"
       )}
     >
-      <GripVertical
-        className={cn(
-          "mt-0.5 h-3 w-3 text-muted-foreground group-hover:text-gray-700",
-          "cursor-grab active:cursor-grabbing"
+      <div className="flex items-center gap-1 min-w-[20px] shrink-0">
+        <GripVertical
+          className={cn(
+            "mt-0.5 h-3 w-3 text-muted-foreground group-hover:text-gray-700",
+            "cursor-grab active:cursor-grabbing"
+          )}
+          aria-hidden="true"
+        />
+        {number != null && (
+          <span className="text-[11px] font-bold text-blue-600 min-w-[14px]">
+            {number}
+          </span>
         )}
-        aria-hidden="true"
-      />
+      </div>
 
       {/* 제목 + 날짜 (👈 이 영역 클릭 시 지도 이동 콜백 호출) */}
       <button

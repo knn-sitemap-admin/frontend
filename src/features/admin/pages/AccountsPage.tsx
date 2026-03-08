@@ -16,19 +16,16 @@ import type { UserRow, RoleKey } from "@/features/users/types";
 import { api } from "@/shared/api/api";
 import { useToast } from "@/hooks/use-toast";
 import { SearchBar } from "@/features/table/components/SearchBar";
-import {
-  getCredentialIdFromAccountId,
-  getCredentialDetail,
-} from "@/features/users/api/account";
+// getCredentialIdFromAccountId는 더 이상 사용되지 않습니다.
 
 export default function AccountsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingCredentialId, setEditingCredentialId] = useState<string | null>(
-    null
+    null,
   );
   const [editingPositionRank, setEditingPositionRank] = useState<string | null>(
-    null
+    null,
   );
   const [viewingFavoritesAccountId, setViewingFavoritesAccountId] = useState<
     string | null
@@ -57,7 +54,7 @@ export default function AccountsPage() {
   // 정렬 핸들러
   const handleSort = (
     column: "name" | "rank" | null,
-    direction: "asc" | "desc"
+    direction: "asc" | "desc",
   ) => {
     setSortColumn(column);
     setSortDirection(direction);
@@ -115,10 +112,9 @@ export default function AccountsPage() {
   // 백엔드 응답을 UserRow 형식으로 변환
   const transformToUserRows = (employees: EmployeeListItem[]): UserRow[] => {
     return employees.map((employee) => {
-      // role 캐시에서 가져오기
-      const role = roleMap.get(employee.accountId);
       return {
         id: employee.accountId, // accountId를 id로 사용
+        credentialId: employee.credentialId, // credentialId 포함
         name: employee.name || "이름 없음",
         phone: employee.phone || undefined,
         positionRank: employee.positionRank || undefined,
@@ -126,64 +122,10 @@ export default function AccountsPage() {
         teamName: employee.teamName || undefined,
         favoritePins: employee.favoritePins || [], // 계정별 즐겨찾기 핀 목록 포함
         reservedPinDrafts: employee.reservedPinDrafts || [], // 계정별 예약한 핀 목록 포함
-        role: role, // role 정보 포함
+        role: employee.role, // role 정보 포함
       };
     });
   };
-
-  // accountId -> credentialId 매핑 캐시
-  const credentialIdMapRef = React.useRef<Map<string, string>>(new Map());
-  const loadingCredentialIdsRef = React.useRef<Set<string>>(new Set());
-  // accountId -> role 매핑 캐시
-  const [roleMap, setRoleMap] = React.useState<
-    Map<string, "admin" | "manager" | "staff">
-  >(new Map());
-  const loadingRolesRef = React.useRef<Set<string>>(new Set());
-
-  // 계정 목록이 변경될 때 각 계정의 role 정보 미리 로드
-  React.useEffect(() => {
-    if (!employeesList || employeesList.length === 0) return;
-
-    const loadRoles = async () => {
-      const accountsToLoad = employeesList.filter(
-        (employee) =>
-          !roleMap.has(employee.accountId) &&
-          !loadingRolesRef.current.has(employee.accountId)
-      );
-
-      if (accountsToLoad.length === 0) return;
-
-      const newRoleMap = new Map(roleMap);
-
-      // 병렬로 role 조회
-      await Promise.all(
-        accountsToLoad.map(async (employee) => {
-          const accountId = employee.accountId;
-          loadingRolesRef.current.add(accountId);
-
-          try {
-            // credentialId 조회
-            const credentialId = await getCredentialIdFromAccountId(accountId);
-            if (credentialId) {
-              // credential detail 조회하여 role 가져오기
-              const detail = await getCredentialDetail(credentialId);
-              console.log(`계정 ${accountId}의 role:`, detail.role);
-              newRoleMap.set(accountId, detail.role);
-            }
-          } catch (error) {
-            console.error(`계정 ${accountId}의 role 조회 실패:`, error);
-          } finally {
-            loadingRolesRef.current.delete(accountId);
-          }
-        })
-      );
-
-      // 상태 업데이트
-      setRoleMap(newRoleMap);
-    };
-
-    loadRoles();
-  }, [employeesList]);
 
   const userRows = useMemo(() => {
     if (!employeesList) return [];
@@ -195,30 +137,13 @@ export default function AccountsPage() {
     }
 
     return rows;
-  }, [employeesList, sortDirection, roleMap]);
+  }, [employeesList, sortDirection]);
 
   // 계정 제거/비활성화 핸들러
   const handleRemove = async (accountId: string) => {
-    // 캐시에서 credentialId 조회
-    let credentialId = credentialIdMapRef.current.get(accountId);
-
-    // 캐시에 없으면 조회 시도
-    if (!credentialId && !loadingCredentialIdsRef.current.has(accountId)) {
-      loadingCredentialIdsRef.current.add(accountId);
-      try {
-        const fetchedCredentialId = await getCredentialIdFromAccountId(
-          accountId
-        );
-        if (fetchedCredentialId) {
-          credentialId = fetchedCredentialId;
-          credentialIdMapRef.current.set(accountId, fetchedCredentialId);
-        }
-      } catch (error) {
-        console.error("credentialId 조회 실패:", error);
-      } finally {
-        loadingCredentialIdsRef.current.delete(accountId);
-      }
-    }
+    // userRows에서 해당 계정 찾기
+    const account = userRows.find((row) => row.id === accountId);
+    const credentialId = account?.credentialId;
 
     if (!credentialId) {
       toast({
@@ -231,7 +156,7 @@ export default function AccountsPage() {
 
     if (
       confirm(
-        "해당 계정을 비활성화하시겠습니까? 비활성화된 계정은 로그인할 수 없습니다."
+        "해당 계정을 비활성화하시겠습니까? 비활성화된 계정은 로그인할 수 없습니다.",
       )
     ) {
       disableAccountMutation.mutate({
@@ -249,30 +174,10 @@ export default function AccountsPage() {
 
   // 계정 수정 핸들러
   const handleEdit = async (accountId: string) => {
-    // userRows에서 해당 계정 찾기 (positionRank 가져오기 위해)
+    // userRows에서 해당 계정 찾기
     const account = userRows.find((row) => row.id === accountId);
     const positionRank = account?.positionRank || null;
-
-    // 캐시에서 credentialId 조회
-    let credentialId = credentialIdMapRef.current.get(accountId);
-
-    // 캐시에 없으면 조회 시도
-    if (!credentialId && !loadingCredentialIdsRef.current.has(accountId)) {
-      loadingCredentialIdsRef.current.add(accountId);
-      try {
-        const fetchedCredentialId = await getCredentialIdFromAccountId(
-          accountId
-        );
-        if (fetchedCredentialId) {
-          credentialId = fetchedCredentialId;
-          credentialIdMapRef.current.set(accountId, fetchedCredentialId);
-        }
-      } catch (error) {
-        console.error("credentialId 조회 실패:", error);
-      } finally {
-        loadingCredentialIdsRef.current.delete(accountId);
-      }
-    }
+    const credentialId = account?.credentialId;
 
     if (!credentialId) {
       toast({
@@ -311,7 +216,7 @@ export default function AccountsPage() {
   const viewingAccountFavorites = useMemo(() => {
     if (!viewingFavoritesAccountId) return null;
     const account = userRows.find(
-      (row) => row.id === viewingFavoritesAccountId
+      (row) => row.id === viewingFavoritesAccountId,
     );
     return account?.favoritePins || [];
   }, [viewingFavoritesAccountId, userRows]);
@@ -320,7 +225,7 @@ export default function AccountsPage() {
   const viewingAccountReservedPins = useMemo(() => {
     if (!viewingReservedPinsAccountId) return null;
     const account = userRows.find(
-      (row) => row.id === viewingReservedPinsAccountId
+      (row) => row.id === viewingReservedPinsAccountId,
     );
     return account?.reservedPinDrafts || [];
   }, [viewingReservedPinsAccountId, userRows]);

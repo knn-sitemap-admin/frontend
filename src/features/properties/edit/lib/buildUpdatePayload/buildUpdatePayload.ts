@@ -178,8 +178,10 @@ export function buildUpdatePayload(
   };
 
   if (Array.isArray(a.imageFolders)) {
-    for (const g of a.imageFolders)
-      for (const img of g ?? []) pushUrl(urlsHorizontal, img?.url);
+    for (const g of a.imageFolders) {
+      const items = Array.isArray(g) ? g : (g as any)?.images ?? [];
+      for (const img of items) pushUrl(urlsHorizontal, img?.url);
+    }
   }
   if (Array.isArray(a.verticalImages)) {
     for (const img of a.verticalImages) pushUrl(urlsVertical, img?.url);

@@ -8,15 +8,18 @@ import {
   toServerPointsFromPins,
   toServerDraftsFromDrafts,
 } from "../lib/searchUtils";
+import { type Bounds } from "@/features/map/shared/types/bounds.type";
 
 type Args = {
-  mapInstance: any;
+  bounds: (Bounds & { zoom: number }) | null; // mapInstance 대신 bounds를 직접 받음
+  zoom?: number;
   filter: MapMenuKey;
   searchRes: PinSearchResult | null;
 };
 
 export function useViewportPinsForMapHome({
-  mapInstance,
+  bounds,
+  zoom,
   filter,
   searchRes,
 }: Args) {
@@ -46,10 +49,10 @@ export function useViewportPinsForMapHome({
     drafts: serverDrafts,
     loading: pinsLoading,
     error: pinsError,
-    reload, // 👈 usePinsFromViewport에서 넘어오는 reload
+    reload,
   } = usePinsFromViewport({
-    map: mapInstance,
-    debounceMs: 300,
+    bounds, // mapInstance 대신 bounds 전달
+    zoom,
     draftState: draftStateForQuery,
     isNew: isNewFlag,
     isOld: isOldFlag,
@@ -57,13 +60,13 @@ export function useViewportPinsForMapHome({
 
   const normServerPoints = useMemo(
     () =>
-      serverPoints?.map((p) => ({ ...p, title: p.title ?? undefined })) ?? [],
+      serverPoints?.map((p) => ({ ...p, title: p.title ?? undefined, addressLine: p.addressLine ?? undefined })) ?? [],
     [serverPoints]
   );
 
   const normServerDrafts = useMemo(
     () =>
-      serverDrafts?.map((d) => ({ ...d, title: d.title ?? undefined })) ?? [],
+      serverDrafts?.map((d) => ({ ...d, title: d.title ?? undefined, addressLine: d.addressLine ?? undefined })) ?? [],
     [serverDrafts]
   );
 

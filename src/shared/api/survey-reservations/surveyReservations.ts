@@ -12,6 +12,7 @@ export type CreateSurveyReservationDto = {
   reservedDate: string; // "YYYY-MM-DD"
   note?: string; // 선택(서버가 무시해도 무방)
   insertAt?: number; // 선택: 0 이상 정수(없으면 맨 뒤)
+  assigneeId?: number; // 관리자/매니저 대리 예약용 대상 계정 ID
 };
 
 export type MyReservation = {

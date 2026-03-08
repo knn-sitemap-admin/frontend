@@ -154,7 +154,7 @@ export function usePinContextMenuActions({
     return undefined;
   }, [pin, metaAtPos, propertyId, position, roadAddress, jibunAddress]);
 
-  const handleReserveClick = useCallback(async () => {
+  const handleReserveClick = useCallback(async (assigneeId?: number) => {
     try {
       setReserving(true);
 
@@ -173,6 +173,7 @@ export function usePinContextMenuActions({
       await createSurveyReservation({
         pinDraftId: draftId,
         reservedDate: todayYmdKST(),
+        assigneeId,
       });
 
       // 2) 예약 리스트 동기화

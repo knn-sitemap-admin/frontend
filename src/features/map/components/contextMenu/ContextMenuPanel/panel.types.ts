@@ -77,6 +77,8 @@ export type ContextMenuPanelProps = {
   reservationId?: string | null;
   /** 예약 취소 핸들러 (내 예약인 경우에만 전달) */
   onCancelReservation?: () => void;
+  /** 강제 취소 권한 여부 (타인의 예약을 취소할 수 있는 뱃지/텍스트 변경용) */
+  isForceCancel?: boolean;
 
   /** 즐겨찾기 UI */
   showFav?: boolean;
