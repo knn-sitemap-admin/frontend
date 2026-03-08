@@ -1,4 +1,4 @@
-import { api } from "@/shared/api/api";
+import { api, getOnce } from "@/shared/api/api";
 
 // 프로필 정보 조회
 export type ProfileResponse = {
@@ -146,6 +146,12 @@ export type UpsertEmployeeInfoRequest = {
   docUrlResidentAbstract?: string | null;
   docUrlIdCard?: string | null;
   docUrlFamilyRelation?: string | null;
+  team?: {
+    teamId: string;
+    isPrimary?: boolean;
+    joinedAt?: string;
+  };
+  teamId?: string | null;
 };
 
 export type CreateEmployeeRequest = {
@@ -171,11 +177,6 @@ export type CreateEmployeeResponse = {
     | "TEAM_LEADER"
     | "DIRECTOR"
     | null;
-  team?: {
-    id: string;
-    name: string;
-    code: string;
-  };
 };
 
 // 첫 번째 API: 계정 생성 (credentials) - Deprecated: createEmployee 사용 권장
@@ -214,11 +215,18 @@ export type CreateEmployeeInfoRequest = {
     | "TEAM_LEADER"
     | "DIRECTOR"
     | "CEO";
+  teamName?: string;
   profileUrl?: string;
   docUrlIdCard?: string;
   docUrlResidentRegistration?: string;
   docUrlResidentAbstract?: string;
   docUrlFamilyRelation?: string;
+  team?: {
+    teamId: string;
+    isPrimary?: boolean;
+    joinedAt?: string;
+  };
+  teamId?: string | null;
 };
 
 export type CreateEmployeeInfoResponse = {
@@ -231,6 +239,11 @@ export type CreateEmployeeInfoResponse = {
   salaryAccount: string;
   positionRank: string;
   isProfileCompleted: boolean;
+  team?: {
+    id: string;
+    name: string;
+    code: string;
+  };
 };
 
 // 새로운 통합 API: 사원 계정 생성 (계정 + 직원 정보 한 번에)
@@ -253,26 +266,7 @@ export async function createEmployee(
   }
 }
 
-// 첫 번째 API: 계정 생성 (Deprecated: createEmployee 사용 권장)
-export async function createAccount(
-  data: CreateAccountRequest,
-): Promise<CreateAccountResponse> {
-  try {
-    console.log("계정 생성 API 호출:", data);
-    const response = await api.post<{
-      message: string;
-      data: CreateAccountResponse;
-    }>("/dashboard/accounts/credentials", data);
-    console.log("계정 생성 API 응답:", response.data);
-    return response.data.data;
-  } catch (error: any) {
-    console.error("계정 생성 API 호출 실패:", error);
-    console.error("에러 상세:", error?.response?.data);
-    throw error;
-  }
-}
-
-// 두 번째 API: 직원 정보 생성
+// 직원 정보 생성
 export async function createEmployeeInfo(
   credentialId: string,
   data: CreateEmployeeInfoRequest,
@@ -323,17 +317,18 @@ export type CredentialDetailResponse = {
   } | null;
 };
 
+/** 상세 정보 조회 (credentialId) */
 export async function getCredentialDetail(
   credentialId: string,
 ): Promise<CredentialDetailResponse> {
   try {
-    const response = await api.get<{
+    const response = await getOnce<{
       message: string;
       data: CredentialDetailResponse;
     }>(`/dashboard/accounts/credentials/${credentialId}`);
     return response.data.data;
   } catch (error: any) {
-    console.error("계정 상세 조회 실패:", error);
+    console.error("계정 상세 정보 조회 실패:", error);
     throw error;
   }
 }
@@ -378,6 +373,8 @@ export type EmployeeListQuery = {
 
 export type EmployeeListItem = {
   accountId: string;
+  credentialId: string;
+  role: "admin" | "manager" | "staff";
   profileUrl: string | null;
   name: string | null;
   positionRank: PositionRank | null;
@@ -455,107 +452,9 @@ export async function patchPositionRank(
   }
 }
 
-// accountId 목록에 대해 credentialId + role을 한 번에 조회 (중복 호출 방지)
-export async function batchResolveAccountIdToCredentialAndRole(
-  accountIds: string[],
-): Promise<
-  Map<
-    string,
-    { credentialId: string; role: "admin" | "manager" | "staff" }
-  >
-> {
-  const result = new Map<
-    string,
-    { credentialId: string; role: "admin" | "manager" | "staff" }
-  >();
-  const idSet = new Set(accountIds);
-  if (idSet.size === 0) return result;
-
-  try {
-    const listResponse = await api.get<{
-      message: string;
-      data: Array<{ id: string }>;
-    }>("/dashboard/accounts/credentials");
-
-    if (!listResponse.data.data || listResponse.data.data.length === 0) {
-      return result;
-    }
-
-    const credentialsToCheck = listResponse.data.data.slice(0, 100);
-    for (const cred of credentialsToCheck) {
-      if (result.size >= idSet.size) break;
-      try {
-        const detail = await getCredentialDetail(cred.id);
-        const accountId = detail.account?.id;
-        if (accountId && idSet.has(accountId)) {
-          result.set(accountId, { credentialId: cred.id, role: detail.role });
-        }
-      } catch {
-        continue;
-      }
-    }
-    return result;
-  } catch (error: any) {
-    console.warn(
-      "계정 배치 조회 실패:",
-      error?.response?.status || error?.message,
-    );
-    return result;
-  }
-}
-
-// accountId로 credentialId 조회
-// 참고: 백엔드 API에 accountId로 credentialId를 직접 조회하는 API가 없으므로,
-// credentials 목록을 조회하여 찾으려고 시도합니다.
-// 만약 이 API가 실패하면 null을 반환하여 기본 정보만 표시합니다.
-export async function getCredentialIdFromAccountId(
-  accountId: string,
-): Promise<string | null> {
-  try {
-    const listResponse = await api.get<{
-      message: string;
-      data: Array<{
-        id: string;
-      }>;
-    }>("/dashboard/accounts/credentials");
-
-    if (!listResponse.data.data || listResponse.data.data.length === 0) {
-      return null;
-    }
-
-    // 각 credential의 detail을 조회하여 accountId와 일치하는 것을 찾기
-    // 성능상 최대 50개까지만 확인
-    const credentialsToCheck = listResponse.data.data.slice(0, 50);
-
-    for (const cred of credentialsToCheck) {
-      try {
-        const detailResponse = await api.get<{
-          message: string;
-          data: {
-            id: string;
-            account: {
-              id: string;
-            } | null;
-          };
-        }>(`/dashboard/accounts/credentials/${cred.id}`);
-
-        if (detailResponse.data.data.account?.id === accountId) {
-          return cred.id;
-        }
-      } catch (e) {
-        // 개별 credential 조회 실패는 무시하고 계속
-        continue;
-      }
-    }
-
-    return null;
-  } catch (error: any) {
-    // credentials 목록 조회 실패 시 에러를 로그로만 남기고 null 반환
-    // (기본 정보만 표시하도록 함)
-    console.warn(
-      "credentialId 조회 실패 (기본 정보만 표시):",
-      error?.response?.status || error?.message,
-    );
-    return null;
-  }
-}
+/** 
+ * 아래의 함수들은 목록 조회 API 개선(credentialId, role 포함)으로 인해 더 이상 사용되지 않습니다.
+ * 추후 완전히 필요 없을 때 삭제 가능합니다.
+ */
+// export async function getCredentialIdFromAccountId(...) { ... }
+// export async function batchResolveAccountIdToCredentialAndRole(...) { ... }

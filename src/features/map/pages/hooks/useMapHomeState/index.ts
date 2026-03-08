@@ -49,7 +49,17 @@ export function useMapHomeState() {
   // 뷰포스트 & 서버 핀
   const postViewport = useViewportPost();
   const lastViewportRef = useRef<Viewport | null>(null);
-  const { points, drafts, setBounds, refetch } = usePinsMap();
+  const {
+    points,
+    drafts,
+    draftsMerged,
+    setBounds,
+    refetch,
+    refreshViewportPins,
+    upsertDraftMarker,
+    replaceTempByRealId,
+    deletePinLocally,
+  } = usePinsMap();
 
   // 방금 등록된 draft 숨김 관리
   const { hiddenDraftIds, hideDraft, clearHiddenDraft } = useHiddenDrafts();
@@ -236,6 +246,7 @@ export function useMapHomeState() {
     hideDraft,
     refetch,
     closeMenu,
+    deletePinLocally,
   });
 
   // 마커 클릭 (매물핀 / __visit__ / __draft__ 모두 지원)
@@ -273,7 +284,7 @@ export function useMapHomeState() {
   // ⭐ 마커 목록 (필터 + 숨김 반영)
   const markers = useMarkersForMapHome({
     points,
-    drafts,
+    drafts: draftsMerged,
     draftPin,
     hiddenDraftIds,
     filter,
@@ -401,6 +412,12 @@ export function useMapHomeState() {
 
     /** ✅ ModalsHost로 내려줄 draft numeric id */
     pinDraftId,
+    refetchPins: refreshViewportPins,
+    upsertDraftMarker,
+    replaceTempByRealId,
+    deletePinLocally,
+
+    /** 하단 카드 높이 ref (동적 pan 오프셋용) */
 
     /** 하단 카드 높이 ref (동적 pan 오프셋용) */
     bottomCardHeightRef,

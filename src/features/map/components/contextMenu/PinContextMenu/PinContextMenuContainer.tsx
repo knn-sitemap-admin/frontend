@@ -433,6 +433,12 @@ export default function PinContextMenuContainer(props: Props) {
       try {
         await deletePinDraft(draftId);
 
+        // ⭐ 로컬 상태에서 즉시 숨김 (지연 0초)
+        const deletePinLocally = (props as any).deletePinLocally;
+        if (deletePinLocally) {
+          deletePinLocally(draftId);
+        }
+
         const box = getBoundsBox();
         if (box && refreshViewportPins) {
           await Promise.resolve(refreshViewportPins(box));

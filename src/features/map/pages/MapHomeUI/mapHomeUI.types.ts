@@ -147,6 +147,9 @@ export type MapHomeUIProps = {
   /** ✅ pin-drafts/{id} 조회용 numeric id */
   pinDraftId?: number;
 
+  /** ✅ 부모(MapHomeState) 강제 갱신용 */
+  refetchPins?: (args?: { draftState?: "all" | "before" | "scheduled" }) => void | Promise<void>;
+
   /** 하단 메뉴 카드 높이 측정용 ref — 동적 pan 오프셋 계산용 */
   bottomCardHeightRef?: React.RefObject<number>;
 };

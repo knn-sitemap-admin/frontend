@@ -92,6 +92,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
     closeView,
     /** ✅ 숫자로 내려오는 draft id */
     pinDraftId,
+    /** ✅ 부모(MapHomeState)에서 내려온 강제 리로드 */
+    refetchPins: refetchFromParent,
     /** 하단 카드 높이 ref */
     bottomCardHeightRef,
   } = props;
@@ -438,9 +440,10 @@ export function MapHomeUI(props: MapHomeUIProps) {
   }, [menuOpen, menuAnchor, culledMarkers, kakaoSDK, mapInstance]);
 
   // 🔄 /map 다시 치도록 하는 함수: 이제는 훅의 reloadPins 사용
-  const refreshViewportPins = useCallback(() => {
-    reloadPins?.();
-  }, [reloadPins]);
+  const refreshViewportPins = useCallback(async () => {
+    await reloadPins?.();
+    await refetchFromParent?.({ draftState: "all" });
+  }, [reloadPins, refetchFromParent]);
 
   const {
     viewOpenLocal,

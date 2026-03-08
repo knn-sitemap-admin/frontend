@@ -39,26 +39,40 @@ export function usePinsMap() {
   /** ✅ 클라이언트 낙관적 임시 드래프트(등록 직후 즉시 표시용) */
   const [localDrafts, setLocalDrafts] = useState<DraftWithTitle[]>([]);
 
+  /** ✅ 즉시 삭제 반영을 위한 ID 보관 */
+  const [deletedPinIds, setDeletedPinIds] = useState<Set<string>>(new Set());
+
   /** ✅ 현재 뷰포트에 적용 중인 필터 상태 */
   const [filters, setFilters] = useState<Filters>({});
 
+  const pointsFiltered = useMemo(() => {
+    if (!deletedPinIds.size) return points;
+    return points.filter((p) => !deletedPinIds.has(String(p.id)));
+  }, [points, deletedPinIds]);
+
+  const draftsFiltered = useMemo(() => {
+    if (!deletedPinIds.size) return drafts;
+    return drafts.filter((d) => !deletedPinIds.has(String(d.id)));
+  }, [drafts, deletedPinIds]);
+
   /** 서버 drafts + 로컬 임시 drafts 병합(서버 우선) */
   const draftsMerged = useMemo<DraftWithTitle[]>(() => {
-    if (!localDrafts.length) return drafts as DraftWithTitle[];
     const byId = new Map<string, DraftWithTitle>();
 
     // 1) 로컬 먼저
     for (const d of localDrafts) {
-      byId.set(String(d.id), d);
+      if (!deletedPinIds.has(String(d.id))) {
+        byId.set(String(d.id), d);
+      }
     }
 
     // 2) 서버로 덮어쓰기(동일 id면 서버가 진실)
-    for (const d of drafts) {
+    for (const d of draftsFiltered) {
       byId.set(String(d.id), d as DraftWithTitle);
     }
 
     return Array.from(byId.values());
-  }, [drafts, localDrafts]);
+  }, [draftsFiltered, localDrafts, deletedPinIds]);
 
   /** ⭐ 실제 서버에서 뷰포트 핀 로드하는 내부 헬퍼 */
   const load = useCallback(
@@ -137,6 +151,14 @@ export function usePinsMap() {
 
         return list;
       });
+
+      // 만약 삭제 목록에 있었다면 제거 (재생성 케이스)
+      setDeletedPinIds((prev) => {
+        if (!prev.has(String(m.id))) return prev;
+        const next = new Set(prev);
+        next.delete(String(m.id));
+        return next;
+      });
     },
     []
   );
@@ -153,8 +175,18 @@ export function usePinsMap() {
     []
   );
 
+  /** ✅ 로컬에서 즉시 삭제 반영 */
+  const deletePinLocally = useCallback((id: string | number) => {
+    const idStr = String(id);
+    setDeletedPinIds((prev) => new Set(prev).add(idStr));
+    setLocalDrafts((prev) => prev.filter((d) => String(d.id) !== idStr));
+  }, []);
+
   /** ✅ 로컬 임시 드래프트 초기화(옵션) */
-  const clearLocalDrafts = useCallback(() => setLocalDrafts([]), []);
+  const clearLocalDrafts = useCallback(() => {
+    setLocalDrafts([]);
+    setDeletedPinIds(new Set());
+  }, []);
 
   /** ✅ 현재 bounds + 필터 기준 강제 재패치(뷰포트 갱신 트리거) */
   const refreshViewportPins = useCallback(
@@ -179,8 +211,8 @@ export function usePinsMap() {
   }, []);
 
   return {
-    points, // 서버 원본 points
-    drafts, // 서버 원본 drafts
+    points: pointsFiltered, // 서버 원본 points (필터링됨)
+    drafts: draftsFiltered, // 서버 원본 drafts (필터링됨)
     draftsMerged, // 서버 + 로컬 낙관적 drafts 병합본 (서버 우선)
     localDrafts, // 로컬 임시 drafts (title 포함)
     loading,
@@ -190,6 +222,7 @@ export function usePinsMap() {
     refreshViewportPins, // 필터를 바꾸면서 재패치할 때 사용
     upsertDraftMarker, // 등록 직후 임시 마커 주입
     replaceTempByRealId, // 임시 → 실제 id 치환
+    deletePinLocally, // 로컬에서 즉시 숨김
     clearLocalDrafts, // 로컬 임시 정리
   } as const;
 }

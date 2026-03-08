@@ -93,7 +93,7 @@ export default function TeamManagementPage() {
 
             <Link
               href={`/admin/team-management/${encodeURIComponent(
-                String(team.id)
+                team.id
               )}`}
             >
               <Button className="w-full">{team.name} 관리</Button>

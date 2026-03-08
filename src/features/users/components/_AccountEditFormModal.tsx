@@ -342,11 +342,13 @@ function AccountEditFormModalBody({
         salaryBankName: v.salary_bank_name,
         salaryAccount: v.salary_account,
         positionRank: v.positionRank,
+        teamName: v.teamName,
         profileUrl: v.photo_url,
         docUrlIdCard: v.id_photo_url,
         docUrlResidentRegistration: v.resident_register_url,
         docUrlResidentAbstract: v.resident_extract_url,
         docUrlFamilyRelation: v.family_relation_url,
+        teamId: v.team?.teamId || null,
       };
 
       await createEmployeeInfo(credentialId, employeeData);

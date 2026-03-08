@@ -77,7 +77,7 @@ function keyOf(url: string, params?: any) {
 /* ────────────────────────────────────────────────────────────
    GET single-flight: 동일 url+params 병합 호출
    ──────────────────────────────────────────────────────────── */
-async function getOnce<T = any>(
+export async function getOnce<T = any>(
   url: string,
   config?: { params?: any; signal?: AbortSignal }
 ): Promise<AxiosResponse<T>> {
