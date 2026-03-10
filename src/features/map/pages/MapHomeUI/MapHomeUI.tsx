@@ -26,6 +26,7 @@ import { usePanelsAndToggles } from "./hooks/usePanelsAndToggles";
 import { useFilterSearch } from "./hooks/useFilterSearch";
 import { useViewportPinsForMapHome } from "./hooks/useViewportPinsForMapHome";
 import { useAfterCreateHandler } from "./hooks/useAfterCreateHandler";
+import { useSalePinSearch } from "@/features/map/hooks/search/useSalePinSearch";
 
 /* 👀 지도 포커스 유틸 */
 import { focusMapToPosition } from "./lib/viewUtils";
@@ -204,6 +205,16 @@ export function MapHomeUI(props: MapHomeUIProps) {
     searchRes,
   });
 
+  const {
+    results: saleResults,
+    loading: saleLoading,
+    isOpen: saleModalOpen,
+    setIsOpen: setSaleModalOpen,
+    performSearch: performSaleSearch,
+  } = useSalePinSearch();
+
+  const [qSale, setQSale] = useState("");
+
   // 🔁 메뉴 오픈 핸들러 래핑: 클릭된 핀 id 기준으로 라벨 숨김
   const handleOpenMenuInternal = useCallback(
     (args: {
@@ -222,6 +233,27 @@ export function MapHomeUI(props: MapHomeUIProps) {
       onOpenMenu?.(args);
     },
     [onOpenMenu, onChangeHideLabelForId, hideLabelForId, menuOpen, menuAnchor]
+  );
+
+  const handleSelectSalePin = useCallback(
+    (item: any) => {
+      const lat = Number(item.lat);
+      const lng = Number(item.lng);
+      setSaleModalOpen(false);
+
+      // 1) 지도 이동 + 확대 (레벨 2)
+      focusMapToPosition({ kakaoSDK, mapInstance, lat, lng, level: 2 });
+
+      // 2) 메뉴 강제 오픈
+      const propertyId = item.isDraft ? `__visit__${item.id}` : String(item.id);
+      handleOpenMenuInternal({
+        position: { lat, lng },
+        propertyId,
+        propertyTitle: item.name || "매물 정보",
+        pin: item.isDraft ? { kind: "question", isFav: false } : undefined,
+      });
+    },
+    [kakaoSDK, mapInstance, setSaleModalOpen, handleOpenMenuInternal]
   );
 
   // 🔍 상단 장소 검색 + 검색핀 관리
@@ -638,6 +670,14 @@ export function MapHomeUI(props: MapHomeUIProps) {
             }
           );
         }, [kakaoSDK, mapInstance])}
+        qSale={qSale}
+        onChangeQSale={setQSale}
+        onSubmitSearchSale={performSaleSearch}
+        saleResults={saleResults}
+        saleLoading={saleLoading}
+        saleModalOpen={saleModalOpen}
+        onSaleModalOpenChange={setSaleModalOpen}
+        onSelectSalePin={handleSelectSalePin}
       />
 
       {/* 필터 플로팅 버튼 + 필터 검색 패널 영역 */}

@@ -3,6 +3,7 @@
 import { forwardRef, useCallback } from "react";
 import { cn } from "@/lib/cn";
 import SearchForm from "@/features/map/components/SearchForm/SearchForm";
+import { SalePinSearchModal } from "@/features/map/components/SalePinSearchModal/SalePinSearchModal";
 import TopRightControls from "@/features/map/components/TopRightControls";
 import type { MapMenuKey } from "@/features/map/components/menu/types/mapMenu.types";
 import { PoiKind } from "@/features/map/poi/lib/poiTypes";
@@ -40,6 +41,16 @@ type TopRegionProps = {
   onToggleRoadviewRoad: () => void;
 
   onMoveToCurrentLocation?: () => void;
+
+  qSale: string;
+  onChangeQSale: (v: string) => void;
+  onSubmitSearchSale: (q: string) => void;
+
+  saleResults: any;
+  saleLoading: boolean;
+  saleModalOpen: boolean;
+  onSaleModalOpenChange: (open: boolean) => void;
+  onSelectSalePin: (item: any) => void;
 };
 
 export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
@@ -67,6 +78,14 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
       roadviewRoadOn,
       onToggleRoadviewRoad,
       onMoveToCurrentLocation,
+      qSale,
+      onChangeQSale,
+      onSubmitSearchSale,
+      saleResults,
+      saleLoading,
+      saleModalOpen,
+      onSaleModalOpenChange,
+      onSelectSalePin,
     },
     rightAreaRef
   ) => {
@@ -93,6 +112,24 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
             className="w-full md:max-w-[360px]"
           />
         </div>
+
+        <div className="pointer-events-auto w-full md:w-auto">
+          <SearchForm
+            value={qSale}
+            onChange={onChangeQSale}
+            onSubmit={onSubmitSearchSale}
+            placeholder="매물명 검색"
+            className="w-full md:max-w-[360px] bg-orange-50/95 ring-orange-200 focus-within:ring-orange-400"
+          />
+        </div>
+
+        <SalePinSearchModal
+          isOpen={saleModalOpen}
+          onOpenChange={onSaleModalOpenChange}
+          results={saleResults}
+          loading={saleLoading}
+          onSelect={onSelectSalePin}
+        />
 
         <div className="pointer-events-auto flex items-center justify-between">
           <div

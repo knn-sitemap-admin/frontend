@@ -24,6 +24,9 @@ export type PinSearchParams = {
 
   /** ✅ 최저 실입주금(원 단위) */
   minRealMoveInCostMax?: number;
+
+  /** ✅ 매물핀네임 검색어 */
+  q?: string;
 };
 
 /** 필터 없이 요청할 때만 함께 반환되는 draft */
