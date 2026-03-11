@@ -199,7 +199,11 @@ export default function LightboxModal({
       </div>
 
       {/* 본문 */}
-      <div className="relative px-4 pb-4 flex-1 flex flex-col min-h-0" onClick={stop}>
+      <div 
+        className="relative px-4 pb-4 flex-1 flex flex-col min-h-0" 
+        onClick={stop}
+        onContextMenu={(e) => e.preventDefault()}
+      >
         {/* 메인 이미지 영역 (가장 크게) */}
         <div
           className="relative flex-1 min-h-0 flex items-center justify-center select-none overflow-hidden rounded-md bg-black/20"
@@ -339,7 +343,7 @@ export default function LightboxModal({
             <img
               src={cur?.dataUrl ?? cur?.url}
               alt={albumTitle || `이미지 ${safeIndex + 1}`}
-              className={`block max-h-full max-w-full ${fitClass}`}
+              className={`block max-h-full max-w-full ${fitClass} no-save`}
               draggable={false}
               style={{ pointerEvents: "none" }}
             />
@@ -397,7 +401,7 @@ export default function LightboxModal({
                     <img
                       src={im?.dataUrl ?? im?.url}
                       alt={t}
-                      className="h-full w-full object-cover rounded"
+                      className="h-full w-full object-cover rounded no-save"
                       draggable={false}
                       loading="lazy"
                       decoding="async"

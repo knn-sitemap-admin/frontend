@@ -52,18 +52,29 @@ export const areaSetsToGroups = (
   const groups: AreaGroupPayload[] = [];
 
   items.forEach(({ set, title }, idx) => {
-    const exMin = toNumOrNullFromAny(
+    const exMinRaw = toNumOrNullFromAny(
       set?.exclusiveMinM2 ?? set?.exclusiveMin ?? set?.m2Min
     );
-    const exMax = toNumOrNullFromAny(
+    const exMaxRaw = toNumOrNullFromAny(
       set?.exclusiveMaxM2 ?? set?.exclusiveMax ?? set?.m2Max
     );
-    const acMin = toNumOrNullFromAny(
+    const acMinRaw = toNumOrNullFromAny(
       set?.actualMinM2 ?? set?.realMinM2 ?? set?.realMin
     );
-    const acMax = toNumOrNullFromAny(
+    const acMaxRaw = toNumOrNullFromAny(
       set?.actualMaxM2 ?? set?.realMaxM2 ?? set?.realMax
     );
+
+    // 최소/최대 자동 채우기 로직
+    let exMin = exMinRaw;
+    let exMax = exMaxRaw;
+    if (exMin === null && exMax !== null) exMin = exMax;
+    if (exMax === null && exMin !== null) exMax = exMin;
+
+    let acMin = acMinRaw;
+    let acMax = acMaxRaw;
+    if (acMin === null && acMax !== null) acMin = acMax;
+    if (acMax === null && acMin !== null) acMax = acMin;
 
     const rawTitle = (title ?? "").toString().trim();
     const finalTitle = rawTitle || String(idx + 1);
@@ -110,16 +121,25 @@ export const areaSetsToGroups = (
 /** areaGroups 비교용: sortOrder는 무시하고 값만 비교 */
 export const normalizeAreaGroupsForCompare = (groups: any[] | undefined) => {
   if (!Array.isArray(groups)) return [] as AreaGroupPayload[];
-  return groups.map((g: any, idx: number) => ({
-    title: (g.title ?? "").toString().trim() || String(idx + 1),
-    exclusiveMinM2: toNumOrNullFromAny(
-      g.exclusiveMinM2 ?? g.exclusiveMin ?? g.exMinM2
-    ),
-    exclusiveMaxM2: toNumOrNullFromAny(
-      g.exclusiveMaxM2 ?? g.exclusiveMax ?? g.exMaxM2
-    ),
-    actualMinM2: toNumOrNullFromAny(g.actualMinM2 ?? g.realMinM2 ?? g.realMin),
-    actualMaxM2: toNumOrNullFromAny(g.actualMaxM2 ?? g.realMaxM2 ?? g.realMax),
-    sortOrder: 0, // 비교에서는 무시
-  }));
+  return groups.map((g: any, idx: number) => {
+    let exMin = toNumOrNullFromAny(g.exclusiveMinM2 ?? g.exclusiveMin ?? g.exMinM2);
+    let exMax = toNumOrNullFromAny(g.exclusiveMaxM2 ?? g.exclusiveMax ?? g.exMaxM2);
+    if (exMin !== null && exMax === null) exMax = exMin;
+    if (exMax !== null && exMin === null) exMin = exMax; // typo in thought, let's fix it here
+
+    let acMin = toNumOrNullFromAny(g.actualMinM2 ?? g.realMinM2 ?? g.realMin);
+    let acMax = toNumOrNullFromAny(g.actualMaxM2 ?? g.realMaxM2 ?? g.realMax);
+    if (acMin !== null && acMax === null) acMax = acMin;
+    if (acMax !== null && acMin === null) acMin = acMax;
+
+    return {
+      title: (g.title ?? "").toString().trim() || String(idx + 1),
+      exclusiveMinM2: exMin,
+      exclusiveMaxM2: exMax,
+      actualMinM2: acMin,
+      actualMaxM2: acMax,
+      sortOrder: 0, // 비교에서는 무시
+      units: Array.isArray(g.units) ? g.units : undefined,
+    };
+  });
 };

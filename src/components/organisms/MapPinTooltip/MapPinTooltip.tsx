@@ -36,6 +36,7 @@ export function MapPinTooltip({
       className={cn("w-80 select-none", className)}
       role="dialog"
       aria-label="pin tooltip"
+      onContextMenu={(e) => e.preventDefault()}
     >
       <div className="flex gap-3">
         <div className="h-20 w-28 overflow-hidden rounded-lg border bg-muted">
@@ -44,7 +45,7 @@ export function MapPinTooltip({
             <img
               src={thumbnailUrl}
               alt={title}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover no-save"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">

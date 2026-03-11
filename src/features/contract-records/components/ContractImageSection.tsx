@@ -192,6 +192,7 @@ export function ContractImageSection({
                 <div
                   key={image.id}
                   className="relative group aspect-square bg-gray-100 rounded-md overflow-hidden"
+                  onContextMenu={(e) => e.preventDefault()}
                 >
                   {image.uploading ? (
                     <div className="w-full h-full flex items-center justify-center bg-gray-200">
@@ -203,7 +204,7 @@ export function ContractImageSection({
                     <img
                       src={image.preview}
                       alt={image.file.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover no-save"
                       onError={(e) => {
                         console.error(
                           "계약 이미지 로드 실패:",

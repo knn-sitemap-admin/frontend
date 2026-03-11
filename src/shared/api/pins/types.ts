@@ -14,6 +14,7 @@ export type UnitsItemDto = {
   hasTerrace?: boolean | null;
   minPrice?: number | null;
   maxPrice?: number | null;
+  note?: string | null;
 };
 
 export type CreatePinDto = {

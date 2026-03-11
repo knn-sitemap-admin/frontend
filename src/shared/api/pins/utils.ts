@@ -219,24 +219,21 @@ export function sanitizeAreaGroups(
     if (!g) return;
 
     const title = String(g.title ?? "").trim();
-    if (!title) return;
+    // 🚀 [수정] 제목이 없어도 면적 데이터가 있으면 통과 (특히 기본 세트)
+    
+    const parseNum = (v: any) => {
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
 
-    // 전용(㎡) — 필수
-    const exMin = Number(g.exclusiveMinM2);
-    const exMax = Number(g.exclusiveMaxM2);
-    if (!Number.isFinite(exMin) || !Number.isFinite(exMax)) return;
-    if (exMin > exMax) return; // 역전 방지 (같은 값 허용)
+    const exMin = parseNum(g.exclusiveMinM2);
+    const exMax = parseNum(g.exclusiveMaxM2);
+    const actMin = parseNum(g.actualMinM2);
+    const actMax = parseNum(g.actualMaxM2);
 
-    // 실제(㎡) — 선택 (미입력 시 null)
-    const hasActMin =
-      g.actualMinM2 != null && Number.isFinite(Number(g.actualMinM2));
-    const hasActMax =
-      g.actualMaxM2 != null && Number.isFinite(Number(g.actualMaxM2));
-
-    const actMin = hasActMin ? Number(g.actualMinM2) : null;
-    const actMax = hasActMax ? Number(g.actualMaxM2) : null;
-
-    if (actMin != null && actMax != null && actMin > actMax) return; // 역전 방지 (같은 값 허용)
+    // 최소한 하나는 데이터가 있어야 함
+    if (exMin === null && exMax === null && actMin === null && actMax === null && !title) return;
 
     out.push({
       title: title.slice(0, 50),
@@ -247,7 +244,7 @@ export function sanitizeAreaGroups(
       sortOrder:
         Number.isFinite(Number(g.sortOrder)) && Number(g.sortOrder) >= 0
           ? Number(g.sortOrder)
-          : idx,
+          : idx + 1,
     });
   });
 
@@ -263,8 +260,12 @@ export function sanitizeUnits(
   const nz = (n: number | null) => (n != null && n < 0 ? 0 : n);
 
   const mapped = list.map((u) => {
-    const minP = toNumOrNull(u?.minPrice);
-    const maxP = toNumOrNull(u?.maxPrice);
+    let minP = toNumOrNull(u?.minPrice);
+    let maxP = toNumOrNull(u?.maxPrice);
+
+    if (minP !== null && maxP === null) maxP = minP;
+    if (maxP !== null && minP === null) minP = maxP;
+
     return {
       rooms: nz(toIntOrNull(u?.rooms)),
       baths: nz(toIntOrNull(u?.baths)),
@@ -272,6 +273,7 @@ export function sanitizeUnits(
       hasTerrace: !!u?.hasTerrace,
       minPrice: minP,
       maxPrice: maxP,
+      note: u?.note ?? null,
     };
   });
 

@@ -121,6 +121,7 @@ export default function MiniCarousel({
       role="region"
       aria-roledescription="carousel"
       aria-label="이미지 캐러셀"
+      onContextMenu={(e) => e.preventDefault()}
     >
       {/* Slides */}
       <div className="absolute inset-0 overflow-hidden rounded-md">
@@ -150,7 +151,7 @@ export default function MiniCarousel({
                     <div className="absolute inset-0 bg-muted" />
                   ) : (
                     <div
-                      className="absolute inset-0 bg-no-repeat bg-center bg-cover"
+                      className="absolute inset-0 bg-no-repeat bg-center bg-cover no-save"
                       style={{ backgroundImage: `url("${safeSrc}")` }}
                     />
                   )
@@ -163,7 +164,7 @@ export default function MiniCarousel({
                   <img
                     src={safeSrc}
                     alt={displayTitle}
-                    className="max-w-full max-h-full w-auto h-auto object-contain object-center"
+                    className="max-w-full max-h-full w-auto h-auto object-contain object-center no-save"
                     loading="lazy"
                     decoding="async"
                     draggable={false}

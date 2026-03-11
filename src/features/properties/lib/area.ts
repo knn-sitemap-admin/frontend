@@ -43,8 +43,8 @@ export const packRange = (a: string, b: string): string => {
   const A = (a ?? "").trim();
   const B = (b ?? "").trim();
   if (A && B) return `${A}~${B}`;
-  if (A) return `${A}~`;
-  if (B) return `~${B}`;
+  if (A) return `${A}~${A}`;
+  if (B) return `${B}~${B}`;
   return "";
 };
 
@@ -52,8 +52,14 @@ export const packRange = (a: string, b: string): string => {
 const unpackRange = (range?: string | null): { min: string; max: string } => {
   const raw = String(range ?? "").trim();
   if (!raw) return { min: "", max: "" };
-  const [min, max] = raw.split("~", 2);
-  return { min: (min ?? "").trim(), max: (max ?? "").trim() };
+  const parts = raw.split("~", 2);
+  let min = (parts[0] ?? "").trim();
+  let max = (parts[1] ?? "").trim();
+
+  if (min && !max) max = min;
+  if (max && !min) min = max;
+
+  return { min, max };
 };
 
 /** "m2Min~m2Max|pyMin~pyMax" 또는 "m2Min~m2Max" 또는 "pyMin~pyMax" 지원
@@ -141,18 +147,36 @@ function normalizeAreaGroup(s?: AreaSet): CreatePinAreaGroupDto | null {
     realMax !== undefined;
   if (!hasAny) return null;
 
-  // 전용(㎡) 최소·최대 필수, 실평(㎡)는 선택 (서버 null 허용)
-  if (exMin === undefined || exMax === undefined) return null;
+  // 전용(㎡) 최소·최대 채워주기
+  let finalExMin = exMin;
+  let finalExMax = exMax;
+  if (finalExMin === undefined && finalExMax !== undefined) finalExMin = finalExMax;
+  if (finalExMax === undefined && finalExMin !== undefined) finalExMax = finalExMin;
 
-  const exLo = Math.min(exMin, exMax);
-  const exHi = Math.max(exMin, exMax);
+  // 실평(㎡) 채워주기
+  let finalAcMin = realMin ?? null;
+  let finalAcMax = realMax ?? null;
+  if (finalAcMin === null && finalAcMax !== null) finalAcMin = finalAcMax;
+  if (finalAcMax === null && finalAcMin !== null) finalAcMax = finalAcMin;
+
+  // 전용 또는 실평 중 하나라도 있어야 유효함 (기존에는 전용 필수였음)
+  if (finalExMin === undefined && finalExMax === undefined && finalAcMin === null && finalAcMax === null) return null;
+
+  const exLo =
+    finalExMin !== undefined && finalExMax !== undefined
+      ? Math.min(finalExMin, finalExMax)
+      : null;
+  const exHi =
+    finalExMin !== undefined && finalExMax !== undefined
+      ? Math.max(finalExMin, finalExMax)
+      : null;
   const acLo =
-    realMin !== undefined && realMax !== undefined
-      ? Math.min(realMin, realMax)
+    finalAcMin !== null && finalAcMax !== null
+      ? Math.min(finalAcMin, finalAcMax)
       : null;
   const acHi =
-    realMin !== undefined && realMax !== undefined
-      ? Math.max(realMin, realMax)
+    finalAcMin !== null && finalAcMax !== null
+      ? Math.max(finalAcMin, finalAcMax)
       : null;
 
   // 개별 평수 정규화 (units 필드가 있는 경우)
@@ -182,12 +206,12 @@ function normalizeAreaGroup(s?: AreaSet): CreatePinAreaGroupDto | null {
 
   return {
     title,
-    exclusiveMinM2: Math.max(0, exLo),
-    exclusiveMaxM2: Math.max(0, exHi),
+    exclusiveMinM2: exLo != null ? Math.max(0, exLo) : null,
+    exclusiveMaxM2: exHi != null ? Math.max(0, exHi) : null,
     actualMinM2: acLo != null ? Math.max(0, acLo) : null,
     actualMaxM2: acHi != null ? Math.max(0, acHi) : null,
     ...(units && units.length > 0 ? { units } : {}),
-  };
+  } as CreatePinAreaGroupDto;
 }
 
 /** base + extras → API용 areaGroups (sortOrder 1부터 연속) */

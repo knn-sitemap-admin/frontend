@@ -393,6 +393,7 @@ export default function ViewStage({
         baseAreaTitle: (f as any).baseAreaTitleView,
         extraAreaTitles: (f as any).extraAreaTitlesView,
         unitLines: (f as any).unitLines,
+        units: (f as any).units, 
       },
     };
 

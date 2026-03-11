@@ -10,8 +10,17 @@ export function normalizeUnits(lines: UnitLine[] | undefined | null) {
 
     if (u.rooms !== undefined) out.rooms = toInt(u.rooms) ?? null;
     if (u.baths !== undefined) out.baths = toInt(u.baths) ?? null;
-    if (u.minPrice !== undefined) out.minPrice = toInt(u.minPrice) ?? null;
-    if (u.maxPrice !== undefined) out.maxPrice = toInt(u.maxPrice) ?? null;
+
+    let minPrice = u.minPrice !== undefined ? toInt(u.minPrice) ?? null : undefined;
+    let maxPrice = u.maxPrice !== undefined ? toInt(u.maxPrice) ?? null : undefined;
+    if (minPrice !== undefined && minPrice !== null && (maxPrice === undefined || maxPrice === null)) {
+      maxPrice = minPrice;
+    } else if (maxPrice !== undefined && maxPrice !== null && (minPrice === undefined || minPrice === null)) {
+      minPrice = maxPrice;
+    }
+    if (minPrice !== undefined) out.minPrice = minPrice;
+    if (maxPrice !== undefined) out.maxPrice = maxPrice;
+
     if (u.deposit !== undefined) out.deposit = toInt(u.deposit) ?? null;
     if (u.rent !== undefined) out.rent = toInt(u.rent) ?? null;
     if (u.maintenanceFee !== undefined)

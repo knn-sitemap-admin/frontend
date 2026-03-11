@@ -14,8 +14,8 @@ export interface CreatePinAreaGroupDto {
   title: string;
 
   /** 전용(㎡) — 필수 */
-  exclusiveMinM2: number;
-  exclusiveMaxM2: number;
+  exclusiveMinM2: number | null;
+  exclusiveMaxM2: number | null;
 
   /** 실평(㎡) — 선택 (미입력 시 null) */
   actualMinM2: number | null;

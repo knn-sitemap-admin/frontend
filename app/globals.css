@@ -15,6 +15,17 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* 이미지 저장 방지 유틸리티 */
+  .no-save {
+    -webkit-touch-callout: none; /* iOS Safari: 롱프레스 메뉴 방지 */
+    -webkit-user-select: none;  /* Safari */
+    -khtml-user-select: none;   /* Konqueror HTML */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+    user-select: none;         /* 기본 user-select */
+    -webkit-user-drag: none;    /* Chrome/Safari 드래그 방지 */
+  }
 }
 
 /* === shadcn 팔레트: root/dark '한 번만' 선언 === */

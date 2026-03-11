@@ -9,6 +9,7 @@ type UnitView = {
   hasTerrace: boolean;
   minPrice?: number | null;
   maxPrice?: number | null;
+  note?: string | null;
 };
 
 const toNum = (v: any): number | undefined => {
@@ -34,6 +35,7 @@ function convertLinesToUnits(lines?: any[] | null): UnitView[] {
     // 가격값이 없으면 primary/secondary를 숫자로 파싱해서 사용
     minPrice: toNum(l?.minPrice) ?? toNum(l?.primary),
     maxPrice: toNum(l?.maxPrice) ?? toNum(l?.secondary),
+    note: l?.note ?? null,
   }));
 }
 
@@ -68,6 +70,7 @@ export default function StructureLinesListContainer({
     terrace: u.hasTerrace,
     minPrice: u.minPrice,
     maxPrice: u.maxPrice,
+    note: u.note,
   }));
 
   return (

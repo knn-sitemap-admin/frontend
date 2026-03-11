@@ -22,6 +22,7 @@ type UnitView = {
   hasTerrace: boolean;
   minPrice?: number | null;
   maxPrice?: number | null;
+  note?: string | null;
 };
 
 const asNumber = (x: any): number | undefined =>
@@ -71,6 +72,7 @@ function convertLinesToUnits(lines: any[] | undefined): UnitView[] {
     hasTerrace: asBool(l?.terrace),
     minPrice: asNumber(l?.minPrice),
     maxPrice: asNumber(l?.maxPrice),
+    note: l?.note ?? null,
   }));
 }
 
@@ -150,6 +152,7 @@ export function useViewForm({
             u?.maxPrice === null || u?.maxPrice === undefined
               ? undefined
               : asNumber(u?.maxPrice),
+          note: u?.note ?? null,
         }))
       : [];
 
@@ -227,6 +230,8 @@ export function useViewForm({
 
       // ✅ 카드(폴더) 제목
       cardTitles,
+      // ✅ 향 정보 (수정 모드 주입용)
+      aspects: (d as any).orientations ?? (d as any).aspects,
     };
   }, [
     data,
@@ -300,6 +305,8 @@ export function useViewForm({
       extraRealAreas: view.extraRealAreas,
       baseAreaTitleView: view.baseAreaTitleView,
       extraAreaTitlesView: view.extraAreaTitlesView,
+      // 향
+      aspects: view.aspects,
     }),
     [
       view,

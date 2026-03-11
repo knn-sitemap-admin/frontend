@@ -201,13 +201,8 @@ export function useEditSave({
       // 🔧 무의미한 null/빈값 제거 + [] 방지 (directions/units 보존)
       dto = stripNoopNulls(dto, bridgedInitial) as UpdatePinDto;
 
-      if (
-        (dto as any)?.areaGroups &&
-        Array.isArray((dto as any).areaGroups) &&
-        (dto as any).areaGroups.length === 0
-      ) {
-        delete (dto as any).areaGroups;
-      }
+      // areaGroups 보존: stripNoopNulls 내부에서 처리되므로 여기서 강제 삭제하지 않음
+
 
       // ✅ buildingGrade → 서버로 보낼지 결정
       if (
@@ -280,7 +275,7 @@ export function useEditSave({
       removeIfSameAsInitial("hasElevator");
       removeIfSameAsInitial("buildingType");
       removeIfSameAsInitial("buildingTypes");
-      removeIfSameAsInitial("areaGroups");
+      // areaGroups는 toPinPatch 내부의 hasAreaGroupsDelta 로직이 더 정확하므로 여기서 삭제하지 않음
       removeIfSameAsInitial("privateMemo");
 
       // 최종 dto 기준으로 의미있는 변경 판단

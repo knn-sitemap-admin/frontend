@@ -32,7 +32,7 @@ const toBool = (v: any): boolean | undefined => {
 };
 
 /* AreaSet 정규화 */
-const toStrictAreaSet = (s: any): StrictAreaSet => ({
+const toStrictAreaSet = (s: any): StrictAreaSet & { units?: any[] } => ({
   title: String(s?.title ?? ""),
   exMinM2: String(s?.exMinM2 ?? ""),
   exMaxM2: String(s?.exMaxM2 ?? ""),
@@ -42,6 +42,7 @@ const toStrictAreaSet = (s: any): StrictAreaSet => ({
   realMaxM2: String(s?.realMaxM2 ?? ""),
   realMinPy: String(s?.realMinPy ?? ""),
   realMaxPy: String(s?.realMaxPy ?? ""),
+  units: Array.isArray(s?.units) ? s.units : undefined,
 });
 
 /* ✅ 옵션 빌드/정규화 (핀 PATCH용) */
@@ -194,13 +195,18 @@ const toNumOrNull = (v: any): number | null => {
 };
 const normUnit = (u?: UnitLike2) => {
   const x: any = u ?? {};
+  let minPrice = toNumOrNull(nPick(x, "minPrice", "primary"));
+  let maxPrice = toNumOrNull(nPick(x, "maxPrice", "secondary"));
+  if (minPrice !== null && maxPrice === null) maxPrice = minPrice;
+  if (maxPrice !== null && minPrice === null) minPrice = maxPrice;
+
   return {
     rooms: toNumOrNull(nPick(x, "rooms")),
     baths: toNumOrNull(nPick(x, "baths")),
     hasLoft: bPick(x, "hasLoft", "duplex"),
     hasTerrace: bPick(x, "hasTerrace", "terrace"),
-    minPrice: toNumOrNull(nPick(x, "minPrice", "primary")),
-    maxPrice: toNumOrNull(nPick(x, "maxPrice", "secondary")),
+    minPrice,
+    maxPrice,
     note: nPick<string | null>(x, "note") ?? null,
   };
 };
@@ -576,6 +582,27 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
       realMaxPy: normNum(s?.realMaxPy ?? s?.real?.maxPy),
     };
 
+    // 자동 채우기
+    if (nowSnap.exMin !== undefined && nowSnap.exMax === undefined)
+      nowSnap.exMax = nowSnap.exMin;
+    if (nowSnap.exMax !== undefined && nowSnap.exMin === undefined)
+      nowSnap.exMin = nowSnap.exMax;
+
+    if (nowSnap.exMinPy !== undefined && nowSnap.exMaxPy === undefined)
+      nowSnap.exMaxPy = nowSnap.exMinPy;
+    if (nowSnap.exMaxPy !== undefined && nowSnap.exMinPy === undefined)
+      nowSnap.exMinPy = nowSnap.exMaxPy;
+
+    if (nowSnap.realMin !== undefined && nowSnap.realMax === undefined)
+      nowSnap.realMax = nowSnap.realMin;
+    if (nowSnap.realMax !== undefined && nowSnap.realMin === undefined)
+      nowSnap.realMin = nowSnap.realMax;
+
+    if (nowSnap.realMinPy !== undefined && nowSnap.realMaxPy === undefined)
+      nowSnap.realMaxPy = nowSnap.realMinPy;
+    if (nowSnap.realMaxPy !== undefined && nowSnap.realMinPy === undefined)
+      nowSnap.realMinPy = nowSnap.realMaxPy;
+
     const putIfChanged = (key: keyof typeof initSnap, patchKey: string) => {
       const prev = (initSnap as any)[key];
       const curr = (nowSnap as any)[key];
@@ -598,6 +625,7 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     exclusiveMaxM2?: string;
     realMinM2?: string;
     realMaxM2?: string;
+    units?: any[];
   };
 
   /* 3) 면적 그룹 — 초기 vs 현재 그룹 ‘정규화’ 비교 */
@@ -620,6 +648,7 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
       ),
       realMinM2: canonNumStr(g?.realMinM2 ?? g?.actualMinM2 ?? g?.realMin),
       realMaxM2: canonNumStr(g?.realMaxM2 ?? g?.actualMaxM2 ?? g?.realMax),
+      units: Array.isArray(g?.units) ? g.units : undefined,
     });
 
     const pickMeaningful = (arr: unknown): AreaGroupNorm[] =>
@@ -632,14 +661,17 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
                 x.exclusiveMinM2 ||
                 x.exclusiveMaxM2 ||
                 x.realMinM2 ||
-                x.realMaxM2
+                x.realMaxM2 ||
+                (x.units && x.units.length > 0)
             )
         : [];
 
-    const keyOf = (g: AreaGroupNorm) =>
-      `${g.title}|${g.exclusiveMinM2 ?? ""}|${g.exclusiveMaxM2 ?? ""}|${
+    const keyOf = (g: AreaGroupNorm) => {
+      const unitsStr = g.units ? JSON.stringify(g.units) : "";
+      return `${g.title}|${g.exclusiveMinM2 ?? ""}|${g.exclusiveMaxM2 ?? ""}|${
         g.realMinM2 ?? ""
-      }|${g.realMaxM2 ?? ""}`;
+      }|${g.realMaxM2 ?? ""}|${unitsStr}`;
+    };
 
     const sortForCmp = (arr: AreaGroupNorm[]) =>
       [...arr].sort((a, b) => keyOf(a).localeCompare(keyOf(b)));
@@ -665,10 +697,8 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     const hasAreaGroupsDelta =
       JSON.stringify(initNorm) !== JSON.stringify(nowNorm);
 
-    // 🔥 핵심: "실제로 폼에서 면적 세트를 건드렸는지" 플래그만 신뢰
-    const areaSetsTouched = !!(f as any).areaSetsTouched;
-
-    if (areaSetsTouched && hasAreaGroupsDelta) {
+    // [최적화] 변경사항이 있을 때만 전송
+    if (hasAreaGroupsDelta) {
       (patch as any).areaGroups = nowGroupsRaw.length ? nowGroupsRaw : [];
     }
   }
@@ -761,14 +791,23 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
   if (unitsChanged(initialUnits, currentUnits)) {
     const units = (currentUnits ?? [])
       .map((u) => {
+        let minPrice = toNumOrNull(u?.minPrice ?? u?.primary);
+        let maxPrice = toNumOrNull(u?.maxPrice ?? u?.secondary);
+
+        if (minPrice !== null && maxPrice === null) maxPrice = minPrice;
+        if (maxPrice !== null && minPrice === null) minPrice = maxPrice;
+
         const n = {
           rooms: toNumOrNull(u?.rooms),
           baths: toNumOrNull(u?.baths),
           hasLoft: !!(u?.hasLoft ?? u?.duplex),
           hasTerrace: !!(u?.hasTerrace ?? u?.terrace),
-          minPrice: toNumOrNull(u?.minPrice ?? u?.primary),
-          maxPrice: toNumOrNull(u?.maxPrice ?? u?.secondary),
-          note: (u?.note ?? null) as string | null,
+          minPrice,
+          maxPrice,
+          note:
+            typeof u?.note === "string" && u.note.trim() !== ""
+              ? u.note.trim()
+              : null,
         };
         let hasAny =
           n.rooms != null ||
@@ -777,9 +816,9 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
           n.hasTerrace ||
           n.minPrice != null ||
           n.maxPrice != null;
-          
+
         hasAny = hasAny || (n.note ?? "") !== "";
-        
+
         return hasAny
           ? {
               rooms: n.rooms,
@@ -823,13 +862,14 @@ export const stripNoopNulls = (dto: any, initial: any) => {
       continue;
     }
 
-    // directions / units / buildingTypes / parkingTypes 는 빈 배열이라도 보존 (등록과 동일)
+    // directions / units / buildingTypes / parkingTypes / areaGroups 는 빈 배열이라도 보존 (등록과 동일)
     if (Array.isArray(v) && v.length === 0) {
       if (
         k === "directions" ||
         k === "units" ||
         k === "buildingTypes" ||
-        k === "parkingTypes"
+        k === "parkingTypes" ||
+        k === "areaGroups"
       )
         continue;
       delete dto[k];

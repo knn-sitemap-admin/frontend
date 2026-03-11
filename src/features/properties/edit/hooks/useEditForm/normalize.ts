@@ -36,8 +36,14 @@ const asOptionalNum = (v: unknown): number | null => {
 const unpackRange = (s: unknown): { min: string; max: string } => {
   const raw = asStr(s).trim();
   if (!raw) return { min: "", max: "" };
-  const [min, max] = raw.split("~", 2);
-  return { min: (min ?? "").trim(), max: (max ?? "").trim() };
+  const parts = raw.split("~", 2);
+  let min = (parts[0] ?? "").trim();
+  let max = (parts[1] ?? "").trim();
+
+  if (min && !max) max = min;
+  if (max && !min) min = max;
+
+  return { min, max };
 };
 
 const pickOrientation = (o: unknown): OrientationValue | "" =>
@@ -129,6 +135,7 @@ type Normalized = {
   publicMemo: string;
   secretMemo: string;
   unitLines: UnitLine[];
+  areaGroups: any[];
 
   aspects: AspectRowLite[];
   buildingType: BuildingType | null;
@@ -143,60 +150,82 @@ type Normalized = {
 export function normalizeInitialData(initialData: any | null): Normalized {
   const d = initialData ?? {};
 
-  // ───────── 면적(기본) ─────────
-  const ex = unpackRange(d.exclusiveArea);
-  const re = unpackRange(d.realArea);
-  const baseAreaTitle = asStr(
-    d.baseAreaTitle ?? d.areaTitle ?? d.areaSetTitle ?? ""
-  );
+  // ───────── 면적(기본 + 추가) ─────────
+  let baseArea: AreaSet;
+  let extraAreas: AreaSet[] = [];
 
-  const baseArea: AreaSet = {
-    title: baseAreaTitle,
-    exMinM2: ex.min,
-    exMaxM2: ex.max,
-    exMinPy: toPy(ex.min),
-    exMaxPy: toPy(ex.max),
-    realMinM2: re.min,
-    realMaxM2: re.max,
-    realMinPy: toPy(re.min),
-    realMaxPy: toPy(re.max),
-  };
+  const groups = Array.isArray(d.areaGroups) && d.areaGroups.length > 0 ? d.areaGroups : null;
 
-  // ───────── 면적(추가) ─────────
-  const extraExclusive = Array.isArray(d.extraExclusiveAreas)
-    ? d.extraExclusiveAreas
-    : [];
-  const extraReal = Array.isArray(d.extraRealAreas) ? d.extraRealAreas : [];
-  const extraTitles =
-    (Array.isArray(d.extraAreaTitles) && d.extraAreaTitles.map(asStr)) ||
-    (Array.isArray(d.areaSetTitles) && d.areaSetTitles.map(asStr)) ||
-    [];
-  const len = Math.max(
-    extraExclusive.length,
-    extraReal.length,
-    extraTitles.length
-  );
+  if (groups) {
+    const mapGroupToAreaSet = (g: any): AreaSet => ({
+      title: asStr(g?.title ?? ""),
+      exMinM2: g?.exclusiveMinM2 != null ? String(g.exclusiveMinM2) : "",
+      exMaxM2: g?.exclusiveMaxM2 != null ? String(g.exclusiveMaxM2) : "",
+      exMinPy: g?.exclusiveMinM2 != null ? toPy(g.exclusiveMinM2) : "",
+      exMaxPy: g?.exclusiveMaxM2 != null ? toPy(g.exclusiveMaxM2) : "",
+      realMinM2: g?.actualMinM2 != null ? String(g.actualMinM2) : "",
+      realMaxM2: g?.actualMaxM2 != null ? String(g.actualMaxM2) : "",
+      realMinPy: g?.actualMinM2 != null ? toPy(g.actualMinM2) : "",
+      realMaxPy: g?.actualMaxM2 != null ? toPy(g.actualMaxM2) : "",
+    });
 
-  const extraAreas: AreaSet[] = Array.from({ length: len }, (_, i) => {
-    const exi = unpackRange(extraExclusive[i] ?? "");
-    const rei = unpackRange(extraReal[i] ?? "");
-    const title = asStr(extraTitles[i] ?? "");
+    baseArea = mapGroupToAreaSet(groups[0]);
+    extraAreas = groups.slice(1).map(mapGroupToAreaSet);
+  } else {
+    // 레거시 호환 (areaGroups가 없을 때)
+    const ex = unpackRange(d.exclusiveArea);
+    const re = unpackRange(d.realArea);
+    const baseAreaTitle = asStr(
+      d.baseAreaTitle ?? d.areaTitle ?? d.areaSetTitle ?? ""
+    );
 
-    const hasAny = title || exi.min || exi.max || rei.min || rei.max;
-    if (!hasAny) return null as any;
-
-    return {
-      title: title || `세트 ${i + 1}`,
-      exMinM2: exi.min,
-      exMaxM2: exi.max,
-      exMinPy: toPy(exi.min),
-      exMaxPy: toPy(exi.max),
-      realMinM2: rei.min,
-      realMaxM2: rei.max,
-      realMinPy: toPy(rei.min),
-      realMaxPy: toPy(rei.max),
+    baseArea = {
+      title: baseAreaTitle,
+      exMinM2: ex.min,
+      exMaxM2: ex.max,
+      exMinPy: toPy(ex.min),
+      exMaxPy: toPy(ex.max),
+      realMinM2: re.min,
+      realMaxM2: re.max,
+      realMinPy: toPy(re.min),
+      realMaxPy: toPy(re.max),
     };
-  }).filter((v): v is AreaSet => Boolean(v));
+
+    const extraExclusive = Array.isArray(d.extraExclusiveAreas)
+      ? d.extraExclusiveAreas
+      : [];
+    const extraReal = Array.isArray(d.extraRealAreas) ? d.extraRealAreas : [];
+    const extraTitles =
+      (Array.isArray(d.extraAreaTitles) && d.extraAreaTitles.map(asStr)) ||
+      (Array.isArray(d.areaSetTitles) && d.areaSetTitles.map(asStr)) ||
+      [];
+    const len = Math.max(
+      extraExclusive.length,
+      extraReal.length,
+      extraTitles.length
+    );
+
+    extraAreas = Array.from({ length: len }, (_, i) => {
+      const exi = unpackRange(extraExclusive[i] ?? "");
+      const rei = unpackRange(extraReal[i] ?? "");
+      const title = asStr(extraTitles[i] ?? "");
+
+      const hasAny = title || exi.min || exi.max || rei.min || rei.max;
+      if (!hasAny) return null as any;
+
+      return {
+        title: title || `세트 ${i + 1}`,
+        exMinM2: exi.min,
+        exMaxM2: exi.max,
+        exMinPy: toPy(exi.min),
+        exMaxPy: toPy(exi.max),
+        realMinM2: rei.min,
+        realMaxM2: rei.max,
+        realMinPy: toPy(rei.min),
+        realMaxPy: toPy(rei.max),
+      };
+    }).filter((v): v is AreaSet => Boolean(v));
+  }
 
   // ───────── 향/aspects ─────────
   const orientationsRaw = d.orientations ?? d.directions ?? [];
@@ -251,8 +280,12 @@ export function normalizeInitialData(initialData: any | null): Normalized {
     ? (d.units as any[]).map((u) => {
         const minVal = u?.minPrice;
         const maxVal = u?.maxPrice;
-        const primary = toMillionUnit(minVal);
-        const secondary = toMillionUnit(maxVal);
+        let primary = toMillionUnit(minVal);
+        let secondary = toMillionUnit(maxVal);
+
+        if (primary && !secondary) secondary = primary;
+        if (secondary && !primary) primary = secondary;
+
         return {
           rooms: asNum(u?.rooms ?? 0, 0),
           baths: asNum(u?.baths ?? 0, 0),
@@ -370,6 +403,7 @@ export function normalizeInitialData(initialData: any | null): Normalized {
     // 면적
     baseArea,
     extraAreas,
+    areaGroups: d.areaGroups ?? [],
 
     // 설비/등급/등기
     elevator,

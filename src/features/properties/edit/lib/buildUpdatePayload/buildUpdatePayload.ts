@@ -25,7 +25,7 @@ import {
   toParkingGradeOrUndefined,
 } from "./utils";
 import { areaSetsToGroups, normalizeAreaGroupsForCompare } from "./area";
-import { unitLinesChanged } from "./unit";
+import { unitLinesChanged, normalizeUnit } from "./unit";
 import { createPatchHelpers } from "./patchHelpers";
 import { AreaSet } from "../../types/editForm.types";
 import { PRESET_OPTIONS } from "@/features/properties/components/constants";
@@ -471,7 +471,11 @@ export function buildUpdatePayload(
     defined(a.realAreaMin) ||
     defined(a.realAreaMax) ||
     defined(a.realAreaMinPy) ||
-    defined(a.realAreaMaxPy);
+    defined(a.realAreaMaxPy) ||
+    defined(a.baseAreaSet) ||
+    defined(a.extraAreaSets) ||
+    defined(a.baseAreaTitleOut) ||
+    defined(a.extraAreaTitlesOut);
 
   const initialHasRangeKeys =
     (initial as any)?.exclusiveAreaMin !== undefined ||
@@ -507,31 +511,25 @@ export function buildUpdatePayload(
 
     const S = fromSet(a.baseAreaSet as any);
 
-    const exMin = pickNumStr(
-      defined(a.exclusiveAreaMin) ? a.exclusiveAreaMin : S.exMin
-    );
-    const exMax = pickNumStr(
-      defined(a.exclusiveAreaMax) ? a.exclusiveAreaMax : S.exMax
-    );
-    const exMinPy = pickNumStr(
-      defined(a.exclusiveAreaMinPy) ? a.exclusiveAreaMinPy : S.exMinPy
-    );
-    const exMaxPy = pickNumStr(
-      defined(a.exclusiveAreaMaxPy) ? a.exclusiveAreaMaxPy : S.exMaxPy
-    );
+    let exMin = pickNumStr(defined(a.exclusiveAreaMin) ? a.exclusiveAreaMin : S.exMin);
+    let exMax = pickNumStr(defined(a.exclusiveAreaMax) ? a.exclusiveAreaMax : S.exMax);
+    if (exMin !== undefined && exMax === undefined) exMax = exMin;
+    if (exMax !== undefined && exMin === undefined) exMin = exMax;
 
-    const realMin = pickNumStr(
-      defined(a.realAreaMin) ? a.realAreaMin : S.realMin
-    );
-    const realMax = pickNumStr(
-      defined(a.realAreaMax) ? a.realAreaMax : S.realMax
-    );
-    const realMinPy = pickNumStr(
-      defined(a.realAreaMinPy) ? a.realAreaMinPy : S.realMinPy
-    );
-    const realMaxPy = pickNumStr(
-      defined(a.realAreaMaxPy) ? a.realAreaMaxPy : S.realMaxPy
-    );
+    let exMinPy = pickNumStr(defined(a.exclusiveAreaMinPy) ? a.exclusiveAreaMinPy : S.exMinPy);
+    let exMaxPy = pickNumStr(defined(a.exclusiveAreaMaxPy) ? a.exclusiveAreaMaxPy : S.exMaxPy);
+    if (exMinPy !== undefined && exMaxPy === undefined) exMaxPy = exMinPy;
+    if (exMaxPy !== undefined && exMinPy === undefined) exMinPy = exMaxPy;
+
+    let realMin = pickNumStr(defined(a.realAreaMin) ? a.realAreaMin : S.realMin);
+    let realMax = pickNumStr(defined(a.realAreaMax) ? a.realAreaMax : S.realMax);
+    if (realMin !== undefined && realMax === undefined) realMax = realMin;
+    if (realMax !== undefined && realMin === undefined) realMin = realMax;
+
+    let realMinPy = pickNumStr(defined(a.realAreaMinPy) ? a.realAreaMinPy : S.realMinPy);
+    let realMaxPy = pickNumStr(defined(a.realAreaMaxPy) ? a.realAreaMaxPy : S.realMaxPy);
+    if (realMinPy !== undefined && realMaxPy === undefined) realMaxPy = realMinPy;
+    if (realMaxPy !== undefined && realMinPy === undefined) realMinPy = realMaxPy;
 
     putAny("exclusiveAreaMin", exMin, (initial as any)?.exclusiveAreaMin);
     putAny("exclusiveAreaMax", exMax, (initial as any)?.exclusiveAreaMax);
@@ -559,16 +557,11 @@ export function buildUpdatePayload(
   // 규칙:
   //  - 초기값이 없는 신규 생성(initial === undefined) 이면 값이 있으면 areaGroups 보냄
   //  - 수정(initial 존재)에서는 "실제 면적 범위 입력을 건드렸을 때(explicitRangeTouched)"만 areaGroups 전송
-  if (initial === undefined) {
-    if (currAreaGroups.length > 0) {
-      (patch as any).areaGroups = currAreaGroupsRaw;
-    }
-  } else if (explicitRangeTouched) {
-    if (!deepEq(prevAreaGroups, currAreaGroups)) {
-      (patch as any).areaGroups = currAreaGroupsRaw.length
-        ? currAreaGroupsRaw
-        : [];
-    }
+  // [최적화] 변경사항이 있을 때만 전송
+  if (!deepEq(prevAreaGroups, currAreaGroups)) {
+    (patch as any).areaGroups = currAreaGroupsRaw.length
+      ? currAreaGroupsRaw
+      : [];
   }
 
   /* ===== 유닛 ===== */
@@ -577,6 +570,7 @@ export function buildUpdatePayload(
     const currUnits = a.unitLines as UnitLine[] | undefined;
     if (initial === undefined || unitLinesChanged(prevUnits, currUnits)) {
       (patch as any).unitLines = currUnits ?? [];
+      (patch as any).units = (currUnits ?? []).map(normalizeUnit);
     }
   }
 

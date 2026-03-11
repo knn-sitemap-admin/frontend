@@ -29,6 +29,8 @@ export type UnitsDto = {
   minPrice?: number | null;
   /** 최대 가격 (정수, 0 이상, 미입력 시 null) */
   maxPrice?: number | null;
+  /** ✅ 해당 유닛(구조) 특이사항 */
+  note?: string | null;
 };
 
 /* ------------------------------------------------------------------ */

@@ -132,6 +132,14 @@ export default function StructureLinesList({
                     <span>{maxText}</span>
                   </div>
                 </div>
+
+                {/* ===== 메모 라인 (추가) ===== */}
+                {typeof l.note === "string" && l.note.trim() !== "" && (
+                  <div className="mt-2 border-t border-dashed pt-1.5 text-[10px] sm:text-xs text-muted-foreground whitespace-pre-wrap flex gap-1">
+                    <span className="font-semibold shrink-0 text-gray-400">[구조 특징]</span>
+                    <span className="min-w-0">{l.note}</span>
+                  </div>
+                )}
               </div>
             </div>
           );

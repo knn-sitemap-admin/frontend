@@ -176,8 +176,11 @@ export function buildCreatePayload(args: BuildArgs) {
       (src as any).max ??
       null;
     /** 구조별 입력(백만원) → sanitizeUnits에서 무조건 × 1000000 적용 */
-    const minPrice = toNumOrNullLocal(rawMin);
-    const maxPrice = toNumOrNullLocal(rawMax);
+    let minPrice = toNumOrNullLocal(rawMin);
+    let maxPrice = toNumOrNullLocal(rawMax);
+
+    if (minPrice !== null && maxPrice === null) maxPrice = minPrice;
+    if (maxPrice !== null && minPrice === null) minPrice = maxPrice;
 
     // 복층/테라스 → hasLoft/hasTerrace로 강제 매핑
     const rawLoft =

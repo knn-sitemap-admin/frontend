@@ -33,8 +33,9 @@ export function SafeImg({
     <img
       src={src!}
       alt={alt}
-      className={className}
+      className={className ? `${className} no-save` : "no-save"}
       onError={() => setErrored(true)}
+      onContextMenu={(e) => e.preventDefault()}
     />
   );
 }

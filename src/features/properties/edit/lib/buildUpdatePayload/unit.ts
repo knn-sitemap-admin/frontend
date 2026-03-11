@@ -32,15 +32,21 @@ const pick = <T>(u: any, ...keys: string[]) => {
   return undefined as unknown as T;
 };
 
-const normalizeUnit = (u?: UnitLike) => {
+export const normalizeUnit = (u?: UnitLike) => {
   const uu: any = u ?? {};
+  let minPrice = pick<number | null>(uu, "minPrice") ?? null;
+  let maxPrice = pick<number | null>(uu, "maxPrice") ?? null;
+
+  if (minPrice !== null && maxPrice === null) maxPrice = minPrice;
+  if (maxPrice !== null && minPrice === null) minPrice = maxPrice;
+
   return {
     rooms: pick<number | null>(uu, "rooms") ?? null,
     baths: pick<number | null>(uu, "baths") ?? null,
     hasLoft: pickBool(uu, "hasLoft", "loft"),
     hasTerrace: pickBool(uu, "hasTerrace", "terrace"),
-    minPrice: pick<number | null>(uu, "minPrice") ?? null,
-    maxPrice: pick<number | null>(uu, "maxPrice") ?? null,
+    minPrice,
+    maxPrice,
     note: pick<string | null>(uu, "note") ?? null,
   };
 };
