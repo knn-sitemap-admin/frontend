@@ -199,9 +199,10 @@ export function normalizeInitialData(initialData: any | null): Normalized {
   }).filter((v): v is AreaSet => Boolean(v));
 
   // ───────── 향/aspects ─────────
+  const orientationsRaw = d.orientations ?? d.directions ?? [];
   const aspects: AspectRowLite[] =
-    Array.isArray(d.orientations) && d.orientations.length
-      ? (d.orientations as unknown[]).map((o, idx) => ({
+    Array.isArray(orientationsRaw) && orientationsRaw.length
+      ? (orientationsRaw as unknown[]).map((o, idx) => ({
           no: idx + 1,
           dir: pickOrientation(o),
         }))
