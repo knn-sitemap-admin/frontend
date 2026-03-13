@@ -760,18 +760,13 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
       return pairs;
     };
 
-    const normSet = (arr: string[]) =>
-      Array.from(new Set(arr.map((s) => s.trim()).filter(Boolean))).sort(
-        (a, b) => a.localeCompare(b)
-      );
-
-    const initDirs = normSet(pickDirStringsFromInitial(initial));
+    const initDirs = pickDirStringsFromInitial(initial);
     const nowPairs = pickHoDirPairsFromForm();
-    const nowDirsSet = normSet(nowPairs.map((p) => p.dir));
+    const nowDirs = nowPairs.map((p) => p.dir);
 
     if ((f as any).aspectsTouched) {
       if (initialHasAnyAspect) {
-        if (JSON.stringify(initDirs) !== JSON.stringify(nowDirsSet)) {
+        if (JSON.stringify(initDirs) !== JSON.stringify(nowDirs)) {
           (patch as any).directions = nowPairs.map((p) => ({
             direction: p.dir,
           }));
