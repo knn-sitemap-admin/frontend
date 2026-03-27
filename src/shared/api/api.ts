@@ -238,12 +238,19 @@ api.interceptors.response.use(
 
     if (
       response &&
-      (response.status === 401 || response.status === 419) &&
-      !(config as any).__retried
+      (response.status === 401 || response.status === 419)
     ) {
-      (config as any).__retried = true;
-      await ensureSessionOnce();
-      return api.request(config);
+      if (!(config as any).__retried) {
+        (config as any).__retried = true;
+        await ensureSessionOnce();
+        return api.request(config);
+      } else {
+        // ✅ 재시도 후에도 401/419인 경우: 세션 만료로 판단하여 로그인 페이지로 강제 이동
+        if (typeof window !== "undefined") {
+          console.warn("[API] Persistent 401/419 detected. Redirecting to /login...");
+          window.location.href = "/login";
+        }
+      }
     }
 
     throw error;

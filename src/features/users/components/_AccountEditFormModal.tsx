@@ -15,12 +15,16 @@ import {
   FormMessage,
 } from "@/components/atoms/Form/Form";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { formatPhone } from "@/lib/formatPhone";
 import { getTeams } from "@/features/teams";
 import {
   getCredentialDetail,
   createEmployeeInfo,
+  patchAccountPassword,
   patchPositionRank,
+  getProfile,
 } from "@/features/users/api/account";
 import { useToast } from "@/hooks/use-toast";
 import { uploadOnePhoto, UploadDomain } from "@/shared/api/photos/photoUpload";
@@ -205,6 +209,7 @@ function AccountEditFormModalBody({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const router = useRouter();
   const form = useForm<UpdateUserValues>({
     resolver: zodResolver(UpdateUserSchema),
     defaultValues: {
@@ -237,6 +242,11 @@ function AccountEditFormModalBody({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: getProfile,
+  });
 
   /** 팀 목록 관리 */
   const [teams, setTeams] = useState<
@@ -353,16 +363,27 @@ function AccountEditFormModalBody({
 
       await createEmployeeInfo(credentialId, employeeData);
 
-      // 비밀번호 변경이 필요한 경우 별도 처리 (백엔드 API 확인 필요)
+      // 비밀번호 변경이 필요한 경우 별도 처리
       if (v.password && v.password.length >= 8) {
-        // TODO: 비밀번호 변경 API 호출
-        console.log("비밀번호 변경 필요:", v.password);
+        await patchAccountPassword(credentialId, v.password);
       }
 
       toast({
         title: "계정 수정 완료",
         description: "계정 정보가 성공적으로 수정되었습니다.",
       });
+
+      // 본인 비밀번호를 수정한 경우 로그아웃 및 리다이렉트
+      if (v.password && v.password.length >= 8 && profile?.credentialId === credentialId) {
+        toast({
+          title: "비밀번호 변경 완료",
+          description: "보안을 위해 다시 로그인해주세요. 2초 후 로그인 페이지로 이동합니다.",
+        });
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+        return; // 나머지 로직(onClose 등) 건너뜀
+      }
 
       onSuccess();
       onClose();

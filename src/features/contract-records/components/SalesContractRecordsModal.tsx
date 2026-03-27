@@ -36,7 +36,10 @@ import {
 } from "../utils/contractTransformers";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { getProfile } from "@/features/users/api/account";
+import {
+  getProfile,
+  getEmployeesList,
+} from "@/features/users/api/account";
 import { api } from "@/shared/api/api";
 import {
   Popover,
@@ -130,11 +133,29 @@ export function SalesContractRecordsModal({
 
   // 내 팀 멤버 가져오기
   const { data: myTeamMembers } = useQuery({
-    queryKey: ["my-team-members"],
+    queryKey: ["my-team-members", profile?.role, profile?.account?.id],
     queryFn: async () => {
       const log = (msg: string, extra?: object) => {
         console.log("[담당자목록]", msg, extra ?? "");
       };
+
+      if (!profile) return [];
+
+      // 1) 관리자/매니저면 전체 직원 리스트 반환 (팀 소속 여부와 무관)
+      if (profile.role === "admin" || profile.role === "manager") {
+        try {
+          const list = await getEmployeesList();
+          log("getEmployeesList 호출 (어드민/매니저)", { 수: list.length });
+          return list.map((item) => ({
+            accountId: item.accountId,
+            name: item.name,
+            positionRank: item.positionRank,
+            teamRole: item.role === "manager" ? "manager" : "staff",
+          }));
+        } catch (e) {
+          log("getEmployeesList 실패, 기존 로직 폴백", { error: (e as any).message });
+        }
+      }
 
       try {
         const accountId = profile?.account?.id;
@@ -143,7 +164,7 @@ export function SalesContractRecordsModal({
           return [];
         }
 
-        // 팀 목록 가져오기 (상태 코드 로깅용 api.get 사용)
+        // 팀 목록 가져오기
         let teams: Array<{ id: number | string; name: string }> = [];
         try {
           const teamsRes = await api.get<{
@@ -156,9 +177,8 @@ export function SalesContractRecordsModal({
             팀수: teams.length,
           });
         } catch (err: any) {
-          const status = err?.response?.status;
           log("getTeams 요청: 실패", {
-            status: status ?? "network/기타",
+            status: err?.response?.status ?? "network/기타",
             error: err?.message,
           });
           return [];
@@ -186,12 +206,6 @@ export function SalesContractRecordsModal({
               };
             }>(`/dashboard/accounts/teams/${team.id}`);
 
-            const status = teamDetailResponse.status;
-            log(`teams/${team.id} 요청: 성공`, {
-              status: status ?? 200,
-              멤버수: teamDetailResponse.data.data.members.length,
-            });
-
             const isMyTeam = teamDetailResponse.data.data.members.some(
               (member) => String(member.accountId) === String(accountId),
             );
@@ -202,9 +216,8 @@ export function SalesContractRecordsModal({
               return members;
             }
           } catch (err: any) {
-            const status = err?.response?.status;
             log(`teams/${team.id} 요청: 실패`, {
-              status: status ?? "network/기타",
+              status: err?.response?.status ?? "network/기타",
               error: err?.message,
             });
             continue;
@@ -214,25 +227,38 @@ export function SalesContractRecordsModal({
         log("최종: 내 팀 없음, 멤버 0명");
         return [];
       } catch (error: any) {
-        const status = error?.response?.status;
         console.error("[담당자목록] 팀 멤버 조회 실패", {
-          status: status ?? "network/기타",
+          status: error?.response?.status ?? "network/기타",
           error: error?.message,
         });
         return [];
       }
     },
-    enabled: !!profile?.account?.id,
-    staleTime: 10 * 60 * 1000, // 10분
+    enabled: !!profile,
+    staleTime: 10 * 60 * 1000,
   });
 
-  // 초기 데이터 또는 팀 멤버 목록이 바뀌면 staffAllocations에 isTeamLeader 반영
+  // 초기 데이터 또는 팀 멤버 목록이 바뀌면 staffAllocations에 이력 반영 및 본인 정보 자동 채우기
   useEffect(() => {
-    const enrichAllocations = (base: typeof defaultData) => {
-      if (!myTeamMembers || myTeamMembers.length === 0) return base;
+    const enrichAllocations = (base: SalesContractData) => {
+      // 1) 본인 정보 자동 채우기 (신규 생성 시)
+      let currentData = { ...base };
+      if (profile && !initialData) {
+        currentData = {
+          ...currentData,
+          salesPerson: {
+            name: profile.account?.name || "",
+            contact: profile.account?.phone || "",
+          },
+        };
+      }
+
+      // 2) 팀 멤버 정보가 있으면 staffAllocations 보완 (직급, 팀장여부 등)
+      if (!myTeamMembers || myTeamMembers.length === 0) return currentData;
+
       return {
-        ...base,
-        staffAllocations: base.staffAllocations.map((staff) => {
+        ...currentData,
+        staffAllocations: currentData.staffAllocations.map((staff) => {
           if (staff.type !== "employee" || !staff.accountId) return staff;
           const member = myTeamMembers.find(
             (m) => String(m.accountId) === String(staff.accountId),
@@ -254,20 +280,7 @@ export function SalesContractRecordsModal({
       setData(enrichAllocations(defaultData));
       setIsEditMode(true);
     }
-  }, [initialData, myTeamMembers]);
-
-  // 프로필 정보가 로드되면 담당자 정보 자동 채우기
-  useEffect(() => {
-    if (profile && !initialData && isOpen) {
-      setData((prevData) => ({
-        ...prevData,
-        salesPerson: {
-          name: profile.account?.name || "",
-          contact: profile.account?.phone || "",
-        },
-      }));
-    }
-  }, [profile, initialData, isOpen]);
+  }, [initialData, myTeamMembers, profile, isOpen]);
 
   // 데이터 변경 핸들러
   const handleDataChange = (newData: SalesContractData) => {

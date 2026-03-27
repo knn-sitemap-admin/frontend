@@ -21,10 +21,12 @@ import {
 } from "@/components/atoms/Form/Form";
 import { Plus, X, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getProfile,
   updateMyProfile,
+  patchAccountPassword,
   type UpdateMyProfileRequest,
 } from "@/features/users/api/account";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +55,22 @@ const ProfileSchema = z.object({
   docUrlResidentAbstract: z.string().optional(),
   docUrlIdCard: z.string().optional(),
   docUrlFamilyRelation: z.string().optional(),
-});
+  password: z
+    .string()
+    .min(8, "비밀번호는 최소 8자 이상이어야 합니다.")
+    .optional()
+    .or(z.literal("")),
+  password_confirm: z.string().optional(),
+}).refine(
+  (data) => {
+    if (!data.password || data.password === "") return true;
+    return data.password === data.password_confirm;
+  },
+  {
+    message: "비밀번호가 일치하지 않습니다.",
+    path: ["password_confirm"],
+  }
+);
 
 type ProfileFormValues = z.infer<typeof ProfileSchema>;
 
@@ -81,6 +98,7 @@ const uploadDomainMap: Record<UploadField, UploadDomain> = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState<UploadField | null>(null);
@@ -130,6 +148,8 @@ export default function ProfilePage() {
       docUrlResidentAbstract: "",
       docUrlIdCard: "",
       docUrlFamilyRelation: "",
+      password: "",
+      password_confirm: "",
     },
     mode: "onChange",
   });
@@ -261,7 +281,26 @@ export default function ProfilePage() {
       docUrlFamilyRelation: values.docUrlFamilyRelation || null,
     };
 
-    updateMutation.mutate(payload);
+    try {
+      // 본인 정보 수정
+      await updateMutation.mutateAsync(payload);
+
+      // 관리자이면서 비밀번호를 입력한 경우 비밀번호 변경 API 호출
+      if (profile?.role === "admin" && values.password && values.password.length >= 8) {
+        await patchAccountPassword(profile.credentialId, values.password);
+        toast({
+          title: "비밀번호 변경 완료",
+          description: "보안을 위해 다시 로그인해주세요. 2초 후 로그인 페이지로 이동합니다.",
+        });
+        
+        // 세션이 무효화되었으므로 로그인 페이지로 리다이렉트
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+      }
+    } catch (error) {
+      // 에러 처리는 mutateAsync 내부 또는 toast에서 이미 처리됨
+    }
   };
 
   const photoUrl = form.watch("profileUrl");
@@ -453,6 +492,51 @@ export default function ProfilePage() {
               />
             </CardContent>
           </Card>
+
+          {/* 비밀번호 변경 - 관리자만 노출 */}
+          {profile?.role === "admin" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>비밀번호 변경 (관리자 전용)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>새 비밀번호</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder="변경할 비밀번호를 입력하세요 (최소 8자)"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password_confirm"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>비밀번호 확인</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder="비밀번호를 다시 한 번 입력하세요"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* 급여 정보 */}
           <Card>

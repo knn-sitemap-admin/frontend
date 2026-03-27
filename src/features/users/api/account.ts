@@ -457,4 +457,16 @@ export async function patchPositionRank(
  * 추후 완전히 필요 없을 때 삭제 가능합니다.
  */
 // export async function getCredentialIdFromAccountId(...) { ... }
-// export async function batchResolveAccountIdToCredentialAndRole(...) { ... }
+export async function patchAccountPassword(
+  credentialId: string,
+  password: string,
+): Promise<void> {
+  try {
+    await api.patch(`/dashboard/accounts/credentials/${credentialId}/password`, {
+      password,
+    });
+  } catch (error: any) {
+    console.error("비밀번호 변경 API 호출 실패:", error);
+    throw error;
+  }
+}
