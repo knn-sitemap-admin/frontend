@@ -143,7 +143,7 @@ export function SalesContractRecordsModal({
 
       // 1) 관리자/매니저면 전체 직원 리스트 반환 (팀 소속 여부와 무관)
       if (profile.role === "admin" || profile.role === "manager") {
-        try {
+        try { 
           const list = await getEmployeesList();
           log("getEmployeesList 호출 (어드민/매니저)", { 수: list.length });
           return list.map((item) => ({
