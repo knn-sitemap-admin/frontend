@@ -7,7 +7,7 @@ export const REGISTRY_LIST = ["확인필요", "완료", "미완료"] as const;
 export type Registry = (typeof REGISTRY_LIST)[number];
 
 /* ───────── Grade ───────── */
-export type Grade = "상" | "중" | "하";
+export type Grade = string;
 
 /* ───────── Building Type (백엔드 스펙) ─────────
  * 서버와 1:1 대응하는 enum 값만 포함합니다.

@@ -116,9 +116,9 @@ export type CreatePayload = {
   elevator?: "O" | "X";
   /** ✅ 별점 1~5 문자열, 미선택은 "" (전송 시 제거됨) */
   parkingGrade?: StarStr;
-  /** ✅ 경사 등급: "상" | "중" | "하" (또는 null) */
+  /** ✅ 경사 등급: "좋음" | "평범" | "복잡" (또는 직접 입력) */
   slopeGrade?: Grade | null;
-  /** ✅ 구조 등급: "상" | "중" | "하" (또는 null) */
+  /** ✅ 구조 등급: "좋음" | "평범" | "복잡" (또는 직접 입력) */
   structureGrade?: Grade | null;
   completionDate?: string;
 
@@ -225,9 +225,9 @@ export type UpdatePayload = {
   elevator?: "O" | "X";
   /** ✅ 별점 1~5 문자열, 미선택은 "" (전송 시 제거됨) */
   parkingGrade?: StarStr;
-  /** ✅ 경사 등급: "상" | "중" | "하" (또는 null) */
+  /** ✅ 경사 등급: "좋음" | "평범" | "복잡" (또는 직접 입력) */
   slopeGrade?: Grade | null;
-  /** ✅ 구조 등급: "상" | "중" | "하" (또는 null) */
+  /** ✅ 구조 등급: "좋음" | "평범" | "복잡" (또는 직접 입력) */
   structureGrade?: Grade | null;
   completionDate?: string;
 

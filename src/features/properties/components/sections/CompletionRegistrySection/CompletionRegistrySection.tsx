@@ -14,7 +14,7 @@ import type { CompletionRegistrySectionProps } from "./types";
 import ElevatorSegment from "../HeaderSection/components/ElevatorSegment";
 
 /** ───────── 상수/타입 ───────── */
-const GRADES = ["상", "중", "하"] as const;
+const GRADES = ["좋음", "평범", "복잡"] as const;
 type GradeLiteral = (typeof GRADES)[number];
 
 const UI_BUILDING_TYPES = ["주택", "APT", "OP", "도/생", "근/생"] as const;
@@ -222,13 +222,25 @@ export default function CompletionRegistrySection({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 md:gap-x-6 md:items-center">
-        <Field label="경사도" align="center" className="min-w-[120px]">
-          <PillRadioGroup
-            name="slopeGrade"
-            options={GRADES}
-            value={slopeGrade as GradeLiteral | undefined}
-            onChange={onChangeSlope}
-          />
+        <Field label="진입로/경사도" align="center" className="min-w-[120px]">
+          <div className="flex items-center gap-2">
+            <PillRadioGroup
+              name="slopeGrade"
+              options={GRADES}
+              value={
+                GRADES.includes(slopeGrade as any)
+                  ? (slopeGrade as GradeLiteral)
+                  : undefined
+              }
+              onChange={onChangeSlope}
+            />
+            <Input
+              className="h-9 w-28"
+              placeholder="직접입력"
+              value={slopeGrade ?? ""}
+              onChange={(e) => setSlopeGrade?.(e.target.value)}
+            />
+          </div>
         </Field>
 
         <Field label="구조" align="center" className="min-w-[120px]">
