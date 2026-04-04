@@ -33,7 +33,7 @@ import { useRouter } from "next/navigation";
 import { getTeams } from "@/features/teams";
 import { createEmployee } from "@/features/users/api/account";
 import { useToast } from "@/hooks/use-toast";
-import { uploadOnePhoto, UploadDomain } from "@/shared/api/photos/photoUpload";
+import { uploadOnePhoto, uploadPhotos, UploadDomain } from "@/shared/api/photos/photoUpload";
 import {
   Popover,
   PopoverContent,
@@ -42,6 +42,7 @@ import {
 import { Calendar } from "@/components/atoms/Calendar/Calendar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { isImageUrl, fileNameFromUrl } from "@/shared/utils/file";
 
 /** ========== 타입 ========== */
 export type CreateAccountPayload = {
@@ -75,10 +76,10 @@ export type CreateAccountPayload = {
 
   // 추가정보(선택)
   photo_url?: string;
-  id_photo_url?: string;
-  resident_register_url?: string; // 등본
-  resident_extract_url?: string; // 초본
-  family_relation_url?: string; // 가족관계증명서
+  id_photo_urls?: string[]; // 신분증 (배열)
+  resident_register_urls?: string[]; // 등본 (배열)
+  resident_extract_urls?: string[]; // 초본 (배열)
+  family_relation_urls?: string[]; // 가족관계증명서 (배열)
 };
 
 const phoneRegex = /^[0-9\-+() ]{9,20}$/;
@@ -145,26 +146,10 @@ const CreateUserSchema = z
       .url("URL 형식이 올바르지 않습니다.")
       .optional()
       .or(z.literal("").transform(() => undefined)),
-    id_photo_url: z
-      .string()
-      .url("URL 형식이 올바르지 않습니다.")
-      .optional()
-      .or(z.literal("").transform(() => undefined)),
-    resident_register_url: z
-      .string()
-      .url("URL 형식이 올바르지 않습니다.")
-      .optional()
-      .or(z.literal("").transform(() => undefined)),
-    resident_extract_url: z
-      .string()
-      .url("URL 형식이 올바르지 않습니다.")
-      .optional()
-      .or(z.literal("").transform(() => undefined)),
-    family_relation_url: z
-      .string()
-      .url("URL 형식이 올바르지 않습니다.")
-      .optional()
-      .or(z.literal("").transform(() => undefined)),
+    id_photo_urls: z.array(z.string().url()).optional().default([]),
+    resident_register_urls: z.array(z.string().url()).optional().default([]),
+    resident_extract_urls: z.array(z.string().url()).optional().default([]),
+    family_relation_urls: z.array(z.string().url()).optional().default([]),
   })
   .refine((data) => data.password === data.password_confirm, {
     message: "비밀번호가 일치하지 않습니다.",
@@ -200,10 +185,10 @@ type CreateUserValues = z.infer<typeof CreateUserSchema>;
 
 type UploadField =
   | "photo_url"
-  | "id_photo_url"
-  | "resident_register_url"
-  | "resident_extract_url"
-  | "family_relation_url";
+  | "id_photo_urls"
+  | "resident_register_urls"
+  | "resident_extract_urls"
+  | "family_relation_urls";
 
 export default function AccountCreatePage({
   onCreate,
@@ -229,10 +214,10 @@ export default function AccountCreatePage({
       team: undefined,
       teamName: "",
       photo_url: "",
-      id_photo_url: "",
-      resident_register_url: "",
-      resident_extract_url: "",
-      family_relation_url: "",
+      id_photo_urls: [],
+      resident_register_urls: [],
+      resident_extract_urls: [],
+      family_relation_urls: [],
     },
     mode: "onChange",
   });
@@ -347,10 +332,10 @@ export default function AccountCreatePage({
           salaryAccount: v.salary_account || null,
           profileUrl: v.photo_url || null,
           positionRank: v.positionRank,
-          docUrlResidentRegistration: v.resident_register_url || null,
-          docUrlResidentAbstract: v.resident_extract_url || null,
-          docUrlIdCard: v.id_photo_url || null,
-          docUrlFamilyRelation: v.family_relation_url || null,
+          docUrlResidentRegistration: v.resident_register_urls && v.resident_register_urls.length > 0 ? v.resident_register_urls : null,
+          docUrlResidentAbstract: v.resident_extract_urls && v.resident_extract_urls.length > 0 ? v.resident_extract_urls : null,
+          docUrlIdCard: v.id_photo_urls && v.id_photo_urls.length > 0 ? v.id_photo_urls : null,
+          docUrlFamilyRelation: v.family_relation_urls && v.family_relation_urls.length > 0 ? v.family_relation_urls : null,
           teamId: v.team?.teamId,
         },
       };
@@ -382,10 +367,10 @@ export default function AccountCreatePage({
           : undefined,
         teamName: v.teamName || undefined,
         photo_url: v.photo_url || undefined,
-        id_photo_url: v.id_photo_url || undefined,
-        resident_register_url: v.resident_register_url || undefined,
-        resident_extract_url: v.resident_extract_url || undefined,
-        family_relation_url: v.family_relation_url || undefined,
+        id_photo_urls: v.id_photo_urls,
+        resident_register_urls: v.resident_register_urls,
+        resident_extract_urls: v.resident_extract_urls,
+        family_relation_urls: v.family_relation_urls,
       });
 
       // 성공 토스트
@@ -420,81 +405,94 @@ export default function AccountCreatePage({
   /** 업로드 도메인 매핑 */
   const uploadDomainMap: Record<UploadField, UploadDomain> = {
     photo_url: "profile",
-    id_photo_url: "profile",
-    resident_register_url: "etc",
-    resident_extract_url: "etc",
-    family_relation_url: "etc",
+    id_photo_urls: "profile",
+    resident_register_urls: "etc",
+    resident_extract_urls: "etc",
+    family_relation_urls: "etc",
   };
 
-  /** 공용 업로드 핸들러: 성공 시 해당 필드에 url 세팅 */
+  /** 공용 업로드 핸들러: 성공 시 해당 필드에 url 세팅 또는 추가 */
   const handleFileChange =
     (field: UploadField): React.ChangeEventHandler<HTMLInputElement> =>
     async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
       setFieldError(field, null);
 
-      if (file.size > maxUploadBytes) {
-        setFieldError(
-          field,
-          `파일이 너무 큽니다. 최대 ${(maxUploadBytes / (1024 * 1024)).toFixed(
-            1
-          )}MB 까지 가능합니다.`
-        );
-        // 파일 입력이 여전히 존재하는지 확인
-        if (e.currentTarget) {
-          e.currentTarget.value = "";
+      // 개별 파일 용량 체크
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].size > maxUploadBytes) {
+          setFieldError(
+            field,
+            `파일 중 하나가 너무 큽니다. 최대 ${(
+              maxUploadBytes /
+              (1024 * 1024)
+            ).toFixed(1)}MB 까지 가능합니다.`
+          );
+          if (e.currentTarget) e.currentTarget.value = "";
+          return;
         }
-        return;
       }
 
       setUploading(field);
       try {
         const domain = uploadDomainMap[field] ?? "etc";
-        const meta = await uploadOnePhoto(file, { domain });
-        if (!meta?.url) {
-          throw new Error("업로드 응답에 URL이 없습니다.");
-        }
+        // 여러 장 업로드 지원
+        const uploadFunc = field === "photo_url" ? uploadOnePhoto : uploadPhotos;
+        
+        if (field === "photo_url") {
+          const meta = await uploadOnePhoto(files[0], { domain });
+          if (meta?.url) {
+            form.setValue(field, meta.url, { shouldValidate: true });
+          }
+        } else {
+          // 최대 5장 제한 체크
+          const currentUrls = (form.getValues(field as any) as string[]) || [];
+          if (currentUrls.length + files.length > 5) {
+            setFieldError(field, "최대 5장까지만 등록 가능합니다.");
+            return;
+          }
 
-        form.setValue(field, meta.url, { shouldValidate: true });
+          const metas = await uploadPhotos(Array.from(files), { domain });
+          const newUrls = metas.map(m => m.url).filter(Boolean) as string[];
+          form.setValue(field as any, [...currentUrls, ...newUrls], { shouldValidate: true });
+        }
       } catch (err: any) {
         const serverMessage =
           err?.response?.data?.message ??
-          err?.response?.data?.messages ??
           err?.message ??
           "업로드 중 오류가 발생했습니다.";
-        console.error("파일 업로드 실패:", err?.response ?? err);
-        setFieldError(
-          field,
-          Array.isArray(serverMessage)
-            ? serverMessage.join(", ")
-            : serverMessage
-        );
+        setFieldError(field, serverMessage);
       } finally {
         setUploading(null);
-        // 파일 입력이 여전히 존재하는지 확인
-        if (e.currentTarget) {
-          e.currentTarget.value = "";
-        }
+        if (e.currentTarget) e.currentTarget.value = "";
       }
     };
 
+  const removeFileAt = (field: UploadField, index: number) => {
+    const current = (form.getValues(field as any) as string[]) || [];
+    const next = [...current];
+    next.splice(index, 1);
+    form.setValue(field as any, next, { shouldValidate: true });
+  };
+
   const clearFile = (field: UploadField) => {
-    form.setValue(field, "", { shouldValidate: true });
+    if (field === "photo_url") {
+      form.setValue(field, "", { shouldValidate: true });
+    } else {
+      form.setValue(field as any, [], { shouldValidate: true });
+    }
     setFieldError(field, null);
   };
 
-  /** 프리뷰 유틸 */
-  const isImageUrl = (url?: string) =>
-    !!url && /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(url.split("?")[0] || "");
 
   /** watch 값 */
   const photoUrl = form.watch("photo_url");
-  const idPhotoUrl = form.watch("id_photo_url");
-  const regUrl = form.watch("resident_register_url");
-  const extUrl = form.watch("resident_extract_url");
-  const famUrl = form.watch("family_relation_url");
+  const idPhotoUrls = form.watch("id_photo_urls");
+  const regUrls = form.watch("resident_register_urls");
+  const extUrls = form.watch("resident_extract_urls");
+  const famUrls = form.watch("family_relation_urls");
 
   return (
     <Card className="border-primary/30">
@@ -861,47 +859,44 @@ export default function AccountCreatePage({
                 />
 
                 {/* 신분증 사진 */}
-                <UploadRow
+                <MultipleUploadRow
                   label="신분증 사진"
-                  value={idPhotoUrl}
-                  error={uploadErrors.id_photo_url}
-                  loading={uploading === "id_photo_url"}
-                  onChange={handleFileChange("id_photo_url")}
-                  onClear={() => clearFile("id_photo_url")}
-                  isImage
+                  values={idPhotoUrls}
+                  error={uploadErrors.id_photo_urls}
+                  loading={uploading === "id_photo_urls"}
+                  onChange={handleFileChange("id_photo_urls")}
+                  onRemove={(idx) => removeFileAt("id_photo_urls", idx)}
+                  maxCount={5}
                 />
 
                 {/* 등본 */}
-                <UploadRow
+                <MultipleUploadRow
                   label="등본"
-                  value={regUrl}
-                  error={uploadErrors.resident_register_url}
-                  loading={uploading === "resident_register_url"}
-                  onChange={handleFileChange("resident_register_url")}
-                  onClear={() => clearFile("resident_register_url")}
-                  isImage={isImageUrl(regUrl)}
+                  values={regUrls}
+                  error={uploadErrors.resident_register_urls}
+                  loading={uploading === "resident_register_urls"}
+                  onChange={handleFileChange("resident_register_urls")}
+                  onRemove={(idx) => removeFileAt("resident_register_urls", idx)}
                 />
 
                 {/* 초본 */}
-                <UploadRow
+                <MultipleUploadRow
                   label="초본"
-                  value={extUrl}
-                  error={uploadErrors.resident_extract_url}
-                  loading={uploading === "resident_extract_url"}
-                  onChange={handleFileChange("resident_extract_url")}
-                  onClear={() => clearFile("resident_extract_url")}
-                  isImage={isImageUrl(extUrl)}
+                  values={extUrls}
+                  error={uploadErrors.resident_extract_urls}
+                  loading={uploading === "resident_extract_urls"}
+                  onChange={handleFileChange("resident_extract_urls")}
+                  onRemove={(idx) => removeFileAt("resident_extract_urls", idx)}
                 />
 
                 {/* 가족관계증명서 */}
-                <UploadRow
+                <MultipleUploadRow
                   label="가족관계증명서"
-                  value={famUrl}
-                  error={uploadErrors.family_relation_url}
-                  loading={uploading === "family_relation_url"}
-                  onChange={handleFileChange("family_relation_url")}
-                  onClear={() => clearFile("family_relation_url")}
-                  isImage={isImageUrl(famUrl)}
+                  values={famUrls}
+                  error={uploadErrors.family_relation_urls}
+                  loading={uploading === "family_relation_urls"}
+                  onChange={handleFileChange("family_relation_urls")}
+                  onRemove={(idx) => removeFileAt("family_relation_urls", idx)}
                 />
               </div>
             </div>
@@ -929,10 +924,10 @@ export default function AccountCreatePage({
                       joinedAt: "",
                     },
                     photo_url: "",
-                    id_photo_url: "",
-                    resident_register_url: "",
-                    resident_extract_url: "",
-                    family_relation_url: "",
+                    id_photo_urls: [],
+                    resident_register_urls: [],
+                    resident_extract_urls: [],
+                    family_relation_urls: [],
                   });
                   setUploadErrors({});
                   setUploading(null);
@@ -955,7 +950,93 @@ export default function AccountCreatePage({
   );
 }
 
-/** 파일 업로드 공용 UI 블록 */
+/** 여러 장 파일 업로드 공용 UI 블록 */
+function MultipleUploadRow({
+  label,
+  values = [],
+  error,
+  loading,
+  onChange,
+  onRemove,
+  maxCount = 5,
+}: {
+  label: string;
+  values?: string[];
+  error?: string;
+  loading?: boolean;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+  onRemove: (index: number) => void;
+  maxCount?: number;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">{label}</div>
+        <div className="text-xs text-muted-foreground">{values.length} / {maxCount}</div>
+      </div>
+      
+      <div className="flex flex-col gap-2">
+        <Input
+          type="file"
+          accept="image/*,.pdf"
+          onChange={onChange}
+          disabled={loading || values.length >= maxCount}
+          multiple // 여러 장 선택 가능 (컨트롤키 활용)
+        />
+        {loading && (
+          <p className="text-xs text-muted-foreground animate-pulse">업로드 중입니다…</p>
+        )}
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </div>
+
+      {values.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {values.map((v, idx) => (
+            <div key={idx} className="group relative aspect-square">
+              {/* 이미지/PDF 썸네일 */}
+              <div className="h-full w-full overflow-hidden rounded-md border bg-muted/20">
+                {isImageUrl(v) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={v}
+                    alt={`${label}-${idx}`}
+                    className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground overflow-hidden px-1">
+                    {fileNameFromUrl(v)}
+                  </div>
+                )}
+              </div>
+              
+              {/* 호버 시 삭제 버튼 */}
+              <button
+                type="button"
+                onClick={() => onRemove(idx)}
+                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm hover:bg-destructive/80 group-hover:flex"
+              >
+                <span className="text-xs">×</span>
+              </button>
+              
+              {/* 원본 링크 */}
+              <a
+                href={v}
+                target="_blank"
+                rel="noreferrer"
+                className="absolute inset-x-0 bottom-0 flex h-4 items-center justify-center bg-black/40 text-[8px] text-white opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                원본
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/** 파일 업로드 단일 UI 블록 */
 function UploadRow({
   label,
   value,
@@ -1027,12 +1108,3 @@ function UploadRow({
   );
 }
 
-/** 유틸 */
-function fileNameFromUrl(u: string) {
-  try {
-    const url = new URL(u);
-    return decodeURIComponent(url.pathname.split("/").pop() || "");
-  } catch {
-    return u.split("?")[0].split("#")[0].split("/").pop() || u;
-  }
-}

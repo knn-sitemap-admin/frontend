@@ -14,6 +14,7 @@ import BirthdayPicker from "@/components/organisms/BirthdayPicker/BirthdayPicker
 import { Button } from "@/components/atoms/Button/Button";
 import { useEffect, useState } from "react";
 import { uploadOnePhoto, UploadDomain } from "@/shared/api/photos/photoUpload";
+import { isImageUrl, fileNameFromUrl } from "@/shared/utils/file";
 
 type Patch = Partial<UserRow> & {
   email?: string;
@@ -206,11 +207,6 @@ function AccountEditModalBody({
     setFieldError(field, null);
   };
 
-  const isImageUrl = (u?: string) =>
-    !!u &&
-    /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(
-      (u.split("?")[0] || "").toLowerCase()
-    );
 
   const disabledSave =
     !name.trim() ||
@@ -552,12 +548,3 @@ function UploadRow({
   );
 }
 
-function fileNameFromUrl(u?: string) {
-  if (!u) return "";
-  try {
-    const url = new URL(u);
-    return decodeURIComponent(url.pathname.split("/").pop() || "");
-  } catch {
-    return u.split("?")[0].split("#")[0].split("/").pop() || u;
-  }
-}

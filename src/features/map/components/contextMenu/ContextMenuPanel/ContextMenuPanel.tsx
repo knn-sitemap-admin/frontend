@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/atoms/Button/Button";
-import { Plus, Star, Trash2, X } from "lucide-react";
+import { Navigation, Plus, Star, Trash2, X } from "lucide-react";
 import StarMeter from "@/features/properties/view/ui/parts/StarMeter";
 import {
   Select,
@@ -17,6 +17,7 @@ import type React from "react";
 
 import { useContextMenuPanelLogic } from "./hooks/useContextMenuPanel";
 import type { ContextMenuPanelProps } from "./panel.types";
+import { openKakaoNavi } from "@/shared/utils/kakaoNavi";
 
 export default function ContextMenuPanel(props: ContextMenuPanelProps) {
   const {
@@ -28,6 +29,7 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     canDelete,
     onDelete,
     onClose,
+    position,
   } = props;
 
   const {
@@ -65,6 +67,21 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     handleReserveClick,
     handleHoverPrefetch,
   } = useContextMenuPanelLogic(props);
+
+  const handleNaviClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const lat = typeof position === "object" && "getLat" in position ? position.getLat() : (position as any).lat;
+    const lng = typeof position === "object" && "getLng" in position ? position.getLng() : (position as any).lng;
+    
+    // 📍 네비게이션 시 '매물테스트' 같은 이름 대신 '지번/도로명 주소'를 우선 사용하도록 수정
+    const naviName = roadAddress || jibunAddress || headerTitle || "목적지";
+
+    await openKakaoNavi({
+      name: naviName,
+      lat: Number(lat),
+      lng: Number(lng),
+    });
+  };
 
   return (
     <div
@@ -105,6 +122,20 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
           className="hover:bg-transparent"
         >
           닫기
+        </Button>
+      </div>
+
+      {/* ---------------- 내비게이션 버튼 (신규) ---------------- */}
+      <div className="mt-2">
+        <Button
+          type="button"
+          onClick={handleNaviClick}
+          variant="secondary"
+          size="sm"
+          className="w-full h-9 gap-1.5 text-[13px] bg-yellow-400 text-yellow-900 hover:bg-yellow-500 border-none font-bold"
+        >
+          <Navigation className="w-4 h-4 fill-current" />
+          <span>카카오 내비 길안내</span>
         </Button>
       </div>
 

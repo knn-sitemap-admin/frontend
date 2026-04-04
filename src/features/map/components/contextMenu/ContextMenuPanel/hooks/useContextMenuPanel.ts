@@ -79,6 +79,20 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
   );
   const [displayOfficePhone, setDisplayOfficePhone] = useState<string>("");
   const [displayParkingGrade, setDisplayParkingGrade] = useState<number>(0);
+  const [displayRoadAddress, setDisplayRoadAddress] = useState<string>(
+    roadAddress ?? ""
+  );
+  const [displayJibunAddress, setDisplayJibunAddress] = useState<string>(
+    jibunAddress ?? ""
+  );
+
+  useEffect(() => {
+    if (roadAddress) setDisplayRoadAddress(roadAddress);
+  }, [roadAddress]);
+
+  useEffect(() => {
+    if (jibunAddress) setDisplayJibunAddress(jibunAddress);
+  }, [jibunAddress]);
 
   useEffect(() => {
     setDisplayTitle((propertyTitle ?? "").trim());
@@ -167,6 +181,11 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
       if (Number.isFinite(pg)) {
         setDisplayParkingGrade(Math.max(0, Math.min(5, pg)));
       }
+
+      const addr = String(raw?.addressLine ?? raw?.property?.addressLine ?? "").trim();
+      if (addr && !displayRoadAddress && !displayJibunAddress) {
+        setDisplayRoadAddress(addr);
+      }
     };
 
     // 1️⃣ 캐시에 있으면 네트워크 없이 바로 사용
@@ -237,6 +256,10 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
           setDisplayTitle(addr);
         }
 
+        if (addr && !displayRoadAddress && !displayJibunAddress) {
+          setDisplayRoadAddress(addr);
+        }
+
         if (phone) {
           setDisplayOfficePhone(phone);
         }
@@ -255,10 +278,16 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
         panelState,
         displayTitle,
         propertyTitle,
-        roadAddress,
-        jibunAddress,
+        roadAddress: displayRoadAddress,
+        jibunAddress: displayJibunAddress,
       }),
-    [panelState, displayTitle, propertyTitle, roadAddress, jibunAddress]
+    [
+      panelState,
+      displayTitle,
+      propertyTitle,
+      displayRoadAddress,
+      displayJibunAddress,
+    ]
   );
 
   const officePhone = useMemo(() => {
@@ -371,8 +400,8 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
 
     // 상태
     headerTitle,
-    roadAddress,
-    jibunAddress,
+    roadAddress: displayRoadAddress,
+    jibunAddress: displayJibunAddress,
     officePhone,
     parkingGrade,
     draft,

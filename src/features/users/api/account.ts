@@ -17,10 +17,10 @@ export type ProfileResponse = {
     bankAccountNo: string | null;
     photoUrl: string | null;
     positionRank: string;
-    docUrlResidentRegistration: string | null;
-    docUrlResidentAbstract: string | null;
-    docUrlIdCard: string | null;
-    docUrlFamilyRelation: string | null;
+    docUrlResidentRegistration: string[] | null;
+    docUrlResidentAbstract: string[] | null;
+    docUrlIdCard: string[] | null;
+    docUrlFamilyRelation: string[] | null;
   } | null;
 };
 
@@ -86,10 +86,10 @@ export type UpdateMyProfileRequest = {
   salaryBankName?: string | null;
   salaryAccount?: string | null;
   profileUrl?: string | null;
-  docUrlResidentRegistration?: string | null;
-  docUrlResidentAbstract?: string | null;
-  docUrlIdCard?: string | null;
-  docUrlFamilyRelation?: string | null;
+  docUrlResidentRegistration?: string[] | null;
+  docUrlResidentAbstract?: string[] | null;
+  docUrlIdCard?: string[] | null;
+  docUrlFamilyRelation?: string[] | null;
 };
 
 export type UpdateMyProfileResponse = {
@@ -142,10 +142,10 @@ export type UpsertEmployeeInfoRequest = {
     | "TEAM_LEADER"
     | "DIRECTOR"
     | "CEO";
-  docUrlResidentRegistration?: string | null;
-  docUrlResidentAbstract?: string | null;
-  docUrlIdCard?: string | null;
-  docUrlFamilyRelation?: string | null;
+  docUrlResidentRegistration?: string[] | null;
+  docUrlResidentAbstract?: string[] | null;
+  docUrlIdCard?: string[] | null;
+  docUrlFamilyRelation?: string[] | null;
   team?: {
     teamId: string;
     isPrimary?: boolean;
@@ -217,10 +217,10 @@ export type CreateEmployeeInfoRequest = {
     | "CEO";
   teamName?: string;
   profileUrl?: string;
-  docUrlIdCard?: string;
-  docUrlResidentRegistration?: string;
-  docUrlResidentAbstract?: string;
-  docUrlFamilyRelation?: string;
+  docUrlIdCard?: string[];
+  docUrlResidentRegistration?: string[];
+  docUrlResidentAbstract?: string[];
+  docUrlFamilyRelation?: string[];
   team?: {
     teamId: string;
     isPrimary?: boolean;
@@ -302,6 +302,10 @@ export type CredentialDetailResponse = {
     salaryBankName: string | null;
     salaryAccount: string | null;
     profileUrl: string | null;
+    docUrlResidentRegistration: string[] | null;
+    docUrlResidentAbstract: string[] | null;
+    docUrlIdCard: string[] | null;
+    docUrlFamilyRelation: string[] | null;
     isProfileCompleted: boolean;
     isDeleted: boolean;
     deletedAt: string | null;

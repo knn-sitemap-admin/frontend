@@ -16,6 +16,7 @@ import { createPinDraft } from "@/shared/api/pins";
 import { CreateFromPinArgs } from "../components/contextMenu/PinContextMenu/PinContextMenuContainer.types";
 import { buildAddressLine } from "../components/contextMenu/PinContextMenu/utils/geo";
 import { PIN_MENU_MAX_LEVEL } from "../shared/constants/mapLevels";
+import { loadKakaoSDK } from "@/lib/kakao/sdkLoader";
 
 export default function MapHomePage() {
   const KAKAO_MAP_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
@@ -66,6 +67,15 @@ export default function MapHomePage() {
       }
     };
   }, [s]);
+
+  // 🚀 카카오 SDK 초기화 (내비게이션용)
+  useEffect(() => {
+    if (KAKAO_MAP_KEY) {
+      loadKakaoSDK(KAKAO_MAP_KEY).catch((err) => {
+        console.warn("[MapHomePage] Kakao SDK load failed:", err);
+      });
+    }
+  }, [KAKAO_MAP_KEY]);
 
   const {
     nestedFavorites,

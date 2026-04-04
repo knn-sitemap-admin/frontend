@@ -30,12 +30,13 @@ import {
   type UpdateMyProfileRequest,
 } from "@/features/users/api/account";
 import { useToast } from "@/hooks/use-toast";
-import { uploadOnePhoto, UploadDomain } from "@/shared/api/photos/photoUpload";
+import { uploadOnePhoto, uploadPhotos, UploadDomain } from "@/shared/api/photos/photoUpload";
 import {
   Avatar,
   AvatarImage,
   AvatarFallback,
 } from "@/components/atoms/Avatar/Avatar";
+import { isImageUrl, isAccessibleUrl, getAccessibleUrl } from "@/shared/utils/file";
 
 const phoneRegex = /^[0-9\-+() ]{9,20}$/;
 
@@ -51,10 +52,10 @@ const ProfileSchema = z.object({
   salaryBankName: z.string().min(1, "은행명을 입력해주세요."),
   salaryAccount: z.string().min(1, "계좌번호를 입력해주세요."),
   profileUrl: z.string().optional(),
-  docUrlResidentRegistration: z.string().optional(),
-  docUrlResidentAbstract: z.string().optional(),
-  docUrlIdCard: z.string().optional(),
-  docUrlFamilyRelation: z.string().optional(),
+  docUrlResidentRegistration: z.array(z.string()).optional().default([]),
+  docUrlResidentAbstract: z.array(z.string()).optional().default([]),
+  docUrlIdCard: z.array(z.string()).optional().default([]),
+  docUrlFamilyRelation: z.array(z.string()).optional().default([]),
   password: z
     .string()
     .min(8, "비밀번호는 최소 8자 이상이어야 합니다.")
@@ -144,10 +145,10 @@ export default function ProfilePage() {
       salaryBankName: "",
       salaryAccount: "",
       profileUrl: "",
-      docUrlResidentRegistration: "",
-      docUrlResidentAbstract: "",
-      docUrlIdCard: "",
-      docUrlFamilyRelation: "",
+      docUrlResidentRegistration: [],
+      docUrlResidentAbstract: [],
+      docUrlIdCard: [],
+      docUrlFamilyRelation: [],
       password: "",
       password_confirm: "",
     },
@@ -166,10 +167,10 @@ export default function ProfilePage() {
         salaryBankName: account.bankName || "",
         salaryAccount: account.bankAccountNo || "",
         profileUrl: account.photoUrl || "",
-        docUrlResidentRegistration: account.docUrlResidentRegistration || "",
-        docUrlResidentAbstract: account.docUrlResidentAbstract || "",
-        docUrlIdCard: account.docUrlIdCard || "",
-        docUrlFamilyRelation: account.docUrlFamilyRelation || "",
+        docUrlResidentRegistration: account.docUrlResidentRegistration || [],
+        docUrlResidentAbstract: account.docUrlResidentAbstract || [],
+        docUrlIdCard: account.docUrlIdCard || [],
+        docUrlFamilyRelation: account.docUrlFamilyRelation || [],
       });
     }
   }, [profile, form]);
@@ -178,92 +179,78 @@ export default function ProfilePage() {
   const handleFileChange =
     (field: UploadField): React.ChangeEventHandler<HTMLInputElement> =>
     async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
       setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
 
       const maxUploadBytes = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxUploadBytes) {
-        setUploadErrors((prev) => ({
-          ...prev,
-          [field]: `파일이 너무 큽니다. 최대 ${(
-            maxUploadBytes /
-            (1024 * 1024)
-          ).toFixed(1)}MB 까지 가능합니다.`,
-        }));
-        if (e.currentTarget) {
-          e.currentTarget.value = "";
+      
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].size > maxUploadBytes) {
+          setUploadErrors((prev) => ({
+            ...prev,
+            [field]: `파일이 너무 큽니다. 최대 ${(
+              maxUploadBytes /
+              (1024 * 1024)
+            ).toFixed(1)}MB 까지 가능합니다.`,
+          }));
+          if (e.currentTarget) e.currentTarget.value = "";
+          return;
         }
-        return;
       }
 
       setUploading(field);
       try {
         const domain = uploadDomainMap[field] ?? "etc";
-        const meta = await uploadOnePhoto(file, { domain });
-        console.log(`=== ${field} 업로드 완료 ===`);
-        console.log("meta 전체:", meta);
-        console.log("meta.url:", meta?.url);
-        console.log("meta.key:", meta?.key);
-        console.log("meta.storageKey:", meta?.storageKey);
+        
+        if (field === "profileUrl") {
+          const meta = await uploadOnePhoto(files[0], { domain });
+          const urlToUse = meta?.url || meta?.key || null;
+          if (!urlToUse) throw new Error("업로드 응답에 URL이 없습니다.");
+          form.setValue(field, urlToUse, { shouldValidate: true });
+        } else {
+          // 최대 5장 제한
+          const currentUrls = (form.getValues(field) as string[]) || [];
+          if (currentUrls.length + files.length > 5) {
+            setUploadErrors((prev) => ({ ...prev, [field]: "최대 5장까지만 등록 가능합니다." }));
+            return;
+          }
 
-        // URL이 없는 경우 key를 사용하거나 에러
-        const urlToUse = meta?.url || meta?.key || null;
-        if (!urlToUse) {
-          throw new Error("업로드 응답에 URL 또는 key가 없습니다.");
+          const metas = await uploadPhotos(Array.from(files), { domain });
+          const newUrls = metas.map(m => m.url).filter(Boolean) as string[];
+          form.setValue(field, [...currentUrls, ...newUrls], { shouldValidate: true });
         }
-
-        form.setValue(field, urlToUse, { shouldValidate: true });
+        
         setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
       } catch (err: any) {
         const serverMessage =
           err?.response?.data?.message ??
-          err?.response?.data?.messages ??
           err?.message ??
           "업로드 중 오류가 발생했습니다.";
-        console.error("파일 업로드 실패:", err?.response ?? err);
         setUploadErrors((prev) => ({
-          ...prev,
-          [field]: Array.isArray(serverMessage)
-            ? serverMessage.join(", ")
-            : serverMessage,
+          ...prev, [field]: serverMessage
         }));
       } finally {
         setUploading(null);
-        if (e.currentTarget) {
-          e.currentTarget.value = "";
-        }
+        if (e.currentTarget) e.currentTarget.value = "";
       }
     };
 
+  const removeFileAt = (field: UploadField, index: number) => {
+    const current = (form.getValues(field) as string[]) || [];
+    const next = [...current];
+    next.splice(index, 1);
+    form.setValue(field, next, { shouldValidate: true });
+  };
+
   const clearFile = (field: UploadField) => {
-    form.setValue(field, "", { shouldValidate: true });
-    setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
-  };
-
-  /** 프리뷰 유틸 */
-  const isImageUrl = (url?: string) =>
-    !!url && /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(url.split("?")[0] || "");
-
-  /** 접근 가능한 URL인지 확인 (s3:// 형태는 브라우저에서 접근 불가) */
-  const isAccessibleUrl = (url?: string) => {
-    if (!url) return false;
-    return url.startsWith("http://") || url.startsWith("https://");
-  };
-
-  /** URL을 접근 가능한 형태로 변환 (s3:// -> key만 반환 또는 에러) */
-  const getAccessibleUrl = (url?: string) => {
-    if (!url) return undefined;
-    // s3:// 형태는 브라우저에서 접근 불가
-    if (url.startsWith("s3://")) {
-      console.warn(
-        "⚠️ s3:// 형태의 URL은 브라우저에서 접근할 수 없습니다:",
-        url
-      );
-      return undefined; // 프리사인 URL 생성 API 필요
+    if (field === "profileUrl") {
+      form.setValue(field, "", { shouldValidate: true });
+    } else {
+      form.setValue(field, [], { shouldValidate: true });
     }
-    return url;
+    setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
   const onSubmit = async (values: ProfileFormValues) => {
@@ -392,8 +379,8 @@ export default function ProfilePage() {
                         <div className="flex-1 space-y-2">
                           <div className="flex gap-2">
                             <label
-                              htmlFor="profile-upload"
-                              className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                                htmlFor="profile-upload"
+                                className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                             >
                               {uploading === "profileUrl" ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -588,111 +575,23 @@ export default function ProfilePage() {
                   "docUrlFamilyRelation",
                 ] as UploadField[]
               ).map((field) => {
-                const url = form.watch(field);
+                const urls = form.watch(field) as string[];
                 return (
                   <FormField
                     key={field}
                     control={form.control}
                     name={field}
-                    render={({ field: formField }) => (
+                    render={() => (
                       <FormItem>
-                        <div className="flex items-center gap-2">
-                          <FormLabel className="mb-0">
-                            {uploadFieldLabels[field]}
-                          </FormLabel>
-                          <label
-                            htmlFor={`upload-${field}`}
-                            className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                          >
-                            {uploading === field ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Plus className="h-4 w-4" />
-                            )}
-                            {url ? "변경" : "업로드"}
-                          </label>
-                          <input
-                            id={`upload-${field}`}
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            onChange={handleFileChange(field)}
-                            disabled={uploading === field}
-                          />
-                        </div>
-                        <FormControl>
-                          <div className="space-y-2">
-                            {url && (
-                              <div className="text-sm text-muted-foreground">
-                                {isAccessibleUrl(url) ? (
-                                  isImageUrl(url) ? (
-                                    <div className="flex items-start gap-2">
-                                      <div>
-                                        <img
-                                          src={url}
-                                          alt={uploadFieldLabels[field]}
-                                          className="max-w-xs max-h-48 rounded border object-contain"
-                                          onError={(e) => {
-                                            console.error(
-                                              `이미지 미리보기 로드 실패 [${field}]:`,
-                                              url
-                                            );
-                                          }}
-                                          onLoad={() => {
-                                            console.log(
-                                              `이미지 미리보기 로드 성공 [${field}]:`,
-                                              url
-                                            );
-                                          }}
-                                        />
-                                      </div>
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => clearFile(field)}
-                                        disabled={uploading === field}
-                                        className="shrink-0"
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-center gap-2">
-                                      <a
-                                        href={url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 hover:underline"
-                                      >
-                                        파일 보기
-                                      </a>
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => clearFile(field)}
-                                        disabled={uploading === field}
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  )
-                                ) : (
-                                  <div className="text-yellow-600 text-xs">
-                                    ⚠️ 이미지 URL이 접근 불가능한 형태입니다
-                                    (s3:// 등)
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            {uploadErrors[field] && (
-                              <p className="text-sm text-destructive">
-                                {uploadErrors[field]}
-                              </p>
-                            )}
-                          </div>
-                        </FormControl>
+                        <MultipleUploadRow
+                          label={uploadFieldLabels[field]}
+                          values={urls}
+                          error={uploadErrors[field]}
+                          loading={uploading === field}
+                          onChange={handleFileChange(field)}
+                          onRemove={(idx) => removeFileAt(field, idx)}
+                          maxCount={5}
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -720,6 +619,91 @@ export default function ProfilePage() {
           </div>
         </form>
       </Form>
+    </div>
+  );
+}
+/** 여러 장 파일 업로드 공용 UI 블록 */
+function MultipleUploadRow({
+  label,
+  values = [],
+  error,
+  loading,
+  onChange,
+  onRemove,
+  maxCount = 5,
+}: {
+  label: string;
+  values?: string[];
+  error?: string;
+  loading?: boolean;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+  onRemove: (index: number) => void;
+  maxCount?: number;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">{label}</div>
+        <div className="text-xs text-muted-foreground">{values.length} / {maxCount}</div>
+      </div>
+      
+      <div className="flex flex-col gap-2">
+        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground justify-center">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+          파일 추가
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            className="hidden"
+            onChange={onChange}
+            disabled={loading || values.length >= maxCount}
+            multiple
+          />
+        </label>
+        {error && <p className="text-xs text-destructive">{error}</p>}
+      </div>
+
+      {values.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {values.map((v, idx) => (
+            <div key={idx} className="group relative aspect-square">
+              <div className="h-full w-full overflow-hidden rounded-md border bg-muted/20">
+                {isImageUrl(v) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={v}
+                    alt={`${label}-${idx}`}
+                    className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground overflow-hidden px-1">
+                    파일
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemove(idx)}
+                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm hover:bg-destructive/80 group-hover:flex"
+              >
+                <span className="text-xs">×</span>
+              </button>
+              <a
+                href={v}
+                target="_blank"
+                rel="noreferrer"
+                className="absolute inset-x-0 bottom-0 flex h-4 items-center justify-center bg-black/40 text-[8px] text-white opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                원본
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
