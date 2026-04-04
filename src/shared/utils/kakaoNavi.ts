@@ -11,24 +11,35 @@ export const openKakaoNavi = (params: {
 
   // 1. 모바일 여부 확인
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const kakao = (window as any).Kakao;
 
-  // 2. 모바일인 경우: SDK를 거치지 않고 '직접 딥링크' 호출 (브릿지 페이지 스킵)
-  // SDK 방식(Kakao.Navi.start)은 가끔 브릿지 페이지를 띄워 경험이 끊기므로 딥링크를 우선합니다.
+  // 2. 모바일 환경 처리: 카카오 공식 SDK 방식을 최우선 사용합니다.
+  // 공식 SDK는 브라운저별 호환성(인앱 브라우저 등)을 카카오 측에서 직접 핸들링하므로 가장 안전합니다.
   if (isMobile) {
-    const deepLinkUrl = `kakaonavi://navigate?name=${encodeURIComponent(
+    if (kakao && kakao.isInitialized() && kakao.Navi) {
+      try {
+        console.log("[KakaoNavi] SDK 실행 (모바일)");
+        kakao.Navi.start({
+          name,
+          x: lng,
+          y: lat,
+          coordType: 'wgs84',
+        });
+        return;
+      } catch (err) {
+        console.warn("[KakaoNavi] SDK 호출 실패, 폴백 실행", err);
+      }
+    }
+
+    // SDK 미로드 혹은 호출 실패 시 예비용 딥링크
+    window.location.href = `kakaonavi://navigate?name=${encodeURIComponent(
       name
     )}&x=${lng}&y=${lat}&coord_type=wgs84`;
-    
-    console.log("[KakaoNavi] 직접 딥링크 호출 (모바일)");
-    window.location.href = deepLinkUrl;
     return;
   }
 
-  // 3. PC 환경인 경우: 카카오 SDK 또는 웹 페이지 연결
+  // 3. PC 환경 처리: GPS 정보를 포함한 웹 페이지 전환
   const openWebNavi = async () => {
-    const kakao = (window as any).Kakao;
-
-    // GPS 정보 시도
     let startPos: { lat: number; lng: number } | null = null;
     try {
       if (typeof window !== "undefined" && "geolocation" in navigator) {
@@ -36,7 +47,7 @@ export const openKakaoNavi = (params: {
           navigator.geolocation.getCurrentPosition(
             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
             () => resolve(null),
-            { enableHighAccuracy: true, timeout: 1500 }
+            { enableHighAccuracy: true, timeout: 2000 }
           );
         });
       }
@@ -44,7 +55,6 @@ export const openKakaoNavi = (params: {
       console.warn("[KakaoNavi] Geolocation failed:", e);
     }
 
-    // 출발지 정보가 있다면 경로안내(route) 페이지로, 없다면 목적지(to) 페이지로
     if (startPos) {
       const webRouteUrl = `https://map.kakao.com/link/from/현재위치,${
         startPos.lat
