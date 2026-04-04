@@ -30,8 +30,6 @@ export function loadKakaoSDK(appKey: string): Promise<any> {
     const script = document.createElement("script");
     script.id = id;
     script.src = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js";
-    script.integrity = "sha384-lXdnvWvEn9WSwzK9WdReUGVCG6InOLtgTMIDJHzNieOyoJ7SdrOsqP8WWM07uYy7";
-    script.crossOrigin = "anonymous";
     script.onload = () => {
       if (!w.Kakao.isInitialized()) {
         w.Kakao.init(appKey);

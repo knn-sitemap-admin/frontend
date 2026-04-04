@@ -68,7 +68,7 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     handleHoverPrefetch,
   } = useContextMenuPanelLogic(props);
 
-  const handleNaviClick = async (e: React.MouseEvent) => {
+  const handleNaviClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     const lat = typeof position === "object" && "getLat" in position ? position.getLat() : (position as any).lat;
     const lng = typeof position === "object" && "getLng" in position ? position.getLng() : (position as any).lng;
@@ -76,7 +76,7 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     // 📍 네비게이션 시 '매물테스트' 같은 이름 대신 '지번/도로명 주소'를 우선 사용하도록 수정
     const naviName = roadAddress || jibunAddress || headerTitle || "목적지";
 
-    await openKakaoNavi({
+    openKakaoNavi({
       name: naviName,
       lat: Number(lat),
       lng: Number(lng),
