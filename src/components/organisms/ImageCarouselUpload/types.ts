@@ -16,4 +16,6 @@ export interface ImageCarouselUploadProps {
   wideAspectClass?: string;
   tallHeightClass?: string;
   objectFit?: "cover" | "contain";
+  /** ✅ 순서 변경 모달 열기 */
+  onOpenReorder?: () => void;
 }

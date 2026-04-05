@@ -34,4 +34,5 @@ export type UserRow = {
     addressLine: string;
     reservedDate: string; // YYYY-MM-DD
   }>; // 계정별 예약한 핀 목록
+  disabled?: boolean;
 };

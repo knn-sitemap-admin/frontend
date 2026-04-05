@@ -4,6 +4,8 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getEmployeesList,
+  deleteAccount,
+  updateAccountDisabled,
   type EmployeeListItem,
 } from "@/features/users/api/account";
 import AccountsListPage from "@/features/users/components/_AccountsListPage";
@@ -74,36 +76,84 @@ export default function AccountsPage() {
       getEmployeesList({ sort: apiSort, name: searchName || undefined }),
   });
 
-  // 계정 비활성화
-  const disableAccountMutation = useMutation({
+  // 계정 비활성화 토글 (optimistic update)
+  const toggleAccountMutation = useMutation({
     mutationFn: async ({
       credentialId,
       disabled,
-    }: {
-      credentialId: string;
-      disabled: boolean;
-    }) => {
-      const response = await api.patch<{
-        message: string;
-        data: { id: string };
-      }>(`/dashboard/accounts/credentials/${credentialId}/disable`, {
-        disabled,
+    }: { credentialId: string; disabled: boolean }) => {
+      return await updateAccountDisabled(credentialId, disabled);
+    },
+    // Optimistically update the cached list
+    onMutate: async ({ credentialId, disabled }) => {
+      const targetIdStr = String(credentialId);
+      console.log(`[Mutation] 계정 상태 토글 시작: id=${targetIdStr}, targetDisabled=${disabled}`);
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ["employees-list"] });
+
+      // Snapshot the previous value for all matching queries
+      const queryKeyPrefix = ["employees-list"];
+      const previousQueriesData = queryClient.getQueriesData<EmployeeListItem[]>({ queryKey: queryKeyPrefix });
+
+      // Optimistically update all matching queries
+      queryClient.setQueriesData<EmployeeListItem[]>(
+        { queryKey: queryKeyPrefix },
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData)) return oldData;
+          return oldData.map((item) =>
+            String(item.credentialId) === targetIdStr
+              ? { ...item, isDisabled: disabled }
+              : item
+          );
+        }
+      );
+
+      return { previousQueriesData };
+    },
+    onError: (error: any, variables, context: any) => {
+      console.error("[Mutation] 계정 상태 토글 실패:", error);
+      // Rollback to previous data on error
+      if (context?.previousQueriesData) {
+        context.previousQueriesData.forEach(([key, data]: [any, any]) => {
+          queryClient.setQueryData(key, data);
+        });
+      }
+      
+      const errorMessage = error?.response?.data?.message || error?.message || "알 수 없는 오류가 발생했습니다.";
+      
+      toast({
+        title: "계정 상태 변경 실패",
+        description: `사유: ${errorMessage}`,
+        variant: "destructive",
       });
-      return response.data.data;
     },
     onSuccess: () => {
+      // Ensure fresh data from server
       queryClient.invalidateQueries({ queryKey: ["employees-list"] });
       toast({
         title: "계정 상태 변경 완료",
         description: "계정 상태가 성공적으로 변경되었습니다.",
       });
     },
+  });
+
+  // 계정 가삭제 (Soft Delete)
+  const deleteAccountMutation = useMutation({
+    mutationFn: async (credentialId: string) => {
+      return await deleteAccount(credentialId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees-list"] });
+      toast({
+        title: "계정 삭제 완료",
+        description: "계정이 목록에서 제거되었습니다. (가삭제)",
+      });
+    },
     onError: (error: any) => {
       toast({
-        title: "계정 상태 변경 실패",
+        title: "계정 삭제 실패",
         description:
-          error?.response?.data?.message ||
-          "계정 상태 변경 중 오류가 발생했습니다.",
+          error?.response?.data?.message || "계정 삭제 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     },
@@ -112,9 +162,13 @@ export default function AccountsPage() {
   // 백엔드 응답을 UserRow 형식으로 변환
   const transformToUserRows = (employees: EmployeeListItem[]): UserRow[] => {
     return employees.map((employee) => {
+      // 디버깅 로그 추가: 특정 계정의 상태 확인
+      if (employee.credentialId === "8" || String(employee.credentialId) === "8") {
+        console.log(`[Transform] 계정 8 발견, isDisabled=${employee.isDisabled}`);
+      }
       return {
         id: employee.accountId, // accountId를 id로 사용
-        credentialId: employee.credentialId, // credentialId 포함
+        credentialId: String(employee.credentialId), // 확실히 문자열로 변환
         name: employee.name || "이름 없음",
         phone: employee.phone || undefined,
         positionRank: employee.positionRank || undefined,
@@ -123,6 +177,7 @@ export default function AccountsPage() {
         favoritePins: employee.favoritePins || [], // 계정별 즐겨찾기 핀 목록 포함
         reservedPinDrafts: employee.reservedPinDrafts || [], // 계정별 예약한 핀 목록 포함
         role: employee.role, // role 정보 포함
+        disabled: !!employee.isDisabled, // 확실히 불리언으로 변환
       };
     });
   };
@@ -139,9 +194,8 @@ export default function AccountsPage() {
     return rows;
   }, [employeesList, sortDirection]);
 
-  // 계정 제거/비활성화 핸들러
+  // 계정 가삭제 핸들러
   const handleRemove = async (accountId: string) => {
-    // userRows에서 해당 계정 찾기
     const account = userRows.find((row) => row.id === accountId);
     const credentialId = account?.credentialId;
 
@@ -154,16 +208,27 @@ export default function AccountsPage() {
       return;
     }
 
-    if (
-      confirm(
-        "해당 계정을 비활성화하시겠습니까? 비활성화된 계정은 로그인할 수 없습니다.",
-      )
-    ) {
-      disableAccountMutation.mutate({
-        credentialId,
-        disabled: true,
+    deleteAccountMutation.mutate(credentialId);
+  };
+
+  // 활성/비활성 토글 핸들러
+  const handleToggleStatus = (accountId: string, currentDisabled: boolean) => {
+    const account = userRows.find((row) => row.id === accountId);
+    const credentialId = account?.credentialId;
+
+    if (!credentialId) {
+      toast({
+        title: "오류",
+        description: "계정 정보를 찾을 수 없습니다.",
+        variant: "destructive",
       });
+      return;
     }
+
+    toggleAccountMutation.mutate({
+      credentialId,
+      disabled: !currentDisabled,
+    });
   };
 
   // 역할 변경 핸들러 (현재는 사용하지 않지만 Props에 필요)
@@ -278,6 +343,7 @@ export default function AccountsPage() {
             rows={userRows}
             onChangeRole={handleChangeRole}
             onRemove={handleRemove}
+            onToggleStatus={handleToggleStatus}
             onEdit={handleEdit}
             onViewFavorites={handleViewFavorites}
             onViewReservedPins={handleViewReservedPins}

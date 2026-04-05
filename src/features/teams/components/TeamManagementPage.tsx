@@ -6,17 +6,43 @@ import { Badge } from "@/components/atoms/Badge/Badge";
 import { Button } from "@/components/atoms/Button/Button";
 import { Users, User } from "lucide-react";
 import Link from "next/link";
-import { useTeams } from "../hooks/useTeams";
+import { useTeams, useDeleteTeam } from "../hooks/useTeams";
 import { useToast } from "@/hooks/use-toast";
+import { CreateTeamForm } from "./CreateTeamForm";
+
 
 export default function TeamManagementPage() {
   const { data: teams = [], isLoading, error } = useTeams();
+  const deleteTeamMutation = useDeleteTeam();
   
   // 비활성 팀 필터링 (활성 팀만 표시)
   const activeTeams = useMemo(() => {
     return teams.filter((team) => team.isActive === true);
   }, [teams]);
   const { toast } = useToast();
+
+  const handleDeleteTeam = async (id: string, name: string) => {
+    if (!confirm(`"${name}" 팀을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+
+    try {
+      await deleteTeamMutation.mutateAsync(id);
+      toast({
+        title: "팀 삭제 완료",
+        description: `"${name}" 팀이 정상적으로 삭제되었습니다.`,
+      });
+    } catch (err: any) {
+      console.error("팀 삭제 실패:", err);
+      // 백엔드 에러 메시지 활용
+      const errorMessage =
+        err.response?.data?.messages?.[0] || "팀 삭제 중 오류가 발생했습니다. (팀원이 남아있으면 삭제할 수 없습니다.)";
+      
+      toast({
+        title: "팀 삭제 실패",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
 
   if (error) {
     toast({
@@ -52,15 +78,14 @@ export default function TeamManagementPage() {
   return (
     <div className="mx-auto max-w-7xl p-6 space-y-8">
       <header>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">팀 관리</h1>
-          <p className="text-sm text-muted-foreground">
-            전체 팀 목록을 조회하고 각 팀의 상세 정보를 확인할 수 있습니다.
-            <br />
-            <span className="text-xs">
-              팀은 팀장 직급 계정 생성 시 자동으로 생성됩니다.
-            </span>
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">팀 관리</h1>
+            <p className="text-sm text-muted-foreground">
+              전체 팀 목록을 조회하고 각 팀의 상세 정보를 확인할 수 있습니다.
+            </p>
+          </div>
+          <CreateTeamForm />
         </div>
       </header>
 
@@ -91,13 +116,21 @@ export default function TeamManagementPage() {
               )}
             </div>
 
-            <Link
-              href={`/admin/team-management/${encodeURIComponent(
-                team.id
-              )}`}
-            >
-              <Button className="w-full">{team.name} 관리</Button>
-            </Link>
+            <div className="flex justify-between gap-3">
+              <Link
+                href={`/admin/team-management/${encodeURIComponent(team.id)}`}
+                className="flex-1"
+              >
+                <Button className="w-full">{team.name} 관리</Button>
+              </Link>
+              <Button
+                variant="outline"
+                className="text-red-500 hover:bg-red-50"
+                onClick={() => handleDeleteTeam(String(team.id), team.name)}
+              >
+                삭제
+              </Button>
+            </div>
           </Card>
         ))}
       </div>

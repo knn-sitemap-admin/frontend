@@ -27,6 +27,8 @@ type Props = {
   hideFavorites?: boolean; // 즐겨찾기 목록 컬럼 숨기기 (팀 관리용)
   hideReservedPins?: boolean; // 예약한 매물 목록 컬럼 숨기기 (팀 관리용)
   removeLabel?: string; // 삭제 버튼 라벨 (기본값: "삭제", 팀 관리용: "팀 제외")
+  onSetLeader?: (id: string) => void; // 팀장으로 임명 (팀 관리용)
+  onToggleStatus?: (id: string, currentStatus: boolean) => void; // 활성/비활성 토글
 };
 
 export default function AccountsListPage({
@@ -44,6 +46,8 @@ export default function AccountsListPage({
   hideFavorites = false,
   hideReservedPins = false,
   removeLabel = "삭제",
+  onSetLeader,
+  onToggleStatus,
 }: Props) {
   const handleViewFavorites = (accountId: string) => {
     onViewFavorites?.(accountId);
@@ -140,6 +144,9 @@ export default function AccountsListPage({
               <th className="px-4 py-3 text-center font-medium">
                 {removeLabel}
               </th>
+              {onSetLeader && (
+                <th className="px-4 py-3 text-center font-medium">역할 관리</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -184,7 +191,14 @@ export default function AccountsListPage({
                   <td className="px-4 py-3 font-medium">{u.name}</td>
                   <td className="px-4 py-3">{phone}</td>
                   <td className="px-4 py-3">
-                    {positionRankLabel(u.positionRank)}
+                    <div className="flex items-center gap-2">
+                      {positionRankLabel(u.positionRank)}
+                      {u.disabled && (
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                          정지
+                        </span>
+                      )}
+                    </div>
                   </td>
                   {!hideDepartment && (
                     <td className="px-4 py-3">{u.teamName || "-"}</td>
@@ -230,28 +244,77 @@ export default function AccountsListPage({
                     </td>
                   )}
                   <td className="px-4 py-3 text-center">
-                    {u.role === "admin" || u.role === "team_leader" ? (
+                    {u.role === "admin" ? (
                       <span className="text-muted-foreground text-xs">-</span>
                     ) : (
-                      <button
-                        className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
-                        onClick={() => {
-                          if (
-                            confirm(
-                              removeLabel === "팀 제외"
-                                ? "해당 직원을 팀에서 제외하시겠습니까?"
-                                : "해당 계정을 삭제하시겠습니까?",
+                      <div className="flex justify-center gap-2">
+                        {onToggleStatus && (
+                          <div className="flex flex-col items-center gap-1">
+                            <button
+                              type="button"
+                              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                                !u.disabled ? "bg-blue-600" : "bg-slate-200"
+                              }`}
+                              onClick={() => onToggleStatus(u.id, !!u.disabled)}
+                              title={u.disabled ? "활성화" : "비활성화"}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                  !u.disabled
+                                    ? "translate-x-5"
+                                    : "translate-x-0"
+                                }`}
+                              />
+                            </button>
+                            <span
+                              className={`text-[10px] font-bold uppercase ${
+                                !u.disabled ? "text-blue-600" : "text-slate-400"
+                              }`}
+                            >
+                              {!u.disabled ? "활성" : "차단"}
+                            </span>
+                          </div>
+                        )}
+                        <button
+                          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            if (
+                              confirm(
+                                removeLabel === "팀 제외"
+                                  ? "해당 직원을 팀에서 제외하시겠습니까?"
+                                  : "해당 계정을 영구 삭제하시겠습니까? (Soft Delete)"
+                              )
                             )
-                          )
-                            onRemove(u.id);
-                        }}
-                        title={removeLabel}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        {removeLabel}
-                      </button>
+                              onRemove(u.id);
+                          }}
+                          title={removeLabel}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          {removeLabel}
+                        </button>
+                      </div>
                     )}
                   </td>
+                  {onSetLeader && (
+                    <td className="px-4 py-3 text-center">
+                      {u.role === "team_leader" ? (
+                        <span className="text-blue-600 font-bold text-xs">
+                          현재 팀장
+                        </span>
+                      ) : (
+                        <button
+                          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50"
+                          onClick={() => {
+                            if (confirm("이 직원을 팀장으로 임명하시겠습니까?"))
+                              onSetLeader(u.id);
+                          }}
+                        >
+                          팀장 임명
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}

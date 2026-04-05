@@ -12,12 +12,12 @@ import type { ContractData } from "@/components/contract-management/types";
 
 type ProfileData =
   | {
-      account?: {
-        id: string;
-        name: string | null;
-        phone: string | null;
-      } | null;
-    }
+    account?: {
+      id: string;
+      name: string | null;
+      phone: string | null;
+    } | null;
+  }
   | undefined;
 
 // 프론트엔드 SalesContractData를 백엔드 CreateContractRequest로 변환
@@ -472,7 +472,10 @@ export function transformContractListItemToContractData(
     customerName: item.customerName || "",
     customerContact: item.customerPhone || "",
     salesPerson: item.createdByName || "",
-    salesPersonSalary, // 관리자 목록: 회사 입금액 (담당자 분배 기준)
+    salesPersonSalary, // 기존: 호환성을 위해 유지 (또는 회사 입금액)
+    companyAmount: item.companyAmount ?? 0,
+    teamLeaderAmount: item.teamLeaderAmount ?? 0,
+    salesPersonAmount: item.salesPersonAmount ?? 0,
     totalCalculation,
     contractDate: item.contractDate,
     balanceDate: item.finalPaymentDate || undefined,
@@ -524,6 +527,9 @@ export function transformMyContractListItemToContractData(
     customerContact: item.customerPhone || "",
     salesPerson: item.createdByName || "",
     salesPersonSalary, // 내 계약: 할당된 본인 급여 (담당자 분배 기준)
+    companyAmount: item.companyAmount ?? 0,
+    teamLeaderAmount: item.teamLeaderAmount ?? 0,
+    salesPersonAmount: item.salesPersonAmount ?? 0,
     totalCalculation,
     contractDate: item.contractDate,
     balanceDate: item.finalPaymentDate || undefined,

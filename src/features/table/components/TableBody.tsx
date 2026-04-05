@@ -62,7 +62,7 @@ export function TableBody<T extends TableData>({
               <td
                 key={column.key}
                 className={cn(
-                  "px-4 py-3 text-sm text-gray-900",
+                  "px-2 py-2 text-sm text-gray-900",
                   column.align === "center" && "text-center",
                   column.align === "right" && "text-right"
                 )}

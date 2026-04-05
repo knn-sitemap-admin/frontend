@@ -150,13 +150,24 @@ export async function batchPatchPhotos(
     id: IdLike;
     dto: Partial<{
       caption: string | null;
-      groupId: IdLike | null; // ⚠️ patchPhotoById에서는 사용하지 않지만 타입은 유지
+      groupId: IdLike | null;
       sortOrder: number | null;
       isCover: boolean | null;
       name?: string | null;
     }>;
   }>
-) {
+): Promise<PinPhoto[]> {
   if (!changes?.length) return [];
-  return Promise.all(changes.map(({ id, dto }) => patchPhotoById(id, dto)));
+  
+  // ✅ 개별 호출(Promise.all) 대신, 백엔드의 진짜 일괄 수정 엔드포인트(/photos/batch) 호출
+  const { data } = await api.patch<{ data?: PinPhoto[]; message?: string }>(
+    `/photos/batch`,
+    changes,
+    { withCredentials: true }
+  );
+  
+  return assertArray<PinPhoto>(
+    data?.data,
+    data?.message || "사진 일괄 수정 실패"
+  );
 }

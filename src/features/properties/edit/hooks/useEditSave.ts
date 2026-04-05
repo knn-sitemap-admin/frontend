@@ -288,7 +288,16 @@ export function useEditSave({
 
     // 1) 사진 커밋
     try {
-      await (commitImageChanges?.() ?? commitPending?.());
+      // eslint-disable-next-line no-console
+      console.log("[useEditSave] Calling commitImageChanges...", { 
+        hasCommit: !!commitImageChanges, 
+        hasPending: !!commitPending 
+      });
+      
+      const imgResult = await (commitImageChanges?.() ?? commitPending?.());
+      
+      // eslint-disable-next-line no-console
+      console.log("[useEditSave] commitImageChanges result:", imgResult);
     } catch (e: any) {
       console.error("[images.commit] 실패:", e);
       showAlert(e?.message || "이미지 변경사항 반영에 실패했습니다.");

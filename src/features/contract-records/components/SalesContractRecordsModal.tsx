@@ -150,7 +150,7 @@ export function SalesContractRecordsModal({
             accountId: item.accountId,
             name: item.name,
             positionRank: item.positionRank,
-            teamRole: item.role === "manager" ? "manager" : "staff",
+            teamRole: (item.teamRole as "manager" | "staff" | null) || "staff",
           }));
         } catch (e) {
           log("getEmployeesList 실패, 기존 로직 폴백", { error: (e as any).message });
@@ -241,15 +241,32 @@ export function SalesContractRecordsModal({
   // 초기 데이터 또는 팀 멤버 목록이 바뀌면 staffAllocations에 이력 반영 및 본인 정보 자동 채우기
   useEffect(() => {
     const enrichAllocations = (base: SalesContractData) => {
-      // 1) 본인 정보 자동 채우기 (신규 생성 시)
       let currentData = { ...base };
+
+      // 1) 본인 정보 자동 채우기 (신규 생성 시)
       if (profile && !initialData) {
+        const myId = profile.account?.id;
+        const myName = profile.account?.name || "";
+        const myIsLeader =
+          profile.role === "manager" || profile.role === "admin";
+
         currentData = {
           ...currentData,
           salesPerson: {
-            name: profile.account?.name || "",
+            name: myName,
             contact: profile.account?.phone || "",
           },
+          staffAllocations: currentData.staffAllocations.map((staff) => {
+            if (staff.id === "employee1") {
+              return {
+                ...staff,
+                accountId: myId,
+                name: myName,
+                isTeamLeader: myIsLeader,
+              };
+            }
+            return staff;
+          }),
         };
       }
 
@@ -267,7 +284,9 @@ export function SalesContractRecordsModal({
           return {
             ...staff,
             positionRank: (member as any).positionRank ?? staff.positionRank,
-            isTeamLeader: (member as any).teamRole === "manager",
+            isTeamLeader:
+              (member as any).teamRole === "manager" ||
+              (member as any).teamRole === "admin",
           };
         }),
       };

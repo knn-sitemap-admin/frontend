@@ -69,118 +69,93 @@ export default function StructureLinesSection({
         {lines.map((line, idx) => (
           <div
             key={idx}
-            className={`
-              grid items-center
-              gap-x-2 gap-y-1 md:gap-x-2
-              grid-cols-[44px_max-content_max-content_minmax(0,1fr)_40px]
-              md:grid-cols-[64px_max-content_max-content_minmax(240px,1fr)_40px]
-              pb-2 border-b border-gray-100 last:border-0 last:pb-0
-            `}
+            className="flex flex-col gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0 md:grid md:grid-cols-[68px_max-content_max-content_1fr_40px] md:items-center md:gap-x-4 md:pb-3"
           >
-            {/* 첫 번째 줄 (구조, 복층, 테라스, 가격, 삭제) */}
-            <div className="col-span-full grid grid-cols-subgrid items-center">
+            {/* 모바일 상단 / 데스크탑 그리드 구성 요소 */}
+            <div className="flex items-center gap-2 md:contents">
               {/* 구조 */}
-            <Input
-              value={`${line.rooms || ""}/${line.baths || ""}`}
-              onChange={(e) => {
-                const v = e.target.value.replace(/\s/g, "");
-                const [r, b] = v.split("/");
-                onUpdate(idx, {
-                  rooms: parseInt(r || "0", 10) || 0,
-                  baths: parseInt(b || "0", 10) || 0,
-                });
-              }}
-              placeholder="2/1"
-              className="h-8 md:h-9 w-[38px] md:w-[64px] text-center"
-              inputMode="numeric"
-              pattern="[0-9/]*"
-            />
-
-            {/* 복층 */}
-            <label className="inline-flex items-center gap-1 md:gap-2 text-xs md:text-sm pl-1 md:pl-2">
-              <Checkbox
-                checked={line.duplex}
-                onCheckedChange={(c) => onUpdate(idx, { duplex: !!c })}
+              <Input
+                value={`${line.rooms || ""}/${line.baths || ""}`}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\s/g, "");
+                  const [r, b] = v.split("/");
+                  onUpdate(idx, {
+                    rooms: parseInt(r || "0", 10) || 0,
+                    baths: parseInt(b || "0", 10) || 0,
+                  });
+                }}
+                placeholder="2/1"
+                className="h-8 md:h-9 w-[44px] md:w-[68px] text-center"
+                inputMode="numeric"
+                pattern="[0-9/]*"
               />
-              <span>복층</span>
-            </label>
 
-            {/* 테라스 */}
-            <label className="inline-flex items-center gap-1 md:gap-2 text-xs md:text-sm pr-1 md:pr-5">
-              <Checkbox
-                checked={line.terrace}
-                onCheckedChange={(c) => onUpdate(idx, { terrace: !!c })}
-              />
-              <span>테라스</span>
-            </label>
-
-            {/* 가격 범위 */}
-            <div
-              className={`
-                w-full
-                flex flex-col gap-1
-                md:grid md:grid-cols-[minmax(110px,1fr)_auto_minmax(110px,1fr)]
-                md:items-center md:justify-items-center md:gap-2
-              `}
-            >
-              {/* 최소 */}
-              <div className="flex w-full min-w-0 items-center gap-1 md:gap-2">
-                <Input
-                  value={line.primary}
-                  onChange={(e) => onUpdate(idx, { primary: e.target.value })}
-                  placeholder="최소매매가"
-                  className="h-8 md:h-9 flex-1 min-w-0"
-                  inputMode="numeric"
-                  inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
-                  required
-                  aria-required="true"
+              {/* 옵션들 (복층, 테라스) */}
+              <label className="inline-flex items-center gap-1.5 text-xs md:text-sm md:pl-2">
+                <Checkbox
+                  checked={line.duplex}
+                  onCheckedChange={(c) => onUpdate(idx, { duplex: !!c })}
                 />
-                <span className="text-[11px] md:text-xs text-gray-500 shrink-0 leading-none">
-                  백만원
-                </span>
+                <span>복층</span>
+              </label>
+
+              <label className="inline-flex items-center gap-1.5 text-xs md:text-sm md:pr-4">
+                <Checkbox
+                  checked={line.terrace}
+                  onCheckedChange={(c) => onUpdate(idx, { terrace: !!c })}
+                />
+                <span>테라스</span>
+              </label>
+
+              {/* 가격 범위 (모바일에서는 아래 행, 데스크탑에선 4번째 그리드 칸) */}
+              <div className="w-full md:col-start-4 md:row-start-1">
+                <div className="flex flex-row items-center gap-2 w-full md:grid md:grid-cols-[1fr_auto_1fr] md:gap-2">
+                  <div className="flex-1 flex items-center gap-1.5">
+                    <Input
+                      value={line.primary}
+                      onChange={(e) => onUpdate(idx, { primary: e.target.value })}
+                      placeholder="최소"
+                      className="h-8 md:h-9 flex-1 min-w-0"
+                      inputMode="numeric"
+                      inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
+                      required
+                    />
+                    <span className="text-[11px] md:text-xs text-gray-400 shrink-0">만</span>
+                  </div>
+                  <span className="text-gray-300 text-xs text-center">~</span>
+                  <div className="flex-1 flex items-center gap-1.5">
+                    <Input
+                      value={line.secondary}
+                      onChange={(e) => onUpdate(idx, { secondary: e.target.value })}
+                      placeholder="최대"
+                      className="h-8 md:h-9 flex-1 min-w-0"
+                      inputMode="numeric"
+                      inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
+                      required
+                    />
+                    <span className="text-[11px] md:text-xs text-gray-400 shrink-0">만</span>
+                  </div>
+                </div>
               </div>
 
-              <span className="hidden md:inline text-xs text-gray-500 justify-self-center px-2">
-                ~
-              </span>
-
-              {/* 최대 */}
-              <div className="flex w-full min-w-0 items-center gap-1 md:gap-2">
-                <Input
-                  value={line.secondary}
-                  onChange={(e) => onUpdate(idx, { secondary: e.target.value })}
-                  placeholder="최대매매가"
-                  className="h-8 md:h-9 flex-1 min-w-0"
-                  inputMode="numeric"
-                  inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
-                  required
-                  aria-required="true"
-                />
-                <span className="text-[11px] md:text-xs text-gray-500 shrink-0 leading-none">
-                  백만원
-                </span>
-              </div>
+              {/* 삭제 버튼 */}
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                onClick={() => onRemove(idx)}
+                className="ml-auto shrink-0 md:col-start-5"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* 삭제버튼 */}
-            <Button
-              variant="ghost"
-              size="icon"
-              type="button"
-              onClick={() => onRemove(idx)}
-              title="행 삭제"
-              className="shrink-0 justify-self-end"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            </div>
-
-            {/* 구조 메모 (새 줄 전체) */}
-            <div className="col-span-full mt-1">
+            {/* 구조 메모 */}
+            <div className="md:col-span-full">
               <Input
                 value={line.note || ""}
                 onChange={(e) => onUpdate(idx, { note: e.target.value })}
-                placeholder="해당 구조에 대한 특이사항 입력 (예: 확장, 근생, 대물 등의 구조적 특이성 메모)"
+                placeholder="구조적 특이성 메모 (예: 확장, 근생, 대물 등)"
                 className="h-8 md:h-9 text-xs"
               />
             </div>

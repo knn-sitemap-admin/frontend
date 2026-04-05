@@ -47,27 +47,25 @@ export default function MiniCarousel({
   const goTo = React.useCallback(
     (target: number) => {
       if (!hasImages) return;
-      const next = ((target % len) + len) % len;
-      setIdx((cur) => {
-        if (cur === next) return cur;
-        onIndexChange?.(next); // 변경시에만 상위 통지
-        return next;
-      });
+      const nextIdx = ((target % len) + len) % len;
+      if (nextIdx !== idx) {
+        setIdx(nextIdx);
+        onIndexChange?.(nextIdx);
+      }
     },
-    [hasImages, len, onIndexChange]
+    [hasImages, len, idx, onIndexChange]
   );
 
   const goDelta = React.useCallback(
     (delta: number) => {
       if (!hasImages) return;
-      setIdx((cur) => {
-        const next = (((cur + delta) % len) + len) % len;
-        if (cur === next) return cur;
-        onIndexChange?.(next);
-        return next;
-      });
+      const nextIdx = (((idx + delta) % len) + len) % len;
+      if (nextIdx !== idx) {
+        setIdx(nextIdx);
+        onIndexChange?.(nextIdx);
+      }
     },
-    [hasImages, len, onIndexChange]
+    [hasImages, len, idx, onIndexChange]
   );
 
   const prev = React.useCallback(() => goDelta(-1), [goDelta]);
@@ -138,7 +136,7 @@ export default function MiniCarousel({
                 key={i}
                 className={[
                   "absolute inset-0 transition-opacity duration-300 ease-in-out",
-                  i === idx ? "opacity-100" : "opacity-0",
+                  i === idx ? "opacity-100 z-10" : "opacity-0 pointer-events-none",
                   objectFit === "contain" ? "grid place-items-center" : "",
                 ].join(" ")}
                 onClick={() => onImageClick?.(i)}

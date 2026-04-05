@@ -383,6 +383,7 @@ export type EmployeeListItem = {
   name: string | null;
   positionRank: PositionRank | null;
   teamName: string; // "미소속" 포함
+  teamRole: string | null;
   phone: string | null;
   reservedPinDrafts: Array<{
     id: string;
@@ -400,6 +401,7 @@ export type EmployeeListItem = {
     customerName: string;
     contractDate: string; // YYYY-MM-DD
   }>;
+  isDisabled: boolean;
 };
 
 export async function getEmployeesList(
@@ -471,6 +473,31 @@ export async function patchAccountPassword(
     });
   } catch (error: any) {
     console.error("비밀번호 변경 API 호출 실패:", error);
+    throw error;
+  }
+}
+
+/** 계정 삭제 (Soft Delete) */
+export async function deleteAccount(credentialId: string): Promise<void> {
+  try {
+    await api.delete(`/dashboard/accounts/credentials/${credentialId}`);
+  } catch (error: any) {
+    console.error("계정 삭제 실패:", error);
+    throw error;
+  }
+}
+
+/** 계정 활성/비활성 상태 변경 */
+export async function updateAccountDisabled(
+  credentialId: string,
+  disabled: boolean,
+): Promise<void> {
+  try {
+    await api.patch(`/dashboard/accounts/credentials/${credentialId}/disable`, {
+      disabled,
+    });
+  } catch (error: any) {
+    console.error("계정 활성/비활성 상태 변경 실패:", error);
     throw error;
   }
 }

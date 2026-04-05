@@ -55,7 +55,7 @@ export default function ToggleSidebar({
         open ? "shadow-md" : "shadow-sm",
         className
       )}
-      style={{ zIndex: 2147483647 }}
+      style={{ zIndex: 10 }}
     >
       {open ? (
         <PanelRightOpen className="h-4 w-4" />

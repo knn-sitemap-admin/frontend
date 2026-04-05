@@ -221,9 +221,13 @@ export default function CompletionRegistrySection({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 md:gap-x-6 md:items-center">
-        <Field label="진입로/경사도" align="center" className="min-w-[120px]">
-          <div className="flex items-center gap-2">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2 md:grid-cols-3 md:gap-x-6 md:items-center">
+        <Field
+          label="진입로/경사도"
+          align="center"
+          className="min-w-0 sm:col-span-2 md:col-span-2"
+        >
+          <div className="flex flex-wrap items-center gap-2">
             <PillRadioGroup
               name="slopeGrade"
               options={GRADES}
@@ -243,7 +247,7 @@ export default function CompletionRegistrySection({
           </div>
         </Field>
 
-        <Field label="구조" align="center" className="min-w-[120px]">
+        <Field label="구조" align="center" className="min-w-0">
           <PillRadioGroup
             name="structureGrade"
             options={GRADES}
@@ -252,7 +256,7 @@ export default function CompletionRegistrySection({
           />
         </Field>
 
-        <Field label="엘리베이터" align="center" className="min-w-[120px]">
+        <Field label="엘리베이터" align="center" className="min-w-0">
           <ElevatorSegment
             value={elevator ?? null}
             onChange={(next) => {
@@ -283,7 +287,11 @@ export default function CompletionRegistrySection({
           />
         </Field>
 
-        <Field label="등기" align="center">
+        <Field
+          label="등기"
+          align="center"
+          className="min-w-0 sm:col-span-2 md:col-span-1"
+        >
           <PillCheckboxGroup
             name="buildingTypes"
             options={UI_BUILDING_TYPES}

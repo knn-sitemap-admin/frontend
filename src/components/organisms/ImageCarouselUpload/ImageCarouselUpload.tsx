@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { ChevronLeft, ChevronRight, Upload, X } from "lucide-react";
+import { ArrowLeftRight, ChevronLeft, ChevronRight, Upload, X } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { cn } from "@/lib/cn";
 import { useEffect, useId, useRef, useState } from "react";
@@ -26,6 +26,7 @@ export default function ImageCarouselUpload({
   captionAsFolderTitle = false,
   folderTitle = "",
   onChangeFolderTitle,
+  onOpenReorder,
 }: ImageCarouselUploadProps & {
   captionAsFolderTitle?: boolean;
   folderTitle?: string;
@@ -51,15 +52,25 @@ export default function ImageCarouselUpload({
   );
 
   useEffect(() => {
+    // 순서 조정 등으로 items 자체가 변경되면 (정렬 포함)
+    // 사용자에게 바뀐 순서의 처음부터 보여주기 위해 0번으로 리셋
+    setCurrent(0);
+    setImgError(false);
+
+    // 캡션 동기화 보장
     setLocalCaptions(
       items.map((it) => (typeof it?.caption === "string" ? it.caption! : ""))
     );
   }, [items]);
 
   useEffect(() => {
-    if (current > 0 && current >= count) setCurrent(count - 1);
+    if (count === 0) {
+      setCurrent(0);
+    } else if (current >= count) {
+      setCurrent(count - 1);
+    }
     setImgError(false);
-  }, [count, current, items]);
+  }, [count]);
 
   const goPrev = () => count > 0 && setCurrent((c) => (c - 1 + count) % count);
   const goNext = () => count > 0 && setCurrent((c) => (c + 1) % count);
@@ -262,15 +273,17 @@ export default function ImageCarouselUpload({
             />
 
             {count > 0 && onRemoveImage && (
-              <button
-                type="button"
-                onClick={handleRemove}
-                aria-label="이미지 삭제"
-                className="absolute top-2 right-2 inline-flex items-center justify-center rounded-full hover:text-red-700 text-gray-500 p-1.5"
-                title="삭제"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="absolute top-2 right-2 flex items-center gap-1.5 z-20">
+                {/* 삭제 버튼 */}
+                <button
+                  type="button"
+                  onClick={handleRemove}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm border border-white/10 text-white hover:text-red-400 hover:bg-black/50 transition-all"
+                  title="삭제"
+                >
+                  <X className="h-4.5 w-4.5" />
+                </button>
+              </div>
             )}
 
             {count > 1 && (
@@ -334,7 +347,20 @@ export default function ImageCarouselUpload({
           className="flex-1 min-w-0 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
         />
 
-        <div className="shrink-0">
+        <div className="shrink-0 flex items-center gap-2">
+          {count > 1 && onOpenReorder && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onOpenReorder}
+              className="px-2.5 text-slate-500 hover:text-primary transition-colors"
+              title="사진 순서 변경"
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+            </Button>
+          )}
+
           <input
             id={id}
             ref={inputRef ?? null}

@@ -282,14 +282,20 @@ export function StaffAllocationSection({
                         data-contract-records-portal="true"
                         className="!z-[2200]"
                       >
-                        {teamMembers.map((employee) => (
-                          <SelectItem
-                            key={employee.accountId}
-                            value={employee.accountId}
-                          >
-                            {employee.name || "이름 없음"}
-                          </SelectItem>
-                        ))}
+                        {teamMembers
+                          .filter(
+                            (employee) =>
+                              employee.teamRole === "manager" ||
+                              employee.teamRole === "admin",
+                          )
+                          .map((employee) => (
+                            <SelectItem
+                              key={employee.accountId}
+                              value={employee.accountId}
+                            >
+                              {employee.name || "이름 없음"}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   )}

@@ -93,10 +93,11 @@ export async function getTeam(id: string): Promise<TeamDetailResponse> {
   }
 }
 
-// 팀 멤버 삭제 API
-export async function removeTeamMember(memberId: string): Promise<void> {
+// 팀 멤버 삭제 API (개편: teamId와 accountId 조합 사용)
+export async function removeTeamMember({ teamId, accountId }: { teamId: string, accountId: string }): Promise<void> {
   try {
-    await api.delete(`/dashboard/accounts/team-members/${memberId}`);
+    // 백엔드 새 엔드포인트: DELETE /dashboard/accounts/teams/:id/members/:accountId
+    await api.delete(`/dashboard/accounts/teams/${teamId}/members/${accountId}`);
   } catch (error: any) {
     console.error("팀 멤버 삭제 API 호출 실패:", error);
     throw error;
@@ -110,12 +111,16 @@ export type AssignTeamMemberRequest = {
   joinedAt?: string;
 };
 
-// 팀 멤버 배정 API
+// 팀 멤버 배정 API (개편: 팀 전속 엔드포인트 사용)
 export async function assignTeamMember(
   data: AssignTeamMemberRequest
 ): Promise<void> {
   try {
-    await api.post(`/dashboard/accounts/team-members`, data);
+    // 백엔드 새 엔드포인트: POST /dashboard/accounts/teams/:id/members
+    await api.post(`/dashboard/accounts/teams/${data.teamId}/members`, {
+      accountId: data.accountId,
+      role: 'staff' // 수동 추가는 기본이 사원으로
+    });
   } catch (error: any) {
     console.error("팀 멤버 배정 API 호출 실패:", error);
     throw error;
@@ -139,6 +144,19 @@ export type ReplaceManagerResponse = {
     unchanged?: boolean;
   };
 };
+
+// 팀장 임명 API (Manual Set Leader)
+export async function setTeamLeader(
+  teamId: string,
+  accountId: string
+): Promise<void> {
+  try {
+    await api.patch(`/dashboard/accounts/teams/${teamId}/leader`, { accountId });
+  } catch (error: any) {
+    console.error("팀장 임명 API 호출 실패:", error);
+    throw error;
+  }
+}
 
 // 팀장 교체 API
 export async function replaceTeamManager(

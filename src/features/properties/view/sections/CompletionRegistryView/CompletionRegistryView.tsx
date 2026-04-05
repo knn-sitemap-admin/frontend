@@ -64,7 +64,7 @@ export default function CompletionRegistryView({
   return (
     <div className="space-y-4">
       {/* 경사도 / 구조 / 엘리베이터 */}
-      <div className="grid grid-cols-3 items-center">
+      <div className="grid grid-cols-1 gap-y-3 sm:grid-cols-2 md:grid-cols-3 items-center">
         <Field label="진입로/경사도" align="center">
           <Pill text={slopeGrade ?? "-"} />
         </Field>

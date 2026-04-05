@@ -148,14 +148,14 @@ export function ContractList({
     if (totalCount > 0 && contracts.length <= paginationConfig.listsPerPage) {
       const filtered = searchTerm
         ? filteredContracts.filter((contract) =>
-            searchKeys.some((key) => {
-              const value = contract[key as keyof ContractData];
-              return value
-                ?.toString()
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase());
-            }),
-          )
+          searchKeys.some((key) => {
+            const value = contract[key as keyof ContractData];
+            return value
+              ?.toString()
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase());
+          }),
+        )
         : filteredContracts;
 
       const totalPages = Math.ceil(totalCount / paginationConfig.listsPerPage);
@@ -217,7 +217,7 @@ export function ContractList({
 
   return (
     <>
-      <div className="mx-auto max-w-7xl p-6 space-y-8">
+      <div className="mx-auto max-w-[1600px] p-6 space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           <div className="flex flex-col sm:flex-row gap-2 items-center">
@@ -297,10 +297,10 @@ export function ContractList({
           columns={
             salaryColumnLabel
               ? contractTableColumns.map((col) =>
-                  col.key === "salesPersonSalary"
-                    ? { ...col, label: salaryColumnLabel }
-                    : col,
-                )
+                col.key === "salesPersonSalary"
+                  ? { ...col, label: salaryColumnLabel }
+                  : col,
+              )
               : contractTableColumns
           }
           pagination={pagination}

@@ -97,6 +97,15 @@ export async function commitImageChangesImpl(
   const newUploadPlans = buildFolderUploadPlans(foldersSnapshot);
   const verticalNewItems = buildVerticalNewItems(verticalImagesRef.current);
 
+  // eslint-disable-next-line no-console
+  console.log("[commitImageChangesImpl] Start", {
+    pendingGroupMapSize: pendingGroupMap.current.size,
+    pendingPhotoMapSize: pendingPhotoMap.current.size,
+    pendingDeleteSetSize: pendingDeleteSet.current.size,
+    newUploadPlansCount: newUploadPlans.length,
+    verticalNewItemsCount: verticalNewItems.length,
+  });
+
   if (
     groupChanges.length === 0 &&
     photoChangesPending.length === 0 &&
@@ -104,6 +113,8 @@ export async function commitImageChangesImpl(
     newUploadPlans.length === 0 &&
     verticalNewItems.length === 0
   ) {
+    // eslint-disable-next-line no-console
+    console.log("[commitImageChangesImpl] No changes detected. Aborting.");
     return false;
   }
 
@@ -140,6 +151,19 @@ export async function commitImageChangesImpl(
         uploadInFlightRef.current,
         { domain: "map" }
       );
+
+      // ✅ 업로드된 결과물 정보를 원래 ImageItem(Ref 내)에 주입
+      let uploadIdx = 0;
+      imageFoldersRef.current[folderIdx].forEach((it: any) => {
+        const sid = getServerPhotoId(it);
+        if (!sid && (it.file instanceof File || it.url?.startsWith("blob:"))) {
+          const p = created[uploadIdx++];
+          if (p) {
+            it.id = p.id;
+            it.url = p.url;
+          }
+        }
+      });
 
       created.forEach((p, i) => {
         const cap = captions[i];
@@ -201,6 +225,18 @@ export async function commitImageChangesImpl(
           { domain: "map" }
         );
 
+        // ✅ 세로 신규 아이템들도 ID 업데이트
+        let vUploadIdx = 0;
+        verticalImagesRef.current.forEach((it: any) => {
+          if (!getServerPhotoId(it)) {
+            const p = created[vUploadIdx++];
+            if (p) {
+              it.id = p.id;
+              it.url = p.url;
+            }
+          }
+        });
+
         created.forEach((p, i) => {
           const cap = captions[i];
           if (!cap) return;
@@ -229,22 +265,72 @@ export async function commitImageChangesImpl(
       );
     }
 
-    if (photoChanges.length) {
-      await batchPatchPhotos(
-        photoChanges.map((p: any) => ({
-          id: p.id,
-          dto: {
-            caption: p.caption,
-            groupId:
-              p.groupId !== undefined ? (p.groupId as IdLike) : undefined,
-            sortOrder:
-              p.sortOrder !== undefined ? (p.sortOrder as number) : undefined,
-            isCover:
-              p.isCover !== undefined ? (p.isCover as boolean) : undefined,
-            name: p.name,
-          },
-        }))
-      );
+    // 3) 최후의 순서 정제 (Final Sort Order Sync)
+    // 업로드가 모두 완료되었으므로, 현재 UI상의 전체 배열(imageFolders, verticalImages)을 훑으며
+    // 모든 사진(기존+신규)의 최종 sortOrder를 다시 한번 한꺼번에 패치합니다.
+    const finalPhotoPatches: { id: IdLike; dto: any }[] = [];
+
+    // 가로 폴더 정렬
+    imageFoldersRef.current.forEach((folder) => {
+      folder.forEach((img, idx) => {
+        const pid = getServerPhotoId(img);
+        if (pid != null) {
+          finalPhotoPatches.push({ id: pid, dto: { sortOrder: idx + 1 } });
+        }
+      });
+    });
+
+    // 세로 폴더 정렬
+    verticalImagesRef.current.forEach((img, idx) => {
+      const pid = getServerPhotoId(img);
+      if (pid != null) {
+        finalPhotoPatches.push({ id: pid, dto: { sortOrder: idx + 1 } });
+      }
+    });
+
+    // 기존 변경사항(캡션 등)과 최종 정렬값을 합침 (Dedupe)
+    const patchMap = new Map<string, any>();
+
+    // 1. 기존 변경 예약된 데이터들
+    photoChanges.forEach((p: any) => {
+      const { id, ...dto } = p;
+      const key = String(id);
+      patchMap.set(key, dto);
+    });
+
+    // 2. 최종 정렬값 덮어쓰기 (UI 순서 우선)
+    finalPhotoPatches.forEach((p) => {
+      const key = String(p.id);
+      const prev = patchMap.get(key) ?? {};
+      patchMap.set(key, { ...prev, ...p.dto });
+    });
+
+    if (patchMap.size > 0) {
+      const payload = Array.from(patchMap.entries()).map(([idStr, dto]) => {
+        const cleanDto: any = {};
+        if (dto.caption !== undefined) cleanDto.caption = dto.caption;
+        if (dto.groupId !== undefined) cleanDto.groupId = dto.groupId;
+        if (dto.sortOrder !== undefined) cleanDto.sortOrder = dto.sortOrder;
+        if (dto.isCover !== undefined) cleanDto.isCover = dto.isCover;
+        if (dto.name !== undefined) cleanDto.name = dto.name;
+
+        return {
+          id: idStr as IdLike,
+          dto: cleanDto,
+        };
+      });
+
+      // eslint-disable-next-line no-console
+      console.log("🚀 [commitImageChangesImpl] SENDING BATCH PAYLOAD:", JSON.stringify(payload, null, 2));
+
+      try {
+        const res = await batchPatchPhotos(payload);
+        // eslint-disable-next-line no-console
+        console.log("✅ [commitImageChangesImpl] BATCH SUCCESS:", res);
+      } catch (err) {
+        console.error("❌ [commitImageChangesImpl] BATCH FAILED:", err);
+        throw err;
+      }
     }
 
     if (deleteIds.length) {

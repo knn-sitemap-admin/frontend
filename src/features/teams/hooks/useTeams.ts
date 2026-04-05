@@ -6,6 +6,7 @@ import {
   removeTeamMember,
   assignTeamMember,
   replaceTeamManager,
+  setTeamLeader,
   deleteTeam,
   CreateTeamRequest,
   CreateTeamResponse,
@@ -61,7 +62,8 @@ export function useRemoveTeamMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (memberId: string) => removeTeamMember(memberId),
+    mutationFn: ({ teamId, accountId }: { teamId: string; accountId: string }) =>
+      removeTeamMember({ teamId, accountId }),
     onSuccess: () => {
       // 팀 멤버 삭제 후 팀 상세 캐시 무효화 및 팀 목록 새로고침
       queryClient.invalidateQueries({ queryKey: teamKeys.details() });
@@ -85,7 +87,29 @@ export function useAssignTeamMember() {
   });
 }
 
-// 팀장 교체 (Mutation)
+// 팀장 임명 (Manual Set Leader)
+export function useSetTeamLeader() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      teamId,
+      accountId,
+    }: {
+      teamId: string;
+      accountId: string;
+    }) => {
+      // api/teams.ts에 새로 추가할 setTeamLeader 호출
+      return setTeamLeader(teamId, accountId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: teamKeys.detail(variables.teamId) });
+      queryClient.invalidateQueries({ queryKey: teamKeys.list() });
+    },
+  });
+}
+
+// 팀장 교체 (Mutation) - 기존 로직 유지용
 export function useReplaceTeamManager() {
   const queryClient = useQueryClient();
 

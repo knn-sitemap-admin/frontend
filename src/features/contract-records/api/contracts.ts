@@ -105,6 +105,16 @@ export type ContractListItemResponse = {
   supportCashAmount: number; // 현금 지원금액 (원)
   isTaxed: boolean; // 과세 여부 (0.967 적용)
   companyPercent?: number; // 회사 비율 (담당자 분배 계산용)
+  companyAmount?: number; // 관리자용: 회사입금액
+  teamLeaderAmount?: number; // 관리자용: 팀장급여
+  salesPersonAmount?: number; // 관리자용: 영업자급여
+  participants?: Array<{
+    accountId: string | null;
+    name: string | null;
+    sharePercent: number;
+    isDisabled: boolean;
+    role: "admin" | "manager" | "staff";
+  }>;
 };
 
 // 계약 목록 응답 타입

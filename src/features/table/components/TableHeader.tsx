@@ -12,7 +12,7 @@ export function TableHeader<T>({ columns }: TableHeaderProps<T>) {
           <th
             key={column.key}
             className={cn(
-              "px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+              "px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap",
               column.align === "center" && "text-center",
               column.align === "right" && "text-right"
             )}

@@ -99,37 +99,23 @@ export default function StructureLinesList({
               className="min-w-0 rounded-md border bg-white px-2 py-2"
             >
               <div className="flex flex-col min-w-0">
-                {/* ===== 헤더 라인 ===== */}
-                <div className="flex items-center min-w-0 text-xs text-gray-500 mb-1">
-                  <div className="flex-1 text-center">방/욕실</div>
-
-                  <div className="w-px bg-gray-200 mx-2 h-4" />
-
-                  <div className="flex-1 text-center">특징</div>
-
-                  <div className="w-px bg-gray-200 mx-2 h-4" />
-
-                  <div className="flex-[1.2] sm:flex-[2] text-center">금액</div>
-                </div>
-
-                {/* ===== 값 라인 ===== */}
-                <div className="flex items-center min-w-0 text-sm">
-                  <div className="flex-1 min-w-0 text-center truncate">
-                    {rb}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  {/* 구조 & 특징 */}
+                  <div className="flex items-center gap-2.5 sm:flex-1">
+                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px] font-bold shrink-0">
+                      {rb}
+                    </span>
+                    <span className="text-gray-500 text-xs truncate">
+                      {features}
+                    </span>
                   </div>
 
-                  <div className="w-px bg-gray-200 mx-2 h-5" />
-
-                  <div className="flex-1 min-w-0 text-center truncate">
-                    {features}
-                  </div>
-
-                  <div className="w-px bg-gray-200 mx-2 h-5" />
-
-                  <div className="flex-[1.2] sm:flex-[2] min-w-0 flex items-center justify-center truncate">
+                  {/* 금액 범위 */}
+                  <div className="flex items-center text-sm font-semibold text-blue-600 sm:flex-1 sm:justify-end">
                     <span>{minText}</span>
-                    <span className="mx-2 text-gray-400">~</span>
+                    <span className="mx-1.5 text-gray-300 font-normal">~</span>
                     <span>{maxText}</span>
+                    <span className="ml-1 text-[11px] text-gray-400 font-normal shrink-0">만원</span>
                   </div>
                 </div>
 

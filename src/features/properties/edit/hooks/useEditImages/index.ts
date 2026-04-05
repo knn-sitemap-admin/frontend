@@ -100,13 +100,18 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
   /* 서버 reload dedupe */
   const reloadMapRef = useRef<Map<string, Promise<void>>>(new Map());
 
+  const [isMediaDirty, setIsMediaDirty] = useState(false);
+
   /* 업로드 dedupe */
   const uploadInFlightRef = useRef<Map<string, Promise<PinPhoto[]>>>(new Map());
   const createAndUploadRef = useRef<
     Map<string, Promise<{ group: PinPhotoGroup; photos: PinPhoto[] }>>
   >(new Map());
 
-  /* 초기 하이드레이션 */
+  /* 큐 래퍼들 */
+  const markDirty = useCallback(() => setIsMediaDirty(true), []);
+
+  /* (후략) */
   useEffect(() => {
     let mounted = true;
 
@@ -235,6 +240,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         const next = prev.map((folder, i) =>
           i === idx ? [...folder, ...tempItems].slice(0, MAX_PER_CARD) : folder
         );
+        markDirty();
         return next;
       });
     },
@@ -243,7 +249,8 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
 
   const addPhotoFolder = useCallback(() => {
     setImageFolders((prev) => [...prev, []]);
-  }, [setImageFolders]);
+    markDirty();
+  }, [setImageFolders, markDirty]);
 
   const removePhotoFolder = useCallback(
     (folderIdx: number, opts?: { keepAtLeastOne?: boolean }) => {
@@ -266,10 +273,11 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         next.splice(folderIdx, 1);
 
         if (next.length === 0 && keepAtLeastOne) next.push([]);
+        markDirty();
         return next;
       });
     },
-    [queueDeleteIfServer, setImageFolders]
+    [queueDeleteIfServer, setImageFolders, markDirty]
   );
 
   const handleRemoveImage = useCallback(
@@ -285,10 +293,11 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
             URL.revokeObjectURL(removed.url);
           } catch {}
         }
+        markDirty();
         return next;
       });
     },
-    [queueDeleteIfServer, setImageFolders]
+    [queueDeleteIfServer, setImageFolders, markDirty]
   );
 
   /* 세로형 삭제/추가/캡션 */
@@ -305,10 +314,11 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
             URL.revokeObjectURL(removed.url);
           } catch {}
         }
+        markDirty();
         return next;
       });
     },
-    [queueDeleteIfServer, setVerticalImages]
+    [queueDeleteIfServer, setVerticalImages, markDirty]
   );
 
   const onAddFiles = useCallback(
@@ -323,9 +333,13 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
           name: f.name,
         });
       }
-      setVerticalImages((prev) => [...prev, ...items].slice(0, MAX_FILES));
+      setVerticalImages((prev) => {
+        const next = [...prev, ...items].slice(0, MAX_FILES);
+        markDirty();
+        return next;
+      });
     },
-    [setVerticalImages]
+    [setVerticalImages, markDirty]
   );
 
   const onChangeFileItemCaption = useCallback(
@@ -343,10 +357,11 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         const pid = getServerPhotoId(target);
         if (pid != null) queuePhotoCaption(pid, text ?? null);
 
+        markDirty();
         return next;
       });
     },
-    [setVerticalImages, queuePhotoCaption]
+    [setVerticalImages, queuePhotoCaption, markDirty]
   );
 
   const onChangeImageCaption = useCallback(
@@ -367,15 +382,108 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         const pid = getServerPhotoId(target);
         if (pid != null) queuePhotoCaption(pid, text ?? null);
 
+        markDirty();
         return next;
       });
     },
-    [setImageFolders, queuePhotoCaption]
+    [setImageFolders, queuePhotoCaption, markDirty]
+  );
+
+  /** ✅ 폴더 내 이미지 순서 변경 (+ 서버 정렬 큐잉) */
+  const moveImageInFolder = useCallback(
+    (folderIdx: number, fromIdx: number, toIdx: number) => {
+      setImageFolders((prev) => {
+        if (folderIdx < 0 || folderIdx >= prev.length) return prev;
+        const next = prev.map((arr) => [...arr]);
+        const folder = next[folderIdx];
+        if (
+          fromIdx < 0 ||
+          fromIdx >= folder.length ||
+          toIdx < 0 ||
+          toIdx >= folder.length
+        ) {
+          return prev;
+        }
+
+        // 1) 로컬 배열 순서 교체 (불변성 유지)
+        const [target] = folder.splice(fromIdx, 1);
+        folder.splice(toIdx, 0, target);
+        next[folderIdx] = [...folder]; // 새 참조 할당으로 리렌더링 보장
+        
+        imageFoldersRef.current = next;
+        markDirty();
+
+        // 2) 폴더 내 모든 사진의 서버 sortOrder 업데이트 예약
+        next[folderIdx].forEach((img, i) => {
+          const pid = getServerPhotoId(img);
+          if (pid != null) {
+            // eslint-disable-next-line no-console
+            console.log(`[moveImageInFolder] Queueing Photo ${pid} at sortOrder ${i + 1}`);
+            queuePhotoSort(pid, i + 1);
+          }
+        });
+
+        return next;
+      });
+    },
+    [setImageFolders, queuePhotoSort, imageFoldersRef, markDirty]
+  );
+
+  /** ✅ 폴더 전체 순서 교체 (모달용) */
+  const reorderFolder = useCallback(
+    (folderIdx: number, nextItems: ImageItem[]) => {
+      // eslint-disable-next-line no-console
+      console.log("[reorderFolder] Starting", { folderIdx, count: nextItems.length });
+      
+      setImageFolders((prev) => {
+        if (folderIdx < 0 || folderIdx >= prev.length) return prev;
+        const next = prev.map((arr, i) => (i === folderIdx ? [...nextItems] : [...arr]));
+        imageFoldersRef.current = next; // 즉시 Ref 동기화
+        markDirty();
+        return next;
+      });
+
+      // 서버 정렬 예약 (사전 예약)
+      nextItems.forEach((img, i) => {
+        const pid = getServerPhotoId(img);
+        if (pid != null) {
+          // eslint-disable-next-line no-console
+          console.log(`[reorderFolder] Queueing Photo ${pid} at sortOrder ${i + 1}`);
+          queuePhotoSort(pid, i + 1);
+        }
+      });
+    },
+    [setImageFolders, queuePhotoSort, imageFoldersRef, markDirty]
+  );
+
+  /** ✅ 세로 폴더 순서 변경 (모달용) */
+  const reorderVerticalFolder = useCallback(
+    (nextItems: ImageItem[]) => {
+      // eslint-disable-next-line no-console
+      console.log("[reorderVerticalFolder] Starting", { count: nextItems.length });
+
+      const next = [...nextItems];
+      setVerticalImages(next);
+      verticalImagesRef.current = next; // 즉시 Ref 동기화
+      markDirty();
+
+      // 서버 정렬 예약
+      next.forEach((img, i) => {
+        const pid = getServerPhotoId(img);
+        if (pid != null) {
+          // eslint-disable-next-line no-console
+          console.log(`[reorderVerticalFolder] Queueing Photo ${pid} at sortOrder ${i + 1}`);
+          queuePhotoSort(pid, i + 1);
+        }
+      });
+    },
+    [setVerticalImages, queuePhotoSort, verticalImagesRef, markDirty]
   );
 
   /* 변경 여부 / 커밋 */
   const hasImageChanges = useCallback(
     () =>
+      isMediaDirty ||
       hasImageChangesImpl({
         propertyId,
         imageFoldersRef,
@@ -389,6 +497,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         createAndUploadRef,
       }),
     [
+      isMediaDirty,
       propertyId,
       imageFoldersRef,
       verticalImagesRef,
@@ -402,21 +511,8 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
     ]
   );
 
-  const commitImageChanges = useCallback(
-    async () =>
-      commitImageChangesImpl({
-        propertyId,
-        imageFoldersRef,
-        verticalImagesRef,
-        pendingGroupMap,
-        pendingPhotoMap,
-        pendingDeleteSet,
-        groupsRef,
-        setGroups,
-        uploadInFlightRef,
-        createAndUploadRef,
-      }),
-    [
+  const commitImageChanges = useCallback(async () => {
+    const result = await commitImageChangesImpl({
       propertyId,
       imageFoldersRef,
       verticalImagesRef,
@@ -427,8 +523,23 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
       setGroups,
       uploadInFlightRef,
       createAndUploadRef,
-    ]
-  );
+    });
+    if (result) {
+      setIsMediaDirty(false);
+    }
+    return result;
+  }, [
+    propertyId,
+    imageFoldersRef,
+    verticalImagesRef,
+    pendingGroupMap,
+    pendingPhotoMap,
+    pendingDeleteSet,
+    groupsRef,
+    setGroups,
+    uploadInFlightRef,
+    createAndUploadRef,
+  ]);
 
   const commitPending = commitImageChanges;
 
@@ -466,6 +577,9 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
     removePhotoFolder,
     onChangeImageCaption,
     handleRemoveImage,
+    moveImageInFolder,
+    reorderFolder,
+    reorderVerticalFolder,
     onAddFiles,
     onChangeFileItemCaption,
     handleRemoveFileItem,

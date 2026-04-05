@@ -8,70 +8,131 @@ export const contractTableColumns: TableColumn<ContractData>[] = [
   {
     key: "contractNumber",
     label: "계약번호",
-    width: "140px",
+    width: "110px",
     align: "center",
-    render: (value) => <div className="font-medium text-blue-600">{value}</div>,
+    render: (value) => (
+      <div className="font-medium text-blue-600 whitespace-nowrap">{value}</div>
+    ),
   },
   {
     key: "salesPerson",
     label: "담당자",
-    width: "100px",
+    width: "80px",
     align: "center",
+    render: (value) => <div className="whitespace-nowrap">{value}</div>,
   },
   {
     key: "customerName",
     label: "고객명",
-    width: "100px",
+    width: "80px",
     align: "center",
+    render: (value) => <div className="whitespace-nowrap">{value}</div>,
   },
   {
     key: "customerContact",
     label: "연락처",
-    width: "130px",
+    width: "135px",
     align: "center",
+    render: (value) => <div className="whitespace-nowrap">{value}</div>,
   },
   {
     key: "totalCalculation",
-    label: "계약금액",
+    label: "총수익",
     width: "120px",
-    align: "center",
-    render: (value) => (
-      <div className="font-medium">{formatCurrency(value)}</div>
-    ),
+    align: "right",
+    render: (value, row) => {
+      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      return (
+        <div className="font-semibold text-gray-900 whitespace-nowrap">
+          {formatCurrency(isZeroStatus ? 0 : value)}
+        </div>
+      );
+    },
   },
   {
     key: "contractDate",
     label: "계약일",
-    width: "110px",
+    width: "105px",
     align: "center",
-    render: (value) => (value ? formatDate(value) : "-"),
+    render: (value) => (
+      <div className="whitespace-nowrap">{value ? formatDate(value) : "-"}</div>
+    ),
   },
   {
     key: "balanceDate",
     label: "잔금일",
-    width: "110px",
+    width: "105px",
     align: "center",
-    render: (value) => (value ? formatDate(value) : "-"),
+    render: (value) => (
+      <div className="whitespace-nowrap">{value ? formatDate(value) : "-"}</div>
+    ),
   },
   {
     key: "salesPersonSalary",
     label: "급여",
-    width: "120px",
-    align: "center",
-    render: (value) => (
-      <div className="font-medium">{formatCurrency(value ?? 0)}</div>
-    ),
+    width: "125px",
+    align: "right",
+    render: (value, row) => {
+      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      return (
+        <div className="font-medium text-gray-700 whitespace-nowrap">
+          {formatCurrency(isZeroStatus ? 0 : (value ?? 0))}
+        </div>
+      );
+    },
+  },
+  {
+    key: "companyAmount",
+    label: "회사입금액",
+    width: "125px",
+    align: "right",
+    render: (value, row) => {
+      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      return (
+        <div className="font-medium text-blue-600 whitespace-nowrap">
+          {formatCurrency(isZeroStatus ? 0 : (value ?? 0))}
+        </div>
+      );
+    },
+  },
+  {
+    key: "teamLeaderAmount",
+    label: "팀장급여",
+    width: "125px",
+    align: "right",
+    render: (value, row) => {
+      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      return (
+        <div className="font-medium text-emerald-600 whitespace-nowrap">
+          {formatCurrency(isZeroStatus ? 0 : (value ?? 0))}
+        </div>
+      );
+    },
+  },
+  {
+    key: "salesPersonAmount",
+    label: "영업자급여",
+    width: "125px",
+    align: "right",
+    render: (value, row) => {
+      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      return (
+        <div className="font-medium text-orange-600 whitespace-nowrap">
+          {formatCurrency(isZeroStatus ? 0 : (value ?? 0))}
+        </div>
+      );
+    },
   },
   {
     key: "status",
     label: "상태",
-    width: "90px",
+    width: "85px",
     align: "center",
     render: (value) => {
       const config = statusConfigMap[value as keyof typeof statusConfigMap];
       return (
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${config.className}`}
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${config.className}`}
         >
           {config.label}
         </span>

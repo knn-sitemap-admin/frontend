@@ -6,6 +6,8 @@ import { FolderPlus } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import ImageCarouselUpload from "@/components/organisms/ImageCarouselUpload/ImageCarouselUpload";
 import { ImageItem, ResolvedFileItem } from "@/features/properties/types/media";
+import ImageReorderModal from "@/components/organisms/ImageCarouselUpload/components/ImageReorderModal";
+import { useState } from "react";
 
 export type PhotoFolder = {
   id: string;
@@ -47,14 +49,13 @@ type Props = {
   onRemoveFileItem?: (index: number) => void;
   maxFiles: number;
 
+  /** ✅ 폴더 전체 순서 교체 (모달용) */
+  onReorderFolder?: (folderIdx: number, nextItems: ImageItem[]) => void;
+  onReorderVerticalFolder?: (nextItems: ImageItem[]) => void;
+
   /** 세로 폴더의 현재 제목 */
   verticalFolderTitle?: string;
 
-  // 아직 ImageCarouselUpload가 안 받으니까 여기선 안 씀
-  onReorder?: (
-    photoId: number | string | undefined,
-    to: number
-  ) => void | Promise<void>;
   onSetCover?: (photoId: number | string | undefined) => void | Promise<void>;
 
   syncServer?: boolean;
@@ -75,6 +76,8 @@ export default function ImagesSection({
   onChangeFileItemCaption,
   onRemoveFileItem,
   maxFiles,
+  onReorderFolder,
+  onReorderVerticalFolder,
   verticalFolderTitle,
 }: Props) {
   const hasFolders = Array.isArray(folders) && folders.length > 0;
@@ -82,6 +85,9 @@ export default function ImagesSection({
   useEffect(() => {
     if (!hasFolders) onAddFolder?.();
   }, [hasFolders, onAddFolder]);
+
+  // ✅ 순서 변경 대상 상태
+  const [reorderIdx, setReorderIdx] = useState<number | "vertical" | null>(null);
 
   const renderFolders: PhotoFolder[] = hasFolders
     ? folders
@@ -153,6 +159,7 @@ export default function ImagesSection({
               onChangeCaption={(imageIdx, text) =>
                 onChangeCaption?.(idx, imageIdx, text)
               }
+              onOpenReorder={() => setReorderIdx(idx)}
             />
           </div>
         );
@@ -179,6 +186,7 @@ export default function ImagesSection({
           onChangeCaption={(index, text) =>
             onChangeFileItemCaption?.(index, text)
           }
+          onOpenReorder={() => setReorderIdx("vertical")}
         />
       </div>
 
@@ -192,6 +200,30 @@ export default function ImagesSection({
         <FolderPlus className="h-4 w-4" />
         사진 폴더 추가
       </Button>
+
+      {/* ✅ 순서 조정 모달 */}
+      <ImageReorderModal
+        open={reorderIdx !== null}
+        onClose={() => setReorderIdx(null)}
+        title={
+          reorderIdx === "vertical"
+            ? verticalFolderTitle || "파일 폴더"
+            : folders[Number(reorderIdx)]?.title || `사진 폴더 ${Number(reorderIdx) + 1}`
+        }
+        items={
+          reorderIdx === "vertical"
+            ? (fileItems as any)
+            : folders[Number(reorderIdx)]?.items || []
+        }
+        onApply={(newItems) => {
+          if (reorderIdx === null) return;
+          if (reorderIdx === "vertical") {
+            onReorderVerticalFolder?.(newItems);
+          } else {
+            onReorderFolder?.(Number(reorderIdx), newItems);
+          }
+        }}
+      />
     </section>
   );
 }

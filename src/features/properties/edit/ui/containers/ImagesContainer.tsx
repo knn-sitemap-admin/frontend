@@ -18,7 +18,7 @@ import {
   MAX_PER_CARD,
 } from "@/features/properties/components/constants";
 
-export default function ImagesContainer({ images }: { images: EditImagesAPI }) {
+export default function ImagesContainer({ images }: { images: any }) {
   const {
     imageFolders,
     verticalImages,
@@ -27,6 +27,8 @@ export default function ImagesContainer({ images }: { images: EditImagesAPI }) {
     removePhotoFolder,
     onChangeImageCaption,
     handleRemoveImage,
+    onReorderFolder,
+    onReorderVerticalFolder,
     onAddFiles,
     onChangeFileItemCaption,
     handleRemoveFileItem,
@@ -78,8 +80,8 @@ export default function ImagesContainer({ images }: { images: EditImagesAPI }) {
   /** 3) 가로 카드용 folders (서버 그룹 title 반영) */
   const folders: PhotoFolder[] = useMemo(
     () =>
-      imageFolders.map((folder, idx) => {
-        const items: ImageItem[] = folder.flatMap((it) => {
+      imageFolders.map((folder: ImageItem[], idx: number) => {
+        const items: ImageItem[] = folder.flatMap((it: any) => {
           const url =
             it.url ??
             it.dataUrl ??
@@ -119,7 +121,7 @@ export default function ImagesContainer({ images }: { images: EditImagesAPI }) {
   /** 4) 세로형(업로드 대기) 파일들 */
   const fileItems: ResolvedFileItem[] = useMemo(
     () =>
-      verticalImages.flatMap((it) => {
+      verticalImages.flatMap((it: any) => {
         const url =
           it.url ??
           it.dataUrl ??
@@ -208,7 +210,8 @@ export default function ImagesContainer({ images }: { images: EditImagesAPI }) {
       maxPerCard={MAX_PER_CARD}
       onChangeCaption={onChangeImageCaption}
       onRemoveImage={handleRemoveImage}
-      onReorder={onReorder}
+      onReorderFolder={onReorderFolder}
+      onReorderVerticalFolder={onReorderVerticalFolder}
       onSetCover={onSetCover}
       /* 세로 (파일 대기열) */
       fileItems={fileItems}

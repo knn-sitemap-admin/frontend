@@ -12,6 +12,7 @@ import type { TeamMemberDetail } from "@/features/teams";
 import {
   useRemoveTeamMember,
   useAssignTeamMember,
+  useSetTeamLeader,
 } from "@/features/teams/hooks/useTeams";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,6 +30,7 @@ export default function UserSettingsPage({
   const queryClient = useQueryClient();
   const removeTeamMemberMutation = useRemoveTeamMember();
   const assignTeamMemberMutation = useAssignTeamMember();
+  const setTeamLeaderMutation = useSetTeamLeader();
 
   // API에서 받은 멤버 데이터를 UserRow 형식으로 변환
   // TODO: API 연결 시 팀 정보 조회하여 teamName 설정
@@ -61,9 +63,12 @@ export default function UserSettingsPage({
     if (teamId && members) {
       // 해당 사용자의 teamMemberId 찾기
       const member = members.find((m) => m.accountId === id);
-      if (member?.teamMemberId) {
+      if (member) {
         try {
-          await removeTeamMemberMutation.mutateAsync(member.teamMemberId);
+          await removeTeamMemberMutation.mutateAsync({
+            teamId: teamId,
+            accountId: id,
+          });
           toast({
             title: "팀원 삭제 완료",
             description: "팀에서 해당 직원이 제거되었습니다.",
@@ -117,6 +122,28 @@ export default function UserSettingsPage({
     }
   };
 
+  const handleSetLeader = async (accountId: string) => {
+    if (!teamId) return;
+
+    try {
+      await setTeamLeaderMutation.mutateAsync({
+        teamId: teamId,
+        accountId: accountId,
+      });
+
+      toast({
+        title: "팀장 임명 완료",
+        description: "해당 직원이 팀의 리더로 임명되었습니다.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "팀장 임명 실패",
+        description: "팀장 임명 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <main className="mx-auto max-w-7xl p-6 space-y-8">
       <div className="flex justify-end gap-2">
@@ -138,6 +165,7 @@ export default function UserSettingsPage({
         <AccountsListPage
           rows={users}
           onRemove={(id: string) => removeUser(id)}
+          onSetLeader={teamId ? (id: string) => handleSetLeader(id) : undefined}
           hideDepartment={true}
           hideEdit={true}
           hideFavorites={true}

@@ -14,17 +14,17 @@ const ElevatorSegment = ({
   const isX = value === "X";
 
   return (
-    <div className="inline-flex rounded-md overflow-hidden">
+    <div className="flex items-center gap-2">
       <Button
         type="button"
-        onClick={() => onChange(isO ? null : "O")} // ⬅ 이미 O면 다시 눌러서 해제도 가능
+        onClick={() => onChange(isO ? null : "O")}
         variant="outline"
         size="default"
         className={cn(
-          "px-3 h-9 text-sm rounded-r-none",
+          "px-5 h-9 text-sm rounded-md",
           isO
-            ? "bg-blue-600 text-white hover:bg-blue-600 hover:text-white"
-            : "bg-white text-gray-700 hover:bg-transparent"
+            ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
         )}
         title="엘리베이터 O"
       >
@@ -36,10 +36,10 @@ const ElevatorSegment = ({
         variant="outline"
         size="default"
         className={cn(
-          "px-3 h-9 text-sm border-l rounded-l-none",
+          "px-5 h-9 text-sm rounded-md",
           isX
-            ? "bg-blue-600 text-white hover:bg-blue-600 hover:text-white"
-            : "bg-white text-gray-700 hover:bg-transparent"
+            ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
         )}
         title="엘리베이터 X"
       >

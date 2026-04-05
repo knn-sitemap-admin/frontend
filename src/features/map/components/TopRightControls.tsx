@@ -239,7 +239,7 @@ export default function TopRightControls(props: {
         )}
 
         {/* 🔵 지도 메뉴 (등록/답사/임시핀 등 필터) - 가운데 */}
-        <div className="relative z-[2] shrink-0">
+        <div className="relative z-[30] shrink-0">
           <MapMenu
             active={props.activeMenu}
             onChange={(next) => {
@@ -265,7 +265,7 @@ export default function TopRightControls(props: {
         </div>
 
         {/* 🟢 사이드바 토글 버튼 - 오른쪽 */}
-        <div className="relative z-[3] shrink-0">
+        <div className="relative z-[10] shrink-0">
           <ToggleSidebar
             overlay={false}
             controlledOpen={props.sidebarOpen}
