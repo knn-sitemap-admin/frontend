@@ -44,6 +44,11 @@ export function useViewportPinsForMapHome({
     [filter]
   );
 
+  const isCompletedFlag = useMemo(
+    () => (filter === "completed" ? true : undefined),
+    [filter]
+  );
+
   const {
     points: serverPoints,
     drafts: serverDrafts,
@@ -56,6 +61,7 @@ export function useViewportPinsForMapHome({
     draftState: draftStateForQuery,
     isNew: isNewFlag,
     isOld: isOldFlag,
+    isCompleted: isCompletedFlag,
   });
 
   const normServerPoints = useMemo(

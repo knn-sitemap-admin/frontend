@@ -24,6 +24,7 @@ type DraftWithTitle = PinsMapDraft & { title?: string };
 type Filters = {
   isOld?: boolean;
   isNew?: boolean;
+  isCompleted?: boolean;
   favoriteOnly?: boolean;
   draftState?: "before" | "scheduled" | "all";
 };

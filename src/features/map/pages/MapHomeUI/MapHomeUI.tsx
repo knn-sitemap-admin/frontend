@@ -405,7 +405,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
   // 메모리에 캐시된 수천 개의 마커 중, 현재 가시 영역(+ 여유분) 내에 있는 것만 필터링합니다.
   // 지도가 미세하게 움직일 때는 필터링을 다시 하지 않아 렌더링 성능을 확보합니다.
   const [culledMarkers, setCulledMarkers] = useState<typeof mergedWithTempDraft>([]);
-  const lastCullingBoundsRef = useRef<typeof bounds>(null);
+  const lastCullingBoundsRef = useRef<typeof bounds | null>(null);
+  const lastMergedWithTempDraftRef = useRef<typeof mergedWithTempDraft | null>(null);
 
   useEffect(() => {
     if (!bounds) {
@@ -428,7 +429,10 @@ export function MapHomeUI(props: MapHomeUIProps) {
     const latSpan = neLat - swLat;
     const lngSpan = neLng - swLng;
 
+    const isDataChanged = lastMergedWithTempDraftRef.current !== mergedWithTempDraft;
+
     const shouldUpdate = !last ||
+      isDataChanged ||
       Math.abs(swLat - last.swLat) > latSpan * 0.05 ||
       Math.abs(swLng - last.swLng) > lngSpan * 0.05 ||
       Math.abs(latSpan - (last.neLat - last.swLat)) > latSpan * 0.1 ||
@@ -450,6 +454,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
       setCulledMarkers(filtered);
       lastCullingBoundsRef.current = bounds;
+      lastMergedWithTempDraftRef.current = mergedWithTempDraft;
     }
   }, [mergedWithTempDraft, bounds]);
 

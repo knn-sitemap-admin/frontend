@@ -1,6 +1,7 @@
 "use client";
 
-import { X, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { cn } from "@/lib/cn";
+import { X, ArrowLeft, Check, GripVertical } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { ImageItem } from "@/features/properties/types/media";
 import { useState, useEffect } from "react";
@@ -27,6 +28,7 @@ export default function ImageReorderModal({
   onApply,
 }: Props) {
   const [localItems, setLocalItems] = useState<ImageItem[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -40,6 +42,34 @@ export default function ImageReorderModal({
     const [target] = next.splice(from, 1);
     next.splice(to, 0, target);
     setLocalItems(next);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    // 브라우저 기본 드래그 이미지 설정
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = "0.4";
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = "1";
+    setDraggedIndex(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+    
+    // 실시간 순서 변경 (선택사항 - 더 부드러운 UX)
+    move(draggedIndex, index);
+    setDraggedIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDraggedIndex(null);
   };
 
   const handleSave = () => {
@@ -62,7 +92,7 @@ export default function ImageReorderModal({
               {title} 순서 조정
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium">
-              사진을 정렬한 후 하단의 적용 버튼을 눌러주세요.
+              사진을 드래그하여 순서를 변경한 후 하단의 적용 버튼을 눌러주세요.
             </p>
           </div>
           <button
@@ -77,40 +107,44 @@ export default function ImageReorderModal({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {localItems.map((img, i) => {
               const src = img.url ?? img.dataUrl;
+              const isDragging = draggedIndex === i;
+              
               return (
-                <div key={i} className="flex flex-col gap-2 group animate-in fade-in zoom-in duration-200">
-                  <div className="relative w-full aspect-square rounded-2xl border-2 border-white shadow-sm overflow-hidden bg-white group-hover:shadow-md transition-all group-hover:border-blue-100">
+                <div 
+                  key={i} 
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, i)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => handleDragOver(e, i)}
+                  onDrop={handleDrop}
+                  className={cn(
+                    "flex flex-col gap-2 group animate-in fade-in zoom-in duration-200 cursor-move transition-all",
+                    isDragging && "opacity-40 scale-95"
+                  )}
+                >
+                  <div className="relative w-full aspect-square rounded-2xl border-2 border-white shadow-sm overflow-hidden bg-white group-hover:shadow-md transition-all group-hover:border-blue-200">
                     <img
                       src={src}
                       alt=""
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover pointer-events-none"
                     />
                     <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-md border border-white/20">
                       {i + 1}
                     </div>
-                  </div>
-                  <div className="flex items-center justify-center gap-1.5 px-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-xl border-gray-200 hover:border-blue-400 hover:text-blue-600 transition-colors"
-                      onClick={() => move(i, i - 1)}
-                      disabled={i === 0}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div className="text-[10px] font-black text-gray-300 tracking-widest uppercase">
-                      SORT
+                    
+                    {/* 드래그 힌트 아이콘 (호버 시 노출) */}
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                      <div className="bg-white/90 p-2 rounded-full shadow-lg">
+                        <ArrowLeft className="h-4 w-4 text-gray-600 rotate-45" />
+                      </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-xl border-gray-200 hover:border-blue-400 hover:text-blue-600 transition-colors"
-                      onClick={() => move(i, i + 1)}
-                      disabled={i === localItems.length - 1}
-                    >
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
+                  </div>
+                  
+                  {/* 기존 버튼은 작게 유지하거나 필요한 경우 제거 가능. 여기서는 드래그 중심 UI를 위해 제거 또는 축소 */}
+                  <div className="flex items-center justify-center gap-1.5 px-1 py-1">
+                    <div className="text-[9px] font-bold text-gray-400 tracking-tight uppercase">
+                      DRAG TO MOVE
+                    </div>
                   </div>
                 </div>
               );
@@ -151,5 +185,6 @@ export default function ImageReorderModal({
         </div>
       </DialogContent>
     </Dialog>
+
   );
 }

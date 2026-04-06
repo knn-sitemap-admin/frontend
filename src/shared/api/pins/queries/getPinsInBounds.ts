@@ -7,6 +7,7 @@ export type PinsMapQuery = {
   neLng?: number;
   isOld?: boolean;
   isNew?: boolean;
+  isCompleted?: boolean;
   favoriteOnly?: boolean;
   draftState?: "before" | "scheduled" | "all";
 };

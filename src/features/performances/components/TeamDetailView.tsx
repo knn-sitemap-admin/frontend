@@ -13,6 +13,8 @@ interface PerformanceData {
   employeeName: string;
   team: string;
   contractCount: number;
+  grossSales: number;
+  netProfit: number;
   finalAllowance: number;
   period: string;
 }
@@ -112,10 +114,32 @@ export function TeamDetailView({
             },
             {
               key: "contractCount",
-              label: "계약 건수",
+              label: "건수",
               sortable: true,
               align: "center",
               render: (value) => `${value}건`,
+            },
+            {
+              key: "grossSales",
+              label: "총매출",
+              sortable: true,
+              align: "right",
+              render: (value) => (
+                <span className="font-semibold text-blue-600">
+                  {value >= 100000000 ? `${(value / 100000000).toFixed(1)}억` : `${(value / 10000).toFixed(0)}만`}
+                </span>
+              ),
+            },
+            {
+              key: "netProfit",
+              label: "순수익",
+              sortable: true,
+              align: "right",
+              render: (value) => (
+                <span className="font-semibold text-green-600">
+                   {value >= 100000000 ? `${(value / 100000000).toFixed(1)}억` : `${(value / 10000).toFixed(0)}만`}
+                </span>
+              ),
             },
             {
               key: "finalAllowance",
@@ -124,7 +148,7 @@ export function TeamDetailView({
               align: "right",
               render: (value) => (
                 <span className="font-bold text-gray-900">
-                  {(value / 10000).toFixed(1)}만원
+                  {(value / 10000).toFixed(1)}만
                 </span>
               ),
             },

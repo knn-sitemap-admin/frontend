@@ -11,6 +11,7 @@ export type UsePinsOpts = {
   draftState?: "before" | "scheduled" | "all";
   isNew?: boolean;
   isOld?: boolean;
+  isCompleted?: boolean;
   favoriteOnly?: boolean;
 };
 
@@ -70,19 +71,19 @@ function pinPointToMarker(
  * - 데이터 규모(1만 개 이하)를 고려하여 지도 이동 시 추가 네트워크 요청을 발생시키지 않습니다.
  */
 export function usePinsFromViewport(opts: UsePinsOpts) {
-  const { isOld, isNew, favoriteOnly } = opts;
+  const { isOld, isNew, isCompleted, favoriteOnly } = opts;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updateTick, setUpdateTick] = useState(0); // 캐시 갱신 반영용
-  
-  // 현재 필터 상태를 해시화하여 변경 여부 판단
-  const filterHash = `${isOld}|${isNew}|${favoriteOnly}`;
 
   // 🔄 핀 데이터 로드 (전체 로딩 전략)
+  // 필터가 바뀌어도 네트워크 요청을 하지 않고 캐시된 데이터를 사용합니다.
   useEffect(() => {
-    // 이미 같은 필터로 데이터를 받았거나 현재 가져오는 중이면 스킵
-    if (lastFilterHash === filterHash || isFetchingAll) return;
+    if (isFetchingAll) return;
+
+    // 만약 이미 데이터를 한 번이라도 가져왔다면 (빈 배열이라도 success했다면) 다시 안 가져옴
+    if (globalPinCache.size > 0 || globalDraftCache.size > 0) return;
 
     const loadAllPins = async () => {
       isFetchingAll = true;
@@ -90,11 +91,9 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
       setError(null);
 
       try {
-        // 영역(bounds) 없이 요청을 보내 전 영역의 모든 핀을 가져옵니다.
+        // 필터 없이 요청을 보내 전 영역의 모든 핀을 가져옵니다.
         const resp = await getMapPins({
-          isOld,
-          isNew,
-          favoriteOnly,
+          isCompleted: undefined, // 백엔드에서 기본 필터링을 하지 않도록 명시 (또는 백엔드 수정)
         });
 
         if (resp) {
@@ -108,7 +107,7 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
           points.forEach((p: any) => globalPinCache.set(String(p.id), p));
           drafts.forEach((d: any) => globalDraftCache.set(String(d.id), d));
 
-          lastFilterHash = filterHash;
+          lastFilterHash = "fixed"; // 이제 필터별 캐시를 쓰지 않으므로 고정값
           setUpdateTick(t => t + 1);
         }
       } catch (err: any) {
@@ -121,25 +120,49 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
     };
 
     loadAllPins();
-  }, [filterHash, isOld, isNew, favoriteOnly]);
+  }, [updateTick]);
 
-  // 🏠 캐시에서 데이터 추출
+  // 🏠 캐시에서 데이터 추출 및 클라이언트 사이드 필터링
   const { points, drafts, markers } = useMemo(() => {
-    const pList = Array.from(globalPinCache.values());
-    const dList = Array.from(globalDraftCache.values());
-    
-    const pMarkers = pList.map(p => pinPointToMarker(p, "pin"));
-    const dMarkers = dList.map(d => pinPointToMarker(d, "draft"));
+    const pListAll = Array.from(globalPinCache.values());
+    const dListAll = Array.from(globalDraftCache.values());
+
+    // 1) 클라이언트 사이드 필터링 적용 (속도 혁명 🚀)
+    const filteredPoints = pListAll.filter((p: any) => {
+      // 신축/구옥 필터
+      if (isNew === true && !p.isNew) return false;
+      if (isOld === true && !p.isOld) return false;
+
+      // 입주완료 필터 (기본값 설정 로직 포함)
+      if (isCompleted === true) {
+        if (!p.isCompleted) return false;
+      } else {
+        // 기본적으로(undefined 또는 false)은 입주 완료된 매물 제외
+        if (p.isCompleted) return false;
+      }
+
+      return true;
+    });
+
+    // 2) 임시핀(Draft) 필터링
+    // 신축/구옥/입주완료 모드에서는 임시핀을 숨김
+    const isSpecialPropMode = isNew || isOld || isCompleted;
+    const filteredDrafts = isSpecialPropMode ? [] : dListAll;
+
+    const pMarkers = filteredPoints.map((p) => pinPointToMarker(p, "pin"));
+    const dMarkers = filteredDrafts.map((d) => pinPointToMarker(d, "draft"));
 
     return {
-      points: pList,
-      drafts: dList,
+      points: filteredPoints,
+      drafts: filteredDrafts,
       markers: [...pMarkers, ...dMarkers],
     };
-  }, [updateTick, loading]);
+  }, [updateTick, loading, isOld, isNew, isCompleted, favoriteOnly]);
 
   // 강제 새로고침 (캐시 비우고 재요청)
   const reload = useCallback(() => {
+    globalPinCache.clear();
+    globalDraftCache.clear();
     lastFilterHash = null;
     setUpdateTick(t => t + 1);
   }, []);

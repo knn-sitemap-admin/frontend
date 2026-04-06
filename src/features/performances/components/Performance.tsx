@@ -31,7 +31,7 @@ import {
 } from "../utils/transformPerformanceData";
 
 export function Performance() {
-  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [selectedPeriod, setSelectedPeriod] = useState("all");
   const currentYear = new Date().getFullYear();
   const currentQuarter = Math.floor(new Date().getMonth() / 3) + 1;
   const currentMonth = new Date().getMonth() + 1;
@@ -79,12 +79,12 @@ export function Performance() {
   }, [performanceSummary]);
 
   // 전체 통계 변환
-  const { totalContracts, totalAllowance, netProfit, totalEmployees } = useMemo(() => {
+  const { totalContracts, totalGrossSales, totalNetProfit, totalEmployees } = useMemo(() => {
     if (!performanceSummary) {
       return {
         totalContracts: 0,
-        totalAllowance: 0,
-        netProfit: 0,
+        totalGrossSales: 0,
+        totalNetProfit: 0,
         totalEmployees: 0,
       };
     }
@@ -188,17 +188,17 @@ export function Performance() {
         </div>
       ) : (
         <>
-          {/* 1. 회사 총매출 */}
-          <StatCardsGrid title="회사 총매출" columns={4}>
+          {/* 1. 회사 총 실적 */}
+          <StatCardsGrid title="전체 실적 요약" columns={4}>
             <StatCard
               label="총매출"
-              value={formatCurrency(totalAllowance)}
+              value={formatCurrency(totalGrossSales)}
               icon={<DollarSign className="h-6 w-6" />}
               variant="blue"
             />
             <StatCard
               label="순수익"
-              value={formatCurrency(netProfit)}
+              value={formatCurrency(totalNetProfit)}
               valueClassName="text-green-600"
               icon={<TrendingUp className="h-6 w-6" />}
               variant="green"

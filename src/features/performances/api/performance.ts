@@ -10,8 +10,9 @@ import type {
  */
 export function convertFilterTypeToBackend(
   period: string
-): "THIS_MONTH" | "MONTH" | "QUARTER" | "YEAR" {
-  switch (period) {
+): "THIS_MONTH" | "MONTH" | "QUARTER" | "YEAR" | "ALL" {
+  const p = period.toLowerCase();
+  switch (p) {
     case "month":
       return "THIS_MONTH";
     case "monthly":
@@ -20,6 +21,8 @@ export function convertFilterTypeToBackend(
       return "QUARTER";
     case "yearly":
       return "YEAR";
+    case "all":
+      return "ALL";
     default:
       return "THIS_MONTH";
   }

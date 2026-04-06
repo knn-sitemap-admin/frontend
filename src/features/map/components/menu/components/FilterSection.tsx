@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Map, Building2, House } from "lucide-react";
+import { ChevronDown, Map, Building2, House, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { cn } from "@/lib/cn";
@@ -19,6 +19,7 @@ const FILTER_MENU_ITEMS: FilterItem[] = [
   { key: "all", label: "전체", icon: Map },
   { key: "new", label: "신축", icon: Building2 },
   { key: "old", label: "구옥", icon: House },
+  { key: "completed", label: "입주완료", icon: CheckCircle2 },
   { key: "plannedOnly", label: "답사예정", icon: "/pins/question-pin.svg" },
 ];
 

@@ -1,6 +1,6 @@
 // 백엔드 API 응답 타입
 
-export type FilterType = "THIS_MONTH" | "MONTH" | "QUARTER" | "YEAR";
+export type FilterType = "THIS_MONTH" | "MONTH" | "QUARTER" | "YEAR" | "ALL";
 
 export interface PerformanceFilterQuery {
   filterType?: FilterType;
@@ -25,6 +25,8 @@ export interface CompanyKpi {
 export interface TeamSummary {
   teamId: string;
   teamName: string;
+  grossSales: number; // 팀 기여분 총 매출
+  netProfit: number; // 팀 기여분 순수익(회사의 수익)
   finalPayout: number; // 팀 최종수당 합
   contractCount: number; // 팀 계약 건수
   memberCount: number; // 팀원 수
@@ -33,6 +35,8 @@ export interface TeamSummary {
 export interface TopTeam {
   teamId: string;
   teamName: string;
+  grossSales: number;
+  netProfit: number;
   finalPayout: number;
   contractCount: number;
   rank: 1 | 2 | 3;
@@ -49,6 +53,8 @@ export interface TeamEmployeeItem {
   accountId: string;
   name: string | null;
   positionRank: string | null;
+  grossSales: number; // 개인 기여분 총 매출
+  netProfit: number; // 개인 기여분 순수익(회사의 수익)
   finalPayout: number; // 직원 최종수당
   contractCount: number; // 직원이 참여한 완료 계약 건수
 }

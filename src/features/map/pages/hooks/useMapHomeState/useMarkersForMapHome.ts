@@ -37,10 +37,20 @@ export function useMarkersForMapHome({
     const isPlannedOnlyMode = filter === "plannedOnly";
 
     // 2) 매물핀: plannedOnly 모드에서는 안 보이게
-    const visiblePoints = isPlannedOnlyMode ? [] : points ?? [];
+    let visiblePoints = isPlannedOnlyMode ? [] : points ?? [];
+
+    // 🔥 입주완료 필터링 (true 면 기본 숨김, completed 필터일 때만 보임)
+    visiblePoints = visiblePoints.filter((p: any) => {
+      if (filter === "completed") return p.isCompleted === true;
+      return p.isCompleted !== true;
+    });
 
     // 3) 임시핀: plannedOnly 모드일 때는 draftState === "BEFORE" 만 남기기
+    //    신축/구옥/입주완료 모드일 때도 숨기기
+    const isSpecialPropMode = filter === "new" || filter === "old" || filter === "completed";
+    
     const visibleDrafts = visibleDraftsRaw.filter((d: any) => {
+      if (isSpecialPropMode) return false;
       if (!isPlannedOnlyMode) return true;
       const state = d.draftState as "BEFORE" | "SCHEDULED" | undefined;
       return state === "BEFORE";

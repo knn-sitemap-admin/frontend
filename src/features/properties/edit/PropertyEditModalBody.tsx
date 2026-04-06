@@ -393,10 +393,15 @@ export default function PropertyEditModalBody({
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  /** ⭐ 라벨/핀 변경 감지용 초기 스냅샷 */
-  const initialVisualRef = useRef<{ label: string; pinKind: any }>({
+  /** ⭐ 라벨/핀/등급 변경 감지용 초기 스냅샷 */
+  const initialVisualRef = useRef<{
+    label: string;
+    pinKind: any;
+    buildingGrade: any;
+  }>({
     label: "",
     pinKind: null,
+    buildingGrade: null,
   });
 
   useEffect(() => {
@@ -408,31 +413,35 @@ export default function PropertyEditModalBody({
     initialVisualRef.current = {
       label: initialLabel,
       pinKind: initialPinKind ?? null,
+      buildingGrade: initialBuildingGrade ?? null,
     };
-  }, [bridgedInitial]);
+  }, [bridgedInitial, initialBuildingGrade]);
 
-  /** ⭐ 저장 성공 시, title / pinKind 변경 여부를 계산해서 상위로 올리는 래퍼 */
+  /** ⭐ 저장 성공 시, title / pinKind / 신축구옥 변경 여부를 계산해서 상위로 올리는 래퍼 */
   const handleLabelChangedInternal = useCallback(() => {
     const prev = initialVisualRef.current;
     const nextLabel = (f.title ?? "").trim();
     const nextPinKind = f.pinKind;
+    const nextBuildingGrade = buildingGrade;
 
     const labelChanged = prev.label !== nextLabel;
     const pinKindChanged =
       String(prev.pinKind ?? "") !== String(nextPinKind ?? "");
+    const buildingGradeChanged = prev.buildingGrade !== nextBuildingGrade;
 
-    const changed = labelChanged || pinKindChanged;
+    const changed = labelChanged || pinKindChanged || buildingGradeChanged;
 
-    // 🔥 실제로 label 또는 pinKind 가 바뀐 경우에만 상위 콜백 실행
+    // 🔥 실제로 시각적 정보(Label/Icon/Grade)가 바뀐 경우에만 상위(MapHomeUI) 리로드 실행
     if (changed) {
       onLabelChanged?.();
       // 이후 비교를 위해 최신 스냅샷으로 갱신
       initialVisualRef.current = {
         label: nextLabel,
         pinKind: nextPinKind,
+        buildingGrade: nextBuildingGrade,
       };
     }
-  }, [onLabelChanged, f.title, f.pinKind]);
+  }, [onLabelChanged, f.title, f.pinKind, buildingGrade]);
 
   /** 저장 로직 훅으로 분리 */
   const { save, canSaveNow } = useEditSave({

@@ -156,11 +156,10 @@ export const isInvalidRange = (min: any, max: any, remainingHouseholds?: number 
   const a = numOrNull(min);
   const b = numOrNull(max);
   if (a === 0 || b === 0) return true;
-  if (a != null && b != null) {
-    // 최대값이 최소값보다 작은 경우만 에러 (같은 값 허용)
-    return b < a;
-  }
-  return false;
+  // 어느 한쪽만 입력된 경우, 저장 시점에 나머지가 자동 채워지므로 검증 통과 (false)
+  if (a == null || b == null) return false;
+  // 최대값이 최소값보다 작은 경우만 에러 (같은 값 허용)
+  return b < a;
 };
 
 /** 구조별 최소/최대 매매가 검증
@@ -184,17 +183,17 @@ export const validateUnitPriceRanges = (
     const max = priceOrNull(u?.maxPrice ?? u?.secondary);
     const label = (u?.label ?? u?.name ?? `${i + 1}번째 구조`).toString();
 
-    // 🔹 최소/최대 하나라도 비어 있으면 에러
-    if (min == null || max == null) {
-      return `${label}: 최소·최대 매매가를 모두 입력해 주세요.`;
+    // 🔹 최소/최대 둘 다 비어 있으면 에러 (최소 하나는 입력해야 함)
+    if (min == null && max == null) {
+      return `${label}: 최소 또는 최대 매매가를 입력해 주세요.`;
     }
 
     if (min === 0 || max === 0) {
       return `${label}: 0원은 입력할 수 없습니다.`;
     }
 
-    // 최대값이 최소값보다 작은 경우만 에러 (같은 값 허용)
-    if (max < min) {
+    // 둘 다 입력된 경우에만 대소 비교
+    if (min != null && max != null && max < min) {
       return `${label}: 최대매매가는 최소매매가보다 크거나 같아야 합니다.`;
     }
   }

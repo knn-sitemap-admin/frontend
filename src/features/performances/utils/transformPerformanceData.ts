@@ -14,9 +14,12 @@ export function transformTeamSummaryToTeamStat(team: TeamSummary): TeamStat {
   return {
     team: team.teamName,
     totalAllowance: team.finalPayout,
+    totalGrossSales: team.grossSales,
+    totalNetProfit: team.netProfit,
     totalContracts: team.contractCount,
     memberCount: team.memberCount,
     avgAllowance: team.memberCount > 0 ? team.finalPayout / team.memberCount : 0,
+    avgGrossSales: team.memberCount > 0 ? team.grossSales / team.memberCount : 0,
   };
 }
 
@@ -27,14 +30,16 @@ export function transformCompanyKpiToPerformanceStats(
   company: CompanyKpi
 ): {
   totalContracts: number;
-  totalAllowance: number; // 총매출 (grossSales)
-  netProfit: number; // 순수익
+  totalAllowance: number; // 수당 총합
+  totalGrossSales: number; // 총매출
+  totalNetProfit: number; // 순수익
   totalEmployees: number;
 } {
   return {
     totalContracts: company.contractCount,
-    totalAllowance: company.grossSales, // 총매출
-    netProfit: company.netProfit, // 순수익
+    totalAllowance: 0, // 요약 대시보드에서 수당합계 대신 매출/수익 위주로 표시할 수 있음
+    totalGrossSales: company.grossSales, // 총매출
+    totalNetProfit: company.netProfit, // 순수익
     totalEmployees: company.headcount,
   };
 }
@@ -52,6 +57,8 @@ export function transformTeamEmployeeToPerformanceData(
     employeeName: employee.name || "이름 없음",
     team: teamName,
     contractCount: employee.contractCount,
+    grossSales: employee.grossSales,
+    netProfit: employee.netProfit,
     finalAllowance: employee.finalPayout,
     period,
   };

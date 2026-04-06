@@ -234,6 +234,10 @@ export function StaffAllocationSection({
                 {staff.type === "employee" &&
                   staffAllocations.filter((s) => s.type === "employee").length >
                     1 &&
+                  // 첫 번째 담당자(주 담당자)는 삭제 불가능
+                  staffAllocations
+                    .filter((s) => s.type === "employee")
+                    .findIndex((s) => s.id === staff.id) !== 0 &&
                   !readOnly && (
                     <Button
                       type="button"
@@ -268,11 +272,22 @@ export function StaffAllocationSection({
                       onValueChange={(value) =>
                         handleEmployeeSelect(staff.id, value)
                       }
-                      disabled={readOnly}
+                      // 첫 번째 담당자(주 담당자)는 사원 변경 불가능
+                      disabled={
+                        readOnly ||
+                        staffAllocations
+                          .filter((s) => s.type === "employee")
+                          .findIndex((s) => s.id === staff.id) === 0
+                      }
                     >
                       <SelectTrigger
                         className="h-5 text-xs border-gray-300"
-                        disabled={readOnly}
+                        disabled={
+                          readOnly ||
+                          staffAllocations
+                            .filter((s) => s.type === "employee")
+                            .findIndex((s) => s.id === staff.id) === 0
+                        }
                       >
                         <SelectValue placeholder="사원 선택">
                           {staff.name || "사원 선택"}
@@ -282,20 +297,14 @@ export function StaffAllocationSection({
                         data-contract-records-portal="true"
                         className="!z-[2200]"
                       >
-                        {teamMembers
-                          .filter(
-                            (employee) =>
-                              employee.teamRole === "manager" ||
-                              employee.teamRole === "admin",
-                          )
-                          .map((employee) => (
-                            <SelectItem
-                              key={employee.accountId}
-                              value={employee.accountId}
-                            >
-                              {employee.name || "이름 없음"}
-                            </SelectItem>
-                          ))}
+                        {teamMembers.map((employee) => (
+                          <SelectItem
+                            key={employee.accountId}
+                            value={employee.accountId}
+                          >
+                            {employee.name || "이름 없음"}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}

@@ -1,6 +1,6 @@
 import { PoiKind } from "../../../engine/overlays/poiOverlays";
 
-export type MapMenuKey = "all" | "new" | "old" | "plannedOnly";
+export type MapMenuKey = "all" | "new" | "old" | "completed" | "plannedOnly";
 export type MapMenuSubmenu = "filter" | "edit";
 
 type CommonProps = {

@@ -29,8 +29,13 @@ interface ContractListProps {
   salaryColumnLabel?: string;
   loadContracts: (
     page: number,
+    filters: {
+      searchTerm?: string;
+      status?: string;
+      year?: string;
+      month?: string;
+    },
   ) =>
-    | Promise<ContractData[]>
     | Promise<{ items: ContractData[]; total: number }>;
   initialLoading?: boolean;
   searchPlaceholder?: string;
@@ -78,19 +83,20 @@ export function ContractList({
   const loadContracts = React.useCallback(async () => {
     try {
       setIsLoadingContracts(true);
-      const result = await loadContractsFn(currentPage);
+      const result = await loadContractsFn(currentPage, {
+        searchTerm,
+        status: selectedStatus,
+        year: selectedYear,
+        month: selectedMonth,
+      });
 
-      if (
-        result &&
-        typeof result === "object" &&
-        "items" in result &&
-        "total" in result
-      ) {
+      if (result && typeof result === "object" && "items" in result) {
         setContracts(result.items);
-        setTotalCount(result.total);
+        setTotalCount(result.total ?? result.items.length);
       } else {
-        setContracts(result as ContractData[]);
-        setTotalCount((result as ContractData[]).length);
+        const items = result as unknown as ContractData[];
+        setContracts(items);
+        setTotalCount(items.length);
       }
     } catch (error: any) {
       console.error("계약 목록 로드 실패:", error);
@@ -105,86 +111,54 @@ export function ContractList({
     } finally {
       setIsLoadingContracts(false);
     }
-  }, [loadContractsFn, currentPage, toast]);
+  }, [
+    loadContractsFn,
+    currentPage,
+    searchTerm,
+    selectedStatus,
+    selectedYear,
+    selectedMonth,
+    toast,
+  ]);
 
   useEffect(() => {
     loadContracts();
   }, [loadContracts]);
 
-  // 계약 데이터에서 필터 옵션들을 동적으로 생성
+  // 필터 옵션들 (고정 값으로 변경하거나 필요 시 서버에서 가져와야 함)
+  // 현재는 년도만 유동적으로 관리 (현재 기준 3년 전까지)
   const filterOptions = useMemo(() => {
-    const years = new Set<string>();
-    const statuses = new Set<string>();
-    contracts.forEach((contract) => {
-      years.add(new Date(contract.contractDate).getFullYear().toString());
-      statuses.add(contract.status);
-    });
+    const currentYear = new Date().getFullYear();
+    const years = ["all"];
+    for (let i = 0; i < 5; i++) {
+      years.push((currentYear - i).toString());
+    }
+
     return {
-      years: [
-        "all",
-        ...Array.from(years).sort((a, b) => Number(b) - Number(a)),
-      ],
+      years,
       months: [
         "all",
         ...Array.from({ length: 12 }, (_, i) => (i + 1).toString()),
       ],
-      statuses: ["all", ...Array.from(statuses)],
+      statuses: ["all", "ongoing", "completed", "cancelled", "rejected"],
     };
-  }, [contracts]);
+  }, []);
 
   const { processedData, pagination } = useMemo(() => {
-    const filteredContracts = contracts.filter((contract) => {
-      const contractDate = new Date(contract.contractDate);
-      const year = contractDate.getFullYear().toString();
-      const month = (contractDate.getMonth() + 1).toString();
+    // API에서 이미 필터링된 결과가 오므로 그대로 사용
+    const totalPages = Math.ceil(totalCount / paginationConfig.listsPerPage);
 
-      const yearMatch = selectedYear === "all" || year === selectedYear;
-      const monthMatch = selectedMonth === "all" || month === selectedMonth;
-      const statusMatch =
-        selectedStatus === "all" || contract.status === selectedStatus;
-      return yearMatch && monthMatch && statusMatch;
-    });
+    return {
+      processedData: contracts,
+      pagination: {
+        currentPage,
+        totalPages: totalPages || 1,
+        listsPerPage: paginationConfig.listsPerPage,
+        totalLists: totalCount,
+      },
+    };
+  }, [contracts, currentPage, totalCount]);
 
-    if (totalCount > 0 && contracts.length <= paginationConfig.listsPerPage) {
-      const filtered = searchTerm
-        ? filteredContracts.filter((contract) =>
-          searchKeys.some((key) => {
-            const value = contract[key as keyof ContractData];
-            return value
-              ?.toString()
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase());
-          }),
-        )
-        : filteredContracts;
-
-      const totalPages = Math.ceil(totalCount / paginationConfig.listsPerPage);
-      return {
-        processedData: filtered,
-        pagination: {
-          currentPage,
-          totalPages,
-          listsPerPage: paginationConfig.listsPerPage,
-          totalLists: totalCount,
-        },
-      };
-    }
-
-    return processTableData(filteredContracts, {
-      searchTerm,
-      searchKeys: [...searchKeys],
-      currentPage,
-      listsPerPage: paginationConfig.listsPerPage,
-    });
-  }, [
-    contracts,
-    searchTerm,
-    currentPage,
-    totalCount,
-    selectedYear,
-    selectedMonth,
-    selectedStatus,
-  ]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);

@@ -3,14 +3,19 @@ import type { PerformanceData } from "../types/PerformanceData";
 export interface TeamStat {
   team: string;
   totalAllowance: number;
+  totalGrossSales: number;
+  totalNetProfit: number;
   totalContracts: number;
   memberCount: number;
   avgAllowance: number;
+  avgGrossSales: number;
 }
 
 export interface PerformanceStats {
   totalContracts: number;
   totalAllowance: number;
+  totalGrossSales: number;
+  totalNetProfit: number;
   totalEmployees: number;
 }
 
@@ -19,18 +24,28 @@ export function calculateTeamStats(
 ): TeamStat[] {
   const stats: Record<
     string,
-    { totalAllowance: number; totalContracts: number; memberCount: number }
+    {
+      totalAllowance: number;
+      totalGrossSales: number;
+      totalNetProfit: number;
+      totalContracts: number;
+      memberCount: number;
+    }
   > = {};
 
   performanceData.forEach((item) => {
     if (!stats[item.team]) {
       stats[item.team] = {
         totalAllowance: 0,
+        totalGrossSales: 0,
+        totalNetProfit: 0,
         totalContracts: 0,
         memberCount: 0,
       };
     }
     stats[item.team].totalAllowance += item.finalAllowance;
+    stats[item.team].totalGrossSales += (item.grossSales || 0);
+    stats[item.team].totalNetProfit += (item.netProfit || 0);
     stats[item.team].totalContracts += item.contractCount;
     stats[item.team].memberCount += 1;
   });
@@ -39,9 +54,12 @@ export function calculateTeamStats(
     .map(([team, data]) => ({
       team,
       totalAllowance: data.totalAllowance,
+      totalGrossSales: data.totalGrossSales,
+      totalNetProfit: data.totalNetProfit,
       totalContracts: data.totalContracts,
       memberCount: data.memberCount,
       avgAllowance: data.totalAllowance / data.memberCount,
+      avgGrossSales: data.totalGrossSales / data.memberCount,
     }))
     .sort((a, b) => a.team.localeCompare(b.team));
 }
@@ -57,11 +75,21 @@ export function calculateOverallStats(
     (sum, item) => sum + item.finalAllowance,
     0
   );
+  const totalGrossSales = performanceData.reduce(
+    (sum, item) => sum + (item.grossSales || 0),
+    0
+  );
+  const totalNetProfit = performanceData.reduce(
+    (sum, item) => sum + (item.netProfit || 0),
+    0
+  );
   const totalEmployees = performanceData.length;
 
   return {
     totalContracts,
     totalAllowance,
+    totalGrossSales,
+    totalNetProfit,
     totalEmployees,
   };
 }

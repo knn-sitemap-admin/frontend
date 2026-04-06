@@ -88,16 +88,22 @@ export function useMergedMarkers(params: {
   const isBeforeMode = filterKey === "plannedOnly";
   const isPlannedMode = filterKey === "planned";
 
-  /** 🔸 신축/구옥 필터일 때는 draft(답사예정핀) 자체를 숨김 */
-  const hideDraftsForAgeFilter = filterKey === "new" || filterKey === "old";
+  /** 🔸 특정 매물 속성 필터(신축/구옥/입주완료)일 때는 draft(답사예정핀) 자체를 숨김 */
+  const hideDraftsForPropFilter = filterKey === "new" || filterKey === "old" || filterKey === "completed";
 
   // 1) 판정용 메타 배열 (id/좌표/출처/상태/ageType)
   const mergedMeta: MergedMarker[] = useMemo(() => {
-    const effectivePoints =
+    const pointsRaw =
       isBeforeMode || isPlannedMode ? [] : serverPoints ?? [];
 
+    // 🔥 입주완료 필터링 (true 면 기본 숨김, completed 필터일 때만 보임)
+    const effectivePoints = pointsRaw.filter((p) => {
+      if (filterKey === "completed") return p.isCompleted === true;
+      return p.isCompleted !== true;
+    });
+
     const effectiveDrafts =
-      hideDraftsForAgeFilter || !serverDrafts
+      hideDraftsForPropFilter || !serverDrafts
         ? []
         : (serverDrafts ?? []).filter((d) => {
             const state = d.draftState as "BEFORE" | "SCHEDULED" | undefined;
@@ -142,16 +148,22 @@ export function useMergedMarkers(params: {
     serverDrafts,
     isBeforeMode,
     isPlannedMode,
-    hideDraftsForAgeFilter,
+    hideDraftsForPropFilter,
   ]);
 
   // 2) 실제 지도에 뿌릴 마커 배열 (아이콘/타입 포함)
   const serverViewMarkers: MapMarker[] = useMemo(() => {
-    const effectivePoints =
+    const pointsRaw =
       isBeforeMode || isPlannedMode ? [] : serverPoints ?? [];
 
+    // 🔥 입주완료 필터링 (true 면 기본 숨김, completed 필터일 때만 보임)
+    const effectivePoints = pointsRaw.filter((p) => {
+      if (filterKey === "completed") return p.isCompleted === true;
+      return p.isCompleted !== true;
+    });
+
     const effectiveDrafts =
-      hideDraftsForAgeFilter || !serverDrafts
+      hideDraftsForPropFilter || !serverDrafts
         ? []
         : (serverDrafts ?? []).filter((d) => {
             const state = d.draftState as "BEFORE" | "SCHEDULED" | undefined;
@@ -212,7 +224,7 @@ export function useMergedMarkers(params: {
     serverDrafts,
     isBeforeMode,
     isPlannedMode,
-    hideDraftsForAgeFilter,
+    hideDraftsForPropFilter,
   ]);
 
   // 3) 로컬 마커와 서버 마커 병합 (⚠️ 서버 우선)

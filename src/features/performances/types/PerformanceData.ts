@@ -6,6 +6,8 @@ export interface PerformanceData extends TableData {
   employeeName: string;
   team: string;
   contractCount: number; // 계약 건수
+  grossSales: number; // 총 매출
+  netProfit: number; // 순수익(회사의 수익)
   finalAllowance: number; // 최종수당 합계
   period: string;
 }
