@@ -183,12 +183,11 @@ export function transformSalesContractToUpdateRequest(
   const request: UpdateContractRequest = {
     customerName: data.customerInfo.name || undefined,
     customerPhone: data.customerInfo.contact || undefined,
-    brokerageFee: Number(data.financialInfo.brokerageFee) || undefined,
+    brokerageFee: data.financialInfo.brokerageFee !== undefined ? Number(data.financialInfo.brokerageFee) : undefined,
     vat,
     rebate: rebateUnits,
-    supportAmount: Number(data.financialInfo.totalSupportAmount) || undefined,
-    supportCashAmount:
-      Number(data.financialInfo.supportCashAmount) || undefined,
+    supportAmount: data.financialInfo.totalSupportAmount !== undefined ? Number(data.financialInfo.totalSupportAmount) : undefined,
+    supportCashAmount: data.financialInfo.supportCashAmount !== undefined ? Number(data.financialInfo.supportCashAmount) : undefined,
     isTaxed: Boolean(data.financialInfo.taxStatus === "taxable"),
     calcMemo: data.financialInfo.supportContent || undefined,
     companyPercent,
