@@ -9,7 +9,8 @@ export type NoticeResponse = {
   id: number;
   title: string;
   content: string;
-  author: string;
+  author: { name: string } | null;
+  views: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -17,7 +18,8 @@ export type NoticeResponse = {
 export type NoticeListResponse = {
   id: number;
   title: string;
-  author: string;
+  author: { name: string } | null;
+  views: number;
   createdAt: string;
 };
 
@@ -97,6 +99,29 @@ export async function deleteNotice(id: number): Promise<void> {
     console.log("공지사항 삭제 성공:", id);
   } catch (error: any) {
     console.error("공지사항 삭제 API 호출 실패:", error);
+    throw error;
+  }
+}
+
+export type NoticeReadStatus = {
+  total: number;
+  readCount: number;
+  unreadCount: number;
+  readList: { id: string; name: string; position_rank?: string }[];
+  unreadList: { id: string; name: string; position_rank?: string }[];
+};
+
+// 공지사항 조회 현황 API
+export async function getNoticeReadStatus(id: number): Promise<NoticeReadStatus> {
+  try {
+    const response = await api.get<{
+      message: string;
+      data: NoticeReadStatus;
+    }>(`/dashboard/notices/${id}/read-status`);
+
+    return response.data.data;
+  } catch (error: any) {
+    console.error("공지사항 조회 현황 호출 실패:", error);
     throw error;
   }
 }

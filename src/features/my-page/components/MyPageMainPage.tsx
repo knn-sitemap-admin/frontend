@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/atoms/Card/Card";
 import { Button } from "@/components/atoms/Button/Button";
-import { User, Users, FileText } from "lucide-react";
+import { User, Users, FileText, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile } from "@/features/users/api/account";
@@ -27,6 +27,13 @@ export function MyPageMainPage() {
       href: "/my-page/profile",
       icon: User,
       color: "bg-blue-500",
+    },
+    {
+      title: "공지사항",
+      description: "전체 공지 내역 확인",
+      href: "/my-page/notices",
+      icon: Megaphone,
+      color: "bg-yellow-500",
     },
     {
       title: "팀 관리",

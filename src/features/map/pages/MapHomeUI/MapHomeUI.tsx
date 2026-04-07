@@ -43,6 +43,7 @@ import { type Bounds } from "../../shared/types/bounds.type";
 import { distM } from "../../poi/lib/geometry";
 import { Viewport } from "../hooks/useMapHomeState/mapHome.types";
 
+import { NoticeBanner } from "../../components/NoticeBanner";
 
 export function MapHomeUI(props: MapHomeUIProps) {
   const {
@@ -551,6 +552,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
   return (
     <div className="fixed inset-0">
+      <NoticeBanner />
       <MapCanvas
         appKey={appKey}
         kakaoSDK={kakaoSDK}
