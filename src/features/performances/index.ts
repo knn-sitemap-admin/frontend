@@ -28,5 +28,3 @@ export {
 // Constants
 export { CHART_CONFIG, PIE_COLORS } from "./utils/chartConfig";
 
-// Data
-export { mockPerformanceData } from "./data/data";
