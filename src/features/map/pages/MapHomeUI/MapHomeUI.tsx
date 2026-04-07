@@ -35,6 +35,7 @@ import usePlaceSearchOnMap from "./hooks/usePlaceSearchOnMap";
 import ContextMenuHost from "../../components/contextMenu/ContextMenuHost";
 import { AddressModal } from "../../components/AddressModal";
 import { MapDistanceMeasure } from "../../components/MapDistanceMeasure/MapDistanceMeasure";
+import { MapRadiusMeasure } from "../../components/MapRadiusMeasure/MapRadiusMeasure";
 import { hideLabelsAround } from "../../engine/overlays/labelRegistry";
 import { useBounds } from "../../hooks/viewport/useBounds";
 import { useBoundsRaw } from "../../hooks/viewport/useBoundsRaw";
@@ -59,6 +60,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
     setUseSidebar,
     distanceMeasureVisible = false,
     onToggleDistanceMeasure,
+    radiusMeasureVisible = false,
+    onToggleRadiusMeasure,
     poiKinds,
     onChangePoiKinds,
     menuOpen,
@@ -166,6 +169,18 @@ export function MapHomeUI(props: MapHomeUIProps) {
       pos: { lat: number; lng: number },
       point?: { x: number; y: number }
     ) => {
+      // 🔵 지도 도구가 활성화된 상태면 주소 모달 안 열기
+      // (로드뷰Overlay, 로드뷰패널, 거리재기, 반경재기, 지적편집도)
+      if (
+        roadviewRoadOn ||
+        roadviewVisible ||
+        distanceMeasureVisible ||
+        radiusMeasureVisible ||
+        isDistrictOn
+      ) {
+        return;
+      }
+
       // 레벨 3 초과(약 500m 이상)면 주소 모달 안 열기 — 100m(레벨 3) 이하에서만 동작
       const level = mapInstance?.getLevel?.();
       if (typeof level === "number" && level > 3) return;
@@ -174,7 +189,14 @@ export function MapHomeUI(props: MapHomeUIProps) {
       setAddressModalPoint(point ?? null);
       setAddressModalOpen(true);
     },
-    [mapInstance]
+    [
+      mapInstance,
+      roadviewRoadOn,
+      roadviewVisible,
+      distanceMeasureVisible,
+      radiusMeasureVisible,
+      isDistrictOn,
+    ]
   );
 
   // 🔍 필터 검색 상태/로직 (API + bounds 맞추기)
@@ -370,12 +392,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
       return;
     }
 
-    // 로드뷰 패널이 닫혀있을 때:
-    // 오버레이(파란 도로선)가 꺼져있으면 활성화만 하고 대기
-    // → 사용자가 파란 도로를 클릭하면 handleRoadviewClickOnMap에서 열림
-    if (!roadviewRoadOn) {
-      toggleRoadviewRoad();
-    }
+    // 로드뷰 패널이 닫혀있을 때: 오버레이(파란 도로선) 토글
+    toggleRoadviewRoad();
 
     if (isDistrictOn) {
       handleSetDistrictOn(false);
@@ -553,13 +571,17 @@ export function MapHomeUI(props: MapHomeUIProps) {
         isDistrictOn={isDistrictOn}
         showRoadviewOverlay={roadviewRoadOn}
         onRoadviewClick={roadviewRoadOn ? handleRoadviewClickOnMap : undefined}
-        onMapClick={
-          distanceMeasureVisible ? undefined : handleMapClickForAddress
-        }
+        onMapClick={handleMapClickForAddress}
       />
 
       <MapDistanceMeasure
         visible={distanceMeasureVisible}
+        kakaoSDK={kakaoSDK}
+        mapInstance={mapInstance}
+      />
+
+      <MapRadiusMeasure
+        visible={radiusMeasureVisible}
         kakaoSDK={kakaoSDK}
         mapInstance={mapInstance}
       />
@@ -636,6 +658,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
         onToggleRoadview={toggleRoadview}
         distanceMeasureVisible={distanceMeasureVisible}
         onToggleDistanceMeasure={onToggleDistanceMeasure ?? (() => { })}
+        radiusMeasureVisible={radiusMeasureVisible}
+        onToggleRadiusMeasure={onToggleRadiusMeasure ?? (() => { })}
         rightOpen={rightOpen}
         setRightOpen={handleSetRightOpen}
         sidebarOpen={useSidebar}

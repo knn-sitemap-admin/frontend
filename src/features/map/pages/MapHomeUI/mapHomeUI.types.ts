@@ -45,6 +45,9 @@ export type MapHomeUIProps = {
   /** 거리재기 도구 켜기/끄기 */
   distanceMeasureVisible?: boolean;
   onToggleDistanceMeasure?: () => void;
+  /** 반경재기 도구 켜기/끄기 */
+  radiusMeasureVisible?: boolean;
+  onToggleRadiusMeasure?: () => void;
 
   // ⭐ POI
   poiKinds: ReadonlyArray<PoiKind>;

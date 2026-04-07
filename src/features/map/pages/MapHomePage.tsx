@@ -283,6 +283,8 @@ export default function MapHomePage() {
       useDistrict: s.useDistrict,
       distanceMeasureVisible: s.distanceMeasureVisible,
       onToggleDistanceMeasure: s.toggleDistanceMeasure,
+      radiusMeasureVisible: s.radiusMeasureVisible,
+      onToggleRadiusMeasure: s.toggleRadiusMeasure,
 
       poiKinds: s.poiKinds,
       onChangePoiKinds,

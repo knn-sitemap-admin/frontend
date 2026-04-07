@@ -26,6 +26,8 @@ export default function MapMenu(props: MapMenuProps) {
     onToggleRoadview,
     distanceMeasureVisible,
     onToggleDistanceMeasure,
+    radiusMeasureVisible,
+    onToggleRadiusMeasure,
     expanded,
     onExpandChange,
   } = props;
@@ -134,9 +136,8 @@ export default function MapMenu(props: MapMenuProps) {
               onToggle={api.close}
               poiKinds={poiKinds}
               onChangePoiKinds={onChangePoiKinds}
-              roadviewVisible={roadviewVisible}
-              roadviewRoadOn={roadviewRoadOn}
-              onToggleRoadview={onToggleRoadview}
+              radiusMeasureVisible={radiusMeasureVisible}
+              onToggleRadiusMeasure={onToggleRadiusMeasure}
               distanceMeasureVisible={distanceMeasureVisible}
               onToggleDistanceMeasure={onToggleDistanceMeasure}
             />

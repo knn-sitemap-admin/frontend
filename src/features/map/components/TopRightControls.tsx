@@ -46,6 +46,8 @@ export default function TopRightControls(props: {
   onToggleRoadview: () => void;
   distanceMeasureVisible?: boolean;
   onToggleDistanceMeasure?: () => void;
+  radiusMeasureVisible?: boolean;
+  onToggleRadiusMeasure?: () => void;
   rightOpen: boolean;
   setRightOpen: (v: boolean) => void;
   sidebarOpen: boolean;
@@ -256,6 +258,8 @@ export default function TopRightControls(props: {
             onToggleRoadview={props.onToggleRoadview}
             distanceMeasureVisible={props.distanceMeasureVisible ?? false}
             onToggleDistanceMeasure={props.onToggleDistanceMeasure ?? (() => {})}
+            radiusMeasureVisible={props.radiusMeasureVisible ?? false}
+            onToggleRadiusMeasure={props.onToggleRadiusMeasure ?? (() => {})}
             expanded={props.rightOpen}
             onExpandChange={(expanded) => {
               props.setRightOpen(expanded);

@@ -12,15 +12,19 @@ type CommonProps = {
   isDistrictOn: boolean;
   onToggleDistrict: (next: boolean) => void;
 
-  /** 로드뷰 패널 표시 여부 */
+  /** 로드뷰 패널 표시 여부 (내부용) */
   roadviewVisible: boolean;
-  /** 로드뷰 도로(파란 라인) 활성화 여부 */
+  /** 로드뷰 도로(파란 라인) 활성화 여부 (내부용) */
   roadviewRoadOn: boolean;
   onToggleRoadview: () => void;
 
   /** 거리재기 토글 */
   distanceMeasureVisible: boolean;
   onToggleDistanceMeasure: () => void;
+
+  /** 반경재기 토글 */
+  radiusMeasureVisible: boolean;
+  onToggleRadiusMeasure: () => void;
 
   /** 주변시설 선택 */
   poiKinds: readonly PoiKind[];

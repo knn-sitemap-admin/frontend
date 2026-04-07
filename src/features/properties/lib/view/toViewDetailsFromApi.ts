@@ -132,10 +132,10 @@ const BUILDING_TYPE_LABEL: Record<string, string> = {
   근생: "근생",
 };
 
-/** "상/중/하" → Grade 유니온 */
+/** 등급 문자열 정규화 */
 function toGrade(g?: string | null) {
   const v = (g ?? "").trim();
-  return v === "상" || v === "중" || v === "하" ? (v as any) : undefined;
+  return v || undefined;
 }
 
 /** 옵션 → 라벨 배열 */

@@ -19,7 +19,7 @@ import {
 
 import type { MapMenuKey } from "../types/mapMenu.types";
 import { FilterSection } from "./FilterSection";
-import RoadviewToggleButton from "./RoadviewToggleButton";
+import RadiusMeasureToggleButton from "./RadiusMeasureToggleButton";
 import DistrictToggleButton from "./DistrictToggleButton";
 import DistanceMeasureToggleButton from "./DistanceMeasureToggleButton";
 import { POI_LABEL } from "../../../engine/overlays/poiOverlays";
@@ -49,10 +49,9 @@ interface ExpandedMenuProps {
   poiKinds: readonly PoiKind[];
   onChangePoiKinds: (next: PoiKind[]) => void;
 
-  // 로드뷰
-  roadviewVisible: boolean;
-  roadviewRoadOn: boolean;
-  onToggleRoadview: () => void;
+  // 반경재기
+  radiusMeasureVisible: boolean;
+  onToggleRadiusMeasure: () => void;
 
   // 거리재기
   distanceMeasureVisible: boolean;
@@ -87,9 +86,8 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
     onToggleDistrict,
     poiKinds,
     onChangePoiKinds,
-    roadviewVisible,
-    roadviewRoadOn,
-    onToggleRoadview,
+    radiusMeasureVisible,
+    onToggleRadiusMeasure,
     distanceMeasureVisible,
     onToggleDistanceMeasure,
     onToggle,
@@ -306,9 +304,9 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
                 showLabel
               />
 
-              <RoadviewToggleButton
-                pressed={roadviewVisible || roadviewRoadOn}
-                onPress={onToggleRoadview}
+              <RadiusMeasureToggleButton
+                pressed={radiusMeasureVisible}
+                onPress={onToggleRadiusMeasure}
                 showLabel
               />
 

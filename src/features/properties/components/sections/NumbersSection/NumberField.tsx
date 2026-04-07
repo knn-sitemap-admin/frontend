@@ -35,10 +35,10 @@ export default function NumberField({
   step = 1,
   min = 0,
   max,
-  align = "start",
+  align = "center",
   labelWidth = 56,
   rowMinHeight = 36,
-  dense = true,
+  dense = false,
   className,
 }: NumberFieldProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -109,7 +109,7 @@ export default function NumberField({
           onWheel={onWheel}
           placeholder={placeholder}
           className="
-            h-8 w-full pr-7 text-right
+            h-9 w-full pr-7 text-right
             [appearance:textfield]
             [&::-webkit-inner-spin-button]:appearance-none
             [&::-webkit-outer-spin-button]:appearance-none

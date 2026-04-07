@@ -27,6 +27,8 @@ type TopRegionProps = {
 
   distanceMeasureVisible: boolean;
   onToggleDistanceMeasure: () => void;
+  radiusMeasureVisible: boolean;
+  onToggleRadiusMeasure: () => void;
 
   rightOpen: boolean;
   setRightOpen: (open: boolean) => void;
@@ -69,6 +71,8 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
       onToggleRoadview,
       distanceMeasureVisible,
       onToggleDistanceMeasure,
+      radiusMeasureVisible,
+      onToggleRadiusMeasure,
       rightOpen,
       setRightOpen,
       sidebarOpen,
@@ -147,6 +151,8 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
               onToggleRoadview={onToggleRoadview}
               distanceMeasureVisible={distanceMeasureVisible}
               onToggleDistanceMeasure={onToggleDistanceMeasure}
+              radiusMeasureVisible={radiusMeasureVisible}
+              onToggleRadiusMeasure={onToggleRadiusMeasure}
               rightOpen={rightOpen}
               setRightOpen={setRightOpen}
               sidebarOpen={sidebarOpen}

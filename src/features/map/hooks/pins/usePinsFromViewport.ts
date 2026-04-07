@@ -61,7 +61,7 @@ function pinPointToMarker(
     source,
     pinDraftId: p.draftId ?? p.pin_draft_id ?? undefined,
     posKey: toPosKey(lat, lng),
-    isNew: p.isNew ?? undefined,
+    isNew: p.isNew ?? p.ageType === "NEW",
   };
 }
 
@@ -130,8 +130,11 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
     // 1) 클라이언트 사이드 필터링 적용 (속도 혁명 🚀)
     const filteredPoints = pListAll.filter((p: any) => {
       // 신축/구옥 필터
-      if (isNew === true && !p.isNew) return false;
-      if (isOld === true && !p.isOld) return false;
+      const isNewActive = p.isNew ?? p.ageType === "NEW";
+      const isOldActive = p.isOld ?? p.ageType === "OLD";
+
+      if (isNew === true && !isNewActive) return false;
+      if (isOld === true && !isOldActive) return false;
 
       // 입주완료 필터 (기본값 설정 로직 포함)
       if (isCompleted === true) {
