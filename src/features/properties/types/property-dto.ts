@@ -118,7 +118,7 @@ export type CreatePayload = {
   parkingGrade?: StarStr;
   /** ✅ 경사 등급: "좋음" | "평범" | "복잡" (또는 직접 입력) */
   slopeGrade?: Grade | null;
-  /** ✅ 구조 등급: "좋음" | "평범" | "복잡" (또는 직접 입력) */
+  /** ✅ 구조 등급: "상" | "중" | "하" (또는 직접 입력) */
   structureGrade?: Grade | null;
   completionDate?: string;
 

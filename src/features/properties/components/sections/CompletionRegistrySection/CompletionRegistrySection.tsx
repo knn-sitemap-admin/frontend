@@ -14,8 +14,11 @@ import type { CompletionRegistrySectionProps } from "./types";
 import ElevatorSegment from "../HeaderSection/components/ElevatorSegment";
 
 /** ───────── 상수/타입 ───────── */
-const GRADES = ["좋음", "평범", "복잡"] as const;
-type GradeLiteral = (typeof GRADES)[number];
+const SLOPE_GRADES = ["좋음", "평범", "복잡"] as const;
+const STRUCTURE_GRADES = ["상", "중", "하"] as const;
+
+type SlopeGradeLiteral = (typeof SLOPE_GRADES)[number];
+type StructureGradeLiteral = (typeof STRUCTURE_GRADES)[number];
 
 const UI_BUILDING_TYPES = ["주택", "APT", "OP", "도/생", "근/생"] as const;
 type UIBuildingType = (typeof UI_BUILDING_TYPES)[number];
@@ -169,11 +172,11 @@ export default function CompletionRegistrySection({
 
   /** ── 경사도/구조 ── */
   const onChangeSlope = useCallback(
-    (v: GradeLiteral | undefined) => setSlopeGrade?.(v as Grade | undefined),
+    (v: SlopeGradeLiteral | undefined) => setSlopeGrade?.(v as Grade | undefined),
     [setSlopeGrade]
   );
   const onChangeStructure = useCallback(
-    (v: GradeLiteral | undefined) =>
+    (v: StructureGradeLiteral | undefined) =>
       setStructureGrade?.(v as Grade | undefined),
     [setStructureGrade]
   );
@@ -230,10 +233,10 @@ export default function CompletionRegistrySection({
           <div className="flex flex-wrap items-center gap-2">
             <PillRadioGroup
               name="slopeGrade"
-              options={GRADES}
+              options={SLOPE_GRADES}
               value={
-                GRADES.includes(slopeGrade as any)
-                  ? (slopeGrade as GradeLiteral)
+                SLOPE_GRADES.includes(slopeGrade as any)
+                  ? (slopeGrade as SlopeGradeLiteral)
                   : undefined
               }
               onChange={onChangeSlope}
@@ -250,8 +253,8 @@ export default function CompletionRegistrySection({
         <Field label="구조" align="center" className="min-w-0">
           <PillRadioGroup
             name="structureGrade"
-            options={GRADES}
-            value={structureGrade as GradeLiteral | undefined}
+            options={STRUCTURE_GRADES}
+            value={structureGrade as StructureGradeLiteral | undefined}
             onChange={onChangeStructure}
           />
         </Field>
