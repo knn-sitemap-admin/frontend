@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/atoms/Card/Card";
 import { Badge } from "@/components/atoms/Badge/Badge";
 import { Button } from "@/components/atoms/Button/Button";
@@ -9,11 +9,17 @@ import Link from "next/link";
 import { useTeams, useDeleteTeam } from "../hooks/useTeams";
 import { useToast } from "@/hooks/use-toast";
 import { CreateTeamForm } from "./CreateTeamForm";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 
 
 export default function TeamManagementPage() {
   const { data: teams = [], isLoading, error } = useTeams();
   const deleteTeamMutation = useDeleteTeam();
+  const [confirmConfig, setConfirmConfig] = useState<{
+    open: boolean;
+    name: string;
+    id: string;
+  }>({ open: false, name: "", id: "" });
   
   // 비활성 팀 필터링 (활성 팀만 표시)
   const activeTeams = useMemo(() => {
@@ -22,8 +28,6 @@ export default function TeamManagementPage() {
   const { toast } = useToast();
 
   const handleDeleteTeam = async (id: string, name: string) => {
-    if (!confirm(`"${name}" 팀을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
-
     try {
       await deleteTeamMutation.mutateAsync(id);
       toast({
@@ -32,7 +36,6 @@ export default function TeamManagementPage() {
       });
     } catch (err: any) {
       console.error("팀 삭제 실패:", err);
-      // 백엔드 에러 메시지 활용
       const errorMessage =
         err.response?.data?.messages?.[0] || "팀 삭제 중 오류가 발생했습니다. (팀원이 남아있으면 삭제할 수 없습니다.)";
       
@@ -126,7 +129,7 @@ export default function TeamManagementPage() {
               <Button
                 variant="outline"
                 className="text-red-500 hover:bg-red-50"
-                onClick={() => handleDeleteTeam(String(team.id), team.name)}
+                onClick={() => setConfirmConfig({ open: true, name: team.name, id: String(team.id) })}
               >
                 삭제
               </Button>
@@ -144,6 +147,16 @@ export default function TeamManagementPage() {
           </p>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmConfig.open}
+        onOpenChange={(open) => setConfirmConfig((prev) => ({ ...prev, open }))}
+        title="팀 삭제"
+        description={`"${confirmConfig.name}" 팀을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`}
+        confirmText="삭제하기"
+        variant="destructive"
+        onConfirm={() => handleDeleteTeam(confirmConfig.id, confirmConfig.name)}
+        isLoading={deleteTeamMutation.isPending}
+      />
     </div>
   );
 }
