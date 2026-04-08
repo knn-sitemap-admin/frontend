@@ -1,6 +1,6 @@
 "use client";
 
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
 import type { ImageItem } from "@/features/properties/types/media";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -77,9 +77,17 @@ export default function LightboxModal({
     setZoom({ scale: 1, x: 0, y: 0 });
   }, []);
 
+  // 회전 상태 (0, 90, 180, 270)
+  const [rotation, setRotation] = useState(0);
+
+  const rotate = useCallback(() => {
+    setRotation((r) => (r + 90) % 360);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     resetZoom();
+    setRotation(0); // 인덱스 바뀔 때 회전도 초기화
   }, [open, index, resetZoom]);
 
   const getTouchDistance = useCallback((touches: React.TouchList | TouchList) => {
@@ -189,6 +197,17 @@ export default function LightboxModal({
         <button
           onClick={(e) => {
             e.stopPropagation();
+            rotate();
+          }}
+          aria-label="회전"
+          className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-white/10 hover:bg-white/20 text-white"
+          title="이미지 회전"
+        >
+          <RotateCw className="h-5 w-5" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
             onClose();
           }}
           aria-label="닫기"
@@ -256,8 +275,9 @@ export default function LightboxModal({
           <div
             className="flex items-center justify-center w-full h-full touch-none"
             style={{
-              transform: `scale(${zoom.scale}) translate(${zoom.x}px, ${zoom.y}px)`,
+              transform: `scale(${zoom.scale}) translate(${zoom.x}px, ${zoom.y}px) rotate(${rotation}deg)`,
               transformOrigin: "center center",
+              transition: "transform 0.2s ease-out", // 회전 시 부드럽게
               touchAction: "none",
             }}
             onMouseDown={(e) => {
