@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Plus, X, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Plus, X, Image as ImageIcon, Loader2, RotateCw } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { Card, CardContent, CardHeader } from "@/components/atoms/Card/Card";
 import { uploadOnePhoto } from "@/shared/api/photos/photoUpload";
@@ -137,6 +137,15 @@ export function ContractImageSection({
   };
 
   const [viewerImage, setViewerImage] = useState<string | null>(null);
+  const [rotation, setRotation] = useState(0);
+
+  const rotate = () => setRotation((r) => (r + 90) % 360);
+
+  useEffect(() => {
+    if (viewerImage) {
+      setRotation(0);
+    }
+  }, [viewerImage]);
 
   const handleDeleteImage = (id: string) => {
     const imageToDelete = images.find((img) => img.id === id);
@@ -271,18 +280,31 @@ export function ContractImageSection({
             <img
               src={viewerImage}
               alt="계약서 원본"
-              className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm animate-in zoom-in-95 duration-300"
+              className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm animate-in zoom-in-95 duration-300 transition-transform duration-200"
+              style={{ transform: `rotate(${rotation}deg)` }}
               onContextMenu={(e) => e.preventDefault()}
               onDragStart={(e) => e.preventDefault()}
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute -top-12 sm:-top-4 sm:-right-12 text-white hover:bg-white/20 h-10 w-10"
-              onClick={() => setViewerImage(null)}
-            >
-              <X className="h-8 w-8" />
-            </Button>
+            <div className="absolute -top-12 sm:-top-4 sm:-right-12 flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20 h-10 w-10"
+                onClick={rotate}
+                title="이미지 회전"
+              >
+                <RotateCw className="h-6 w-6" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20 h-10 w-10"
+                onClick={() => setViewerImage(null)}
+                title="닫기"
+              >
+                <X className="h-8 w-8" />
+              </Button>
+            </div>
           </div>
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60 text-xs font-medium bg-black/40 px-3 py-1.5 rounded-full pointer-events-none">
             바깥 영역을 클릭하면 닫힙니다
