@@ -71,8 +71,6 @@ export type CreateAccountPayload = {
     isPrimary?: boolean;
     joinedAt?: string; // YYYY-MM-DD
   };
-  // 팀 이름 (팀장 직급일 때만 사용)
-  teamName?: string;
 
   // 추가정보(선택)
   photo_url?: string;
@@ -140,7 +138,6 @@ const CreateUserSchema = z
         }
         return val;
       }),
-    teamName: z.string().optional(),
     photo_url: z
       .string()
       .url("URL 형식이 올바르지 않습니다.")
@@ -166,19 +163,6 @@ const CreateUserSchema = z
     {
       message: "팀장 직급은 팀 배정이 불가능합니다.",
       path: ["team"],
-    }
-  )
-  .refine(
-    (data) => {
-      // 팀장 직급이면 팀 이름 필수
-      if (data.positionRank === "TEAM_LEADER") {
-        return !!data.teamName?.trim();
-      }
-      return true;
-    },
-    {
-      message: "팀 이름을 입력하세요.",
-      path: ["teamName"],
     }
   );
 type CreateUserValues = z.infer<typeof CreateUserSchema>;
@@ -212,7 +196,6 @@ export default function AccountCreatePage({
       salary_bank_name: "",
       salary_account: "",
       team: undefined,
-      teamName: "",
       photo_url: "",
       id_photo_urls: [],
       resident_register_urls: [],
@@ -288,16 +271,6 @@ export default function AccountCreatePage({
         return;
       }
 
-      // 팀장 직급일 때는 팀 이름이 필수
-      if (isTeamLeader && !v.teamName?.trim()) {
-        toast({
-          title: "입력 오류",
-          description: "팀 이름을 입력하세요.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
 
       // 새로운 통합 API 호출 (계정 + 직원 정보 한 번에)
       const createData = {
@@ -318,10 +291,6 @@ export default function AccountCreatePage({
               },
             }
           : {}),
-        // 팀장인 경우 teamName 포함
-        ...(isTeamLeader && v.teamName?.trim()
-          ? { teamName: v.teamName.trim() }
-          : {}),
         // 직원 정보
         info: {
           name: v.name || null,
@@ -336,7 +305,6 @@ export default function AccountCreatePage({
           docUrlResidentAbstract: v.resident_extract_urls && v.resident_extract_urls.length > 0 ? v.resident_extract_urls : null,
           docUrlIdCard: v.id_photo_urls && v.id_photo_urls.length > 0 ? v.id_photo_urls : null,
           docUrlFamilyRelation: v.family_relation_urls && v.family_relation_urls.length > 0 ? v.family_relation_urls : null,
-          teamId: v.team?.teamId,
         },
       };
 
@@ -365,7 +333,6 @@ export default function AccountCreatePage({
                   : undefined,
             }
           : undefined,
-        teamName: v.teamName || undefined,
         photo_url: v.photo_url || undefined,
         id_photo_urls: v.id_photo_urls,
         resident_register_urls: v.resident_register_urls,
@@ -815,29 +782,6 @@ export default function AccountCreatePage({
                     )}
                   />
                 </>
-              )}
-              {/* 팀장 직급일 때 팀 이름 입력 필드 표시 */}
-              {form.watch("positionRank") === "TEAM_LEADER" && (
-                <FormField
-                  control={form.control}
-                  name="teamName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>팀 이름 *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="팀 이름을 입력하세요"
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <p className="text-xs text-muted-foreground">
-                        팀장 직급으로 설정하면 자동으로 팀이 생성됩니다.
-                      </p>
-                    </FormItem>
-                  )}
-                />
               )}
             </div>
 

@@ -97,7 +97,6 @@ const UpdateUserSchema = z
         }
         return val;
       }),
-    teamName: z.string().optional(),
     photo_url: z
       .string()
       .url("URL 형식이 올바르지 않습니다.")
@@ -131,19 +130,6 @@ const UpdateUserSchema = z
     {
       message: "팀장 직급은 팀 배정이 불가능합니다.",
       path: ["team"],
-    }
-  )
-  .refine(
-    (data) => {
-      // 팀장 직급이면 팀 이름 필수
-      if (data.positionRank === "TEAM_LEADER") {
-        return !!data.teamName?.trim();
-      }
-      return true;
-    },
-    {
-      message: "팀 이름을 입력하세요.",
-      path: ["teamName"],
     }
   );
 
@@ -209,7 +195,6 @@ function AccountEditFormModalBody({
       password: "",
       password_confirm: "",
       team: undefined,
-      teamName: "",
       photo_url: "",
       id_photo_urls: [],
       resident_register_urls: [],
@@ -296,7 +281,6 @@ function AccountEditFormModalBody({
                     joinedAt: team.joinedAt || undefined,
                   }
                 : undefined,
-            teamName: isTeamLeader && team ? team.name : "",
             photo_url: account.profileUrl || "",
             id_photo_urls: (account as any).docUrlIdCard || [],
             resident_register_urls:
@@ -337,13 +321,11 @@ function AccountEditFormModalBody({
         salaryBankName: v.salary_bank_name,
         salaryAccount: v.salary_account,
         positionRank: v.positionRank,
-        teamName: v.teamName,
         profileUrl: v.photo_url,
         docUrlIdCard: v.id_photo_urls,
         docUrlResidentRegistration: v.resident_register_urls,
         docUrlResidentAbstract: v.resident_extract_urls,
         docUrlFamilyRelation: v.family_relation_urls,
-        teamId: v.team?.teamId || null,
       };
 
       await createEmployeeInfo(credentialId, employeeData);
@@ -783,29 +765,6 @@ function AccountEditFormModalBody({
                       />
                     </>
                   )}
-                {/* 팀장 직급일 때 팀 이름 입력 필드 표시 */}
-                {form.watch("positionRank") === "TEAM_LEADER" && (
-                  <FormField
-                    control={form.control}
-                    name="teamName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>팀 이름 *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="팀 이름을 입력하세요"
-                            {...field}
-                            value={field.value || ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        <p className="text-xs text-muted-foreground">
-                          팀장 직급으로 설정하면 자동으로 팀이 생성됩니다.
-                        </p>
-                      </FormItem>
-                    )}
-                  />
-                )}
               </div>
 
               {/* 추가 정보 (파일 업로드) */}

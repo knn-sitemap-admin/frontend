@@ -146,12 +146,6 @@ export type UpsertEmployeeInfoRequest = {
   docUrlResidentAbstract?: string[] | null;
   docUrlIdCard?: string[] | null;
   docUrlFamilyRelation?: string[] | null;
-  team?: {
-    teamId: string;
-    isPrimary?: boolean;
-    joinedAt?: string;
-  };
-  teamId?: string | null;
 };
 
 export type CreateEmployeeRequest = {
@@ -159,7 +153,6 @@ export type CreateEmployeeRequest = {
   password: string;
   isDisabled?: boolean;
   team?: CreateTeamAssignRequest;
-  teamName?: string;
   info?: UpsertEmployeeInfoRequest;
 };
 
@@ -215,18 +208,11 @@ export type CreateEmployeeInfoRequest = {
     | "TEAM_LEADER"
     | "DIRECTOR"
     | "CEO";
-  teamName?: string;
   profileUrl?: string;
   docUrlIdCard?: string[];
   docUrlResidentRegistration?: string[];
   docUrlResidentAbstract?: string[];
   docUrlFamilyRelation?: string[];
-  team?: {
-    teamId: string;
-    isPrimary?: boolean;
-    joinedAt?: string;
-  };
-  teamId?: string | null;
 };
 
 export type CreateEmployeeInfoResponse = {
@@ -440,7 +426,6 @@ export type PatchPositionRankRequest = {
     | "TEAM_LEADER"
     | "DIRECTOR"
     | "CEO";
-  teamName?: string; // TEAM_LEADER일 때만 사용
 };
 
 export async function patchPositionRank(
