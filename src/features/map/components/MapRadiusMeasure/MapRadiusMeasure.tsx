@@ -47,7 +47,39 @@ export function MapRadiusMeasure({
   const showRadius = useCallback(
     (radius: number, position: any) => {
       if (!kakaoSDK || !mapInstance) return;
-      const content = `<div style="position:relative;top:5px;left:5px;padding:4px 8px;background:#fff;border-radius:6px;box-shadow:0 1px 2px #888;font-size:12px">반경 <span style="font-weight:bold;color:#2563eb">${Math.round(radius)}</span>m</div>`;
+
+      const formatTime = (totalMinutes: number) => {
+        if (totalMinutes <= 0) return "1분 미만";
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        if (h > 0) {
+          return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+        }
+        return `${m}분`;
+      };
+
+      const walkDisplay = formatTime(Math.floor(radius / 67));
+      const cycleDisplay = formatTime(Math.floor(radius / 227));
+
+      const distDisplay = radius >= 1000 
+        ? `${(radius / 1000).toFixed(2)}km` 
+        : `${Math.round(radius)}m`;
+
+      const content = `
+        <div style="position:relative;top:5px;left:5px;padding:8px 12px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:12px;line-height:1.6;min-width:130px;border:1px solid #cbd5e1;z-index:100;font-family:sans-serif;">
+          <div style="margin-bottom:6px;border-bottom:1px solid #f1f5f9;padding-bottom:4px;font-weight:bold;color:#1e293b;font-size:13px;">
+            반경 <span style="color:#2563eb;">${distDisplay}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+            <span style="color:#64748b;font-size:11px;">🚶 도보</span>
+            <span style="font-weight:600;color:#334155;">${walkDisplay}</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="color:#64748b;font-size:11px;">🚲 자전거</span>
+            <span style="font-weight:600;color:#334155;">${cycleDisplay}</span>
+          </div>
+        </div>
+      `;
       
       if (distanceOverlayRef.current) {
         distanceOverlayRef.current.setPosition(position);

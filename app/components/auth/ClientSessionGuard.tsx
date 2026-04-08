@@ -5,6 +5,7 @@ import {
   AUTH_CHANNEL_NAME,
   AuthBroadcastMessage,
 } from "@/shared/api/auth/authChannel";
+import { Logger } from "@/shared/utils/logger";
 
 /**
  * 백엔드 API base (마지막 슬래시 제거해서 안전하게 사용)
@@ -50,8 +51,8 @@ async function fetchSessionValid(): Promise<boolean> {
     return true;
   } catch (error: any) {
     // 네트워크 에러 (백엔드 서버가 실행되지 않았거나 연결 불가)
-    console.error("세션 확인 실패:", error);
-    console.error(`백엔드 서버(${API_BASE})에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.`);
+    Logger.error("세션 확인 실패:", error);
+    Logger.error(`백엔드 서버(${API_BASE})에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.`);
     // 개발 환경에서는 에러를 던지지 않고 false 반환 (로그인 페이지로 리다이렉트)
     return false;
   }

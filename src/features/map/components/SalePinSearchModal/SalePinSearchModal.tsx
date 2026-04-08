@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/atoms/Dialog/Dialog";
 import { ScrollArea } from "@/components/atoms/ScrollArea/ScrollArea";
 import type { PinSearchResult } from "@/features/pins/types/pin-search";
@@ -43,6 +44,9 @@ export function SalePinSearchModal({
       <DialogContent className="max-w-[400px] p-0 overflow-hidden">
         <DialogHeader className="p-4 border-b">
           <DialogTitle>매물핀 검색 결과</DialogTitle>
+          <DialogDescription className="sr-only">
+            검색어와 일치하는 매물핀 및 임시 저장된 핀의 목록입니다.
+          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh]">

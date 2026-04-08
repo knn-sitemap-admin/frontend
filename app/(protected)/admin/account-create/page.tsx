@@ -7,7 +7,6 @@ import { AdminAuthGuard } from "@/components/auth-guard/AdminAuthGuard";
 
 const TeamCreatePage = () => {
   const handleCreateUser = (payload: CreateAccountPayload) => {
-    console.log("계정 생성:", payload);
     // TODO: API 연동
   };
 

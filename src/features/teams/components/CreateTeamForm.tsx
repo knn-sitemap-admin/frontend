@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/atoms/Dialog/Dialog";
 import { FormError } from "@/components/atoms/FormError/FormError";
@@ -89,6 +90,9 @@ export function CreateTeamForm({ onTeamCreated }: CreateTeamFormProps) {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>새 팀 생성</DialogTitle>
+          <DialogDescription className="sr-only">
+            새로운 팀을 생성하기 위한 정보를 입력하세요.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">

@@ -35,4 +35,3 @@ const form = {
 };
 
 const patch = toPinPatch(form, initial);
-console.log(JSON.stringify(patch, null, 2));

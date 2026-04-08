@@ -1,6 +1,7 @@
 /**
  * Kakao Navi Utility
  */
+import { Logger } from "./logger";
 
 export const openKakaoNavi = (params: {
   name: string;
@@ -18,7 +19,6 @@ export const openKakaoNavi = (params: {
   if (isMobile) {
     if (kakao && kakao.isInitialized() && kakao.Navi) {
       try {
-        console.log("[KakaoNavi] SDK 실행 (모바일)");
         kakao.Navi.start({
           name,
           x: lng,
@@ -27,7 +27,7 @@ export const openKakaoNavi = (params: {
         });
         return;
       } catch (err) {
-        console.warn("[KakaoNavi] SDK 호출 실패, 폴백 실행", err);
+        Logger.warn("[KakaoNavi] SDK 호출 실패, 폴백 실행", err);
       }
     }
 
@@ -52,7 +52,7 @@ export const openKakaoNavi = (params: {
         });
       }
     } catch (e) {
-      console.warn("[KakaoNavi] Geolocation failed:", e);
+      Logger.warn("[KakaoNavi] Geolocation failed:", e);
     }
 
     if (startPos) {

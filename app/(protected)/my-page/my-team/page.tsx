@@ -30,7 +30,6 @@ const MyTeamPage = () => {
       }
 
       const accountId = String(profileResponse.data.data.account.id);
-      console.log("내 accountId:", accountId);
 
       // 모든 팀 목록 가져오기
       let teamsResponse;
@@ -47,9 +46,7 @@ const MyTeamPage = () => {
         return null;
       }
 
-      console.log("팀 목록:", teamsResponse.data.data);
       if (teamsResponse.data.data.length === 0) {
-        console.log("팀 목록이 비어있습니다.");
         return null;
       }
 
@@ -80,21 +77,15 @@ const MyTeamPage = () => {
             };
           }>(`/dashboard/accounts/teams/${team.id}`);
 
-          console.log(
-            `팀 ${team.name} 멤버:`,
-            teamDetailResponse.data.data.members
-          );
 
           // 팀 멤버 목록에서 내 accountId가 있는지 확인 (타입 안전하게 비교)
           const isMyTeam = teamDetailResponse.data.data.members.some(
             (member) => String(member.accountId) === accountId
           );
 
-          console.log(`팀 ${team.name}에 내가 속해있는지:`, isMyTeam);
 
           // 내가 속한 팀을 찾으면 해당 팀 상세 정보 반환
           if (isMyTeam) {
-            console.log(`내 팀 발견: ${team.name} (${team.id})`);
             return teamDetailResponse.data.data;
           }
         } catch (error: any) {
@@ -108,7 +99,6 @@ const MyTeamPage = () => {
       }
 
       // 내가 속한 팀을 찾지 못함
-      console.log("내가 속한 팀을 찾지 못했습니다.");
       return null;
     },
   });

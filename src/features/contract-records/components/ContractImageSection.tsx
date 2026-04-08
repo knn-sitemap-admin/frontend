@@ -136,6 +136,8 @@ export function ContractImageSection({
     }
   };
 
+  const [viewerImage, setViewerImage] = useState<string | null>(null);
+
   const handleDeleteImage = (id: string) => {
     const imageToDelete = images.find((img) => img.id === id);
     if (imageToDelete) {
@@ -191,8 +193,9 @@ export function ContractImageSection({
               {images.map((image) => (
                 <div
                   key={image.id}
-                  className="relative group aspect-square bg-gray-100 rounded-md overflow-hidden"
+                  className="relative group aspect-square bg-gray-100 rounded-md overflow-hidden cursor-pointer shadow-sm border border-gray-100 hover:border-blue-200 transition-colors"
                   onContextMenu={(e) => e.preventDefault()}
+                  onClick={() => !image.uploading && setViewerImage(image.preview)}
                 >
                   {image.uploading ? (
                     <div className="w-full h-full flex items-center justify-center bg-gray-200">
@@ -200,23 +203,17 @@ export function ContractImageSection({
                     </div>
                   ) : image.preview &&
                     (image.preview.startsWith("http://") ||
-                      image.preview.startsWith("https://")) ? (
+                      image.preview.startsWith("https://") ||
+                      image.preview.startsWith("blob:")) ? (
                     <img
                       src={image.preview}
-                      alt={image.file.name}
-                      className="w-full h-full object-cover no-save"
+                      alt={image.file?.name || "contract image"}
+                      className="w-full h-full object-cover select-none"
+                      onContextMenu={(e) => e.preventDefault()}
+                      onDragStart={(e) => e.preventDefault()}
                       onError={(e) => {
                         console.error(
                           "계약 이미지 로드 실패:",
-                          image.preview,
-                          "id:",
-                          image.id
-                        );
-                        console.error("에러 이벤트:", e);
-                      }}
-                      onLoad={() => {
-                        console.log(
-                          "계약 이미지 로드 성공:",
                           image.preview,
                           "id:",
                           image.id
@@ -228,9 +225,6 @@ export function ContractImageSection({
                       {image.preview ? (
                         <div>
                           <p>이미지 접근 불가</p>
-                          <p className="text-[10px] opacity-75 truncate">
-                            {image.preview}
-                          </p>
                         </div>
                       ) : (
                         <p>이미지 없음</p>
@@ -241,15 +235,18 @@ export function ContractImageSection({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteImage(image.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteImage(image.id);
+                      }}
                       disabled={image.uploading}
-                      className="absolute top-1 right-1 h-5 w-5 p-0 bg-red-500 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                      className="absolute top-1 right-1 h-5 w-5 p-0 bg-red-500 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 z-10"
                     >
                       <X className="h-3 w-3" />
                     </Button>
                   )}
-                  {!image.uploading && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
+                  {!image.uploading && image.file?.name && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-[10px] p-1 truncate opacity-0 group-hover:opacity-100 transition-opacity">
                       {image.file.name}
                     </div>
                   )}
@@ -259,6 +256,39 @@ export function ContractImageSection({
           )}
         </div>
       </CardContent>
+
+      {/* 이미지 뷰어 모달 */}
+      {viewerImage && (
+        <div 
+          className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-sm cursor-zoom-out p-4 md:p-10 select-none animate-in fade-in duration-200"
+          onClick={() => setViewerImage(null)}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <div 
+            className="relative max-w-full max-h-full flex items-center justify-center cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={viewerImage}
+              alt="계약서 원본"
+              className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm animate-in zoom-in-95 duration-300"
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute -top-12 sm:-top-4 sm:-right-12 text-white hover:bg-white/20 h-10 w-10"
+              onClick={() => setViewerImage(null)}
+            >
+              <X className="h-8 w-8" />
+            </Button>
+          </div>
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60 text-xs font-medium bg-black/40 px-3 py-1.5 rounded-full pointer-events-none">
+            바깥 영역을 클릭하면 닫힙니다
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogClose,
 } from "@/components/atoms/Dialog/Dialog";
 
@@ -130,6 +131,9 @@ function NoticeDetailContent({ notice }: { notice: NoticeResponse | null }) {
           <DialogTitle className="text-xl font-bold text-gray-900 leading-tight">
             {notice.title}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {notice.title} 공지사항의 상세 내용입니다.
+          </DialogDescription>
           <div className="flex items-center gap-3 pt-1">
             <span className="text-sm text-gray-600 font-medium">{notice.author?.name || "퇴사자/없음"}</span>
             <div className="w-1 h-1 bg-gray-300 rounded-full" />

@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/atoms/Dialog/Dialog";
 import { FormError } from "@/components/atoms/FormError/FormError";
@@ -93,6 +94,9 @@ export function CreateNoticeForm({ onNoticeCreated }: CreateNoticeFormProps) {
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>새 공지사항 작성</DialogTitle>
+          <DialogDescription className="sr-only">
+            모든 직원에게 표시될 새 공지사항 내용을 작성하세요.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">

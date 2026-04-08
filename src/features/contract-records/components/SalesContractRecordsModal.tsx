@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/atoms/Dialog/Dialog";
 import { Button } from "@/components/atoms/Button/Button";
 import { Separator } from "@/components/atoms/Separator/Separator";
@@ -629,6 +630,9 @@ export function SalesContractRecordsModal({
             <DialogTitle className="text-lg font-bold">
               영업 계약기록 관리
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              계약 상세 정보 확인 및 수정을 위한 모달 창입니다.
+            </DialogDescription>
             {data.contractNumber && (
               <div className="text-sm text-muted-foreground mr-8">
                 계약번호:{" "}

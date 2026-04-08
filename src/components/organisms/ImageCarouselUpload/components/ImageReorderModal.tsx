@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/atoms/Dialog/Dialog";
 
 type Props = {
@@ -91,9 +92,9 @@ export default function ImageReorderModal({
             <DialogTitle className="text-xl font-extrabold text-gray-900 tracking-tight">
               {title} 순서 조정
             </DialogTitle>
-            <p className="text-sm text-gray-500 font-medium">
+            <DialogDescription className="text-sm text-gray-500 font-medium">
               사진을 드래그하여 순서를 변경한 후 하단의 적용 버튼을 눌러주세요.
-            </p>
+            </DialogDescription>
           </div>
           <button
             onClick={onClose}
