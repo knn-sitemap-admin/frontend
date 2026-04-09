@@ -10,18 +10,25 @@ import { cn } from "@/lib/cn";
 
 interface DataTableSectionProps {
   title?: string;
+  description?: string;
   children: ReactNode;
   className?: string;
 }
 
 export function DataTableSection({
   title,
+  description,
   children,
   className,
 }: DataTableSectionProps) {
   return (
     <div className={cn("space-y-4", className)}>
-      {title && <h2 className="text-xl font-bold text-gray-900">{title}</h2>}
+      {(title || description) && (
+        <div className="space-y-1">
+          {title && <h2 className="text-xl font-bold text-gray-900">{title}</h2>}
+          {description && <p className="text-sm text-gray-500">{description}</p>}
+        </div>
+      )}
       {children}
     </div>
   );
