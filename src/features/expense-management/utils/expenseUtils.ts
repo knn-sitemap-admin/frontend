@@ -13,10 +13,10 @@ export function buildExpenseFilterQuery(
 ): ExpenseFilterQuery {
   const query: ExpenseFilterQuery = { period };
 
-  if (period === "monthly" || period === "quarter" || period === "yearly") {
+  if (period === "month" || period === "monthly" || period === "quarter" || period === "yearly") {
     query.year = parseInt(year, 10);
   }
-  if (period === "monthly" && month) {
+  if ((period === "month" || period === "monthly") && month) {
     query.month = parseInt(month, 10);
   }
   if (period === "quarter" && quarter) {
@@ -31,9 +31,14 @@ export function filterExpenseByPeriod<T extends { date: string }>(
   filterQuery: ExpenseFilterQuery
 ): T[] {
   return items.filter((item) => {
-    const d = new Date(item.date);
-    const y = d.getFullYear();
-    const m = d.getMonth() + 1;
+    if (!item.date) return false;
+    
+    // Robust parsing: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD
+    const parts = item.date.split(/[-/.]/);
+    if (parts.length < 2) return false;
+    
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10); // 1-based
     const q = Math.floor((m - 1) / 3) + 1;
 
     switch (filterQuery.period) {

@@ -220,15 +220,31 @@ export function Expense() {
           <Skeleton className="h-[102px] w-full" />
         </StatCardsGrid>
       ) : (
-        <StatCardsGrid title="지출금액" columns={2}>
+        <StatCardsGrid title="지출금액" columns={selectedPeriod === "all" ? 1 : 2}>
+          {selectedPeriod !== "all" && (
+            <StatCard
+              label={
+                selectedPeriod === "yearly"
+                  ? "전년 지출액"
+                  : selectedPeriod === "quarter"
+                  ? "전 분기 지출액"
+                  : "전월 지출액"
+              }
+              value={formatCurrency(previousMonthAmount)}
+              icon={<Calendar className="h-6 w-6" />}
+              variant="blue"
+            />
+          )}
           <StatCard
-            label="전월 지출액"
-            value={formatCurrency(previousMonthAmount)}
-            icon={<Calendar className="h-6 w-6" />}
-            variant="blue"
-          />
-          <StatCard
-            label="당월 지출액"
+            label={
+              selectedPeriod === "all"
+                ? "총 지출액"
+                : selectedPeriod === "yearly"
+                ? "해당 연도 지출액"
+                : selectedPeriod === "quarter"
+                ? "해당 분기 지출액"
+                : "당월 지출액"
+            }
             value={formatCurrency(currentMonthAmount)}
             icon={<Wallet className="h-6 w-6" />}
             variant="green"
