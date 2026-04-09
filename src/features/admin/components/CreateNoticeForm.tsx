@@ -24,11 +24,11 @@ import { createNotice } from "../api/notices";
 const createNoticeSchema = z.object({
   title: z
     .string()
-    .min(2, "제목은 최소 2글자 이상이어야 합니다")
+    .min(1, "제목은 최소 1글자 이상이어야 합니다")
     .max(200, "제목은 최대 200글자까지 가능합니다"),
   content: z
     .string()
-    .min(10, "내용은 최소 10글자 이상이어야 합니다")
+    .min(1, "내용은 최소 1글자 이상이어야 합니다")
     .max(5000, "내용은 최대 5000글자까지 가능합니다"),
 });
 

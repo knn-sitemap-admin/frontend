@@ -67,3 +67,25 @@ export interface TeamEmployeesResponse {
   employees: TeamEmployeeItem[];
 }
 
+export interface EmployeeMonthlyStat {
+  year: number;
+  month: number;
+  grossSales: number;
+  netProfit: number;
+  finalPayout: number;
+  contractCount: number;
+}
+
+export interface EmployeePerformanceResponse {
+  accountId: string;
+  name: string | null;
+  positionRank: string | null;
+  monthlyStats: EmployeeMonthlyStat[];
+}
+
+export interface BaseEmployee {
+  id: string;
+  name: string | null;
+  positionRank: string | null;
+}
+

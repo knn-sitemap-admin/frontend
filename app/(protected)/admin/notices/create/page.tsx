@@ -22,11 +22,11 @@ import { AdminAuthGuard } from "@/components/auth-guard/AdminAuthGuard";
 const createNoticeSchema = z.object({
   title: z
     .string()
-    .min(2, "제목은 최소 2글자 이상이어야 합니다")
+    .min(1, "제목은 최소 1글자 이상이어야 합니다")
     .max(200, "제목은 최대 200글자까지 가능합니다"),
   content: z
     .string()
-    .min(10, "내용은 최소 10글자 이상이어야 합니다")
+    .min(1, "내용은 최소 1글자 이상이어야 합니다")
     .max(5000, "내용은 최대 5000글자까지 가능합니다"),
 });
 
@@ -76,71 +76,71 @@ export default function CreateNoticePage() {
   return (
     <AdminAuthGuard>
       <div className="mx-auto max-w-4xl p-6 space-y-8">
-      {/* 헤더 */}
-      <div className="flex items-center gap-4">
-        <Link href="/admin/notices">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            목록으로
-          </Button>
-        </Link>
-      </div>
-
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">새 공지사항 작성</h1>
-        <p className="text-sm text-muted-foreground">
-          새로운 공지사항을 작성하고 관리자에게 공유하세요.
-        </p>
-      </div>
-
-      {/* 작성 폼 */}
-      <div className="bg-white rounded-lg border p-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">제목</Label>
-            <Input
-              id="title"
-              placeholder="공지사항 제목을 입력하세요"
-              {...register("title")}
-              disabled={isLoading}
-            />
-            <FormError message={errors.title?.message} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="content">내용</Label>
-            <Textarea
-              id="content"
-              placeholder="공지사항 내용을 입력하세요"
-              rows={12}
-              {...register("content")}
-              disabled={isLoading}
-            />
-            <FormError message={errors.content?.message} />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-6 border-t">
-            <Link href="/admin/notices">
-              <Button type="button" variant="outline" disabled={isLoading}>
-                취소
-              </Button>
-            </Link>
+        {/* 헤더 */}
+        <div className="flex items-center gap-4">
+          <Link href="/admin/notices">
             <Button
-              type="submit"
-              disabled={isLoading}
+              variant="outline"
+              size="sm"
               className="flex items-center gap-2"
             >
-              <Save className="h-4 w-4" />
-              {isLoading ? "생성 중..." : "공지사항 생성"}
+              <ArrowLeft className="h-4 w-4" />
+              목록으로
             </Button>
-          </div>
-        </form>
+          </Link>
+        </div>
+
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">새 공지사항 작성</h1>
+          <p className="text-sm text-muted-foreground">
+            새로운 공지사항을 작성하고 관리자에게 공유하세요.
+          </p>
+        </div>
+
+        {/* 작성 폼 */}
+        <div className="bg-white rounded-lg border p-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="title">제목</Label>
+              <Input
+                id="title"
+                placeholder="공지사항 제목을 입력하세요"
+                {...register("title")}
+                disabled={isLoading}
+              />
+              <FormError message={errors.title?.message} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="content">내용</Label>
+              <Textarea
+                id="content"
+                placeholder="공지사항 내용을 입력하세요"
+                rows={12}
+                {...register("content")}
+                disabled={isLoading}
+              />
+              <FormError message={errors.content?.message} />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-6 border-t">
+              <Link href="/admin/notices">
+                <Button type="button" variant="outline" disabled={isLoading}>
+                  취소
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {isLoading ? "생성 중..." : "공지사항 생성"}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
     </AdminAuthGuard>
   );
 }

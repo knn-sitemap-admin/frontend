@@ -19,16 +19,23 @@ import { TeamDetailView } from "./TeamDetailView";
 import { CHART_CONFIG } from "../utils/chartConfig";
 import { DollarSign, TrendingUp, Users, FileText } from "lucide-react";
 import { formatCurrency } from "@/components/contract-management/utils/contractUtils";
-import {
-  getPerformanceSummary,
-  getTeamEmployees,
-  buildPerformanceFilterQuery,
+import { 
+  getPerformanceSummary, 
+  getTeamEmployees, 
+  buildPerformanceFilterQuery 
 } from "../api/performance";
-import {
-  transformTeamSummaryToTeamStat,
-  transformCompanyKpiToPerformanceStats,
-  transformTeamEmployeesToPerformanceData,
+import { 
+  transformTeamSummaryToTeamStat, 
+  transformCompanyKpiToPerformanceStats, 
+  transformTeamEmployeesToPerformanceData 
 } from "../utils/transformPerformanceData";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/atoms/Tabs/Tabs";
+import { EmployeePerformanceView } from "./EmployeePerformanceView";
 
 export function Performance() {
   const [selectedPeriod, setSelectedPeriod] = useState("all");
@@ -154,7 +161,7 @@ export function Performance() {
     <DataTablePageLayout>
       <DataTablePageHeader
         title="실적 확인"
-        description="계약기록 기반 실적 분석"
+        description="분양 기록 기반 실적 및 수익 분석"
         periodLabel={
           performanceSummary?.resolvedRange.label ||
           getPeriodLabel(
@@ -184,11 +191,11 @@ export function Performance() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="text-gray-500">로딩 중...</div>
+          <div className="text-gray-500">데이터를 분석 중입니다...</div>
         </div>
       ) : (
-        <>
-          {/* 1. 회사 총 실적 */}
+        <div className="space-y-10">
+          {/* 1. 회사 총 실적 - 탭 상단 고정 */}
           <StatCardsGrid title="전체 실적 요약" columns={4}>
             <StatCard
               label="총매출"
@@ -217,62 +224,87 @@ export function Performance() {
             />
           </StatCardsGrid>
 
-          {/* 2. 팀 실적 - 그래프 */}
-          <DataTableSection title="팀 실적">
-            {teamStats.length > 0 ? (
-              <TeamAllowanceBarChart
-                teamStats={teamStats}
-                chartConfig={CHART_CONFIG}
-              />
-            ) : (
-              <div className="text-center text-gray-500 py-8">
-                표시할 팀 실적 데이터가 없습니다.
-              </div>
-            )}
-          </DataTableSection>
-
-          {/* 3. 팀별 총 금액, 건수, 순수익 카드 */}
-          {teamStats.length > 0 ? (
-            <TeamStatsCards
-              teamStats={teamStats}
-              selectedTeamDetail={selectedTeamDetail}
-              onTeamSelect={setSelectedTeamDetail}
-            />
-          ) : (
-            <div className="text-center text-gray-500 py-8">
-              표시할 팀 데이터가 없습니다.
+          <Tabs defaultValue="team" className="w-full">
+            <div className="flex items-center justify-between mb-6">
+              <TabsList className="bg-gray-100/80 p-1 rounded-xl ring-1 ring-gray-200">
+                <TabsTrigger 
+                  value="team" 
+                  className="px-8 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-bold transition-all"
+                >
+                  팀별 실적
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="employee"
+                  className="px-8 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-bold transition-all"
+                >
+                  영업자별 실적
+                </TabsTrigger>
+              </TabsList>
             </div>
-          )}
 
-          {/* 선택된 팀의 직원별 상세 정보 */}
-          {selectedTeamDetail && (
-            <div ref={teamDetailRef} className="scroll-mt-6">
-              {isLoadingTeamEmployees ? (
-                <div className="text-center text-gray-500 py-8">
-                  직원 데이터를 불러오는 중...
-                </div>
-              ) : (
-                <TeamDetailView
+            <TabsContent value="team" className="space-y-10 focus:outline-none">
+              {/* 2. 팀 실적 - 그래프 */}
+              <DataTableSection title="팀 실적 현황">
+                {teamStats.length > 0 ? (
+                  <TeamAllowanceBarChart
+                    teamStats={teamStats}
+                    chartConfig={CHART_CONFIG}
+                  />
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    표시할 팀 실적 데이터가 없습니다.
+                  </div>
+                )}
+              </DataTableSection>
+
+              {/* 3. 팀별 총 금액, 건수, 순수익 카드 */}
+              {teamStats.length > 0 ? (
+                <TeamStatsCards
+                  teamStats={teamStats}
                   selectedTeamDetail={selectedTeamDetail}
-                  selectedTeamMembers={selectedTeamMembers}
-                  selectedPeriod={selectedPeriod}
-                  selectedYear={selectedYear}
-                  selectedQuarter={selectedQuarter}
-                  selectedMonth={selectedMonth}
-                  yearOptions={yearOptions}
-                  quarterOptions={quarterOptions}
-                  monthOptions={monthOptions}
-                  chartConfig={CHART_CONFIG}
-                  onPeriodChange={setSelectedPeriod}
-                  onYearChange={setSelectedYear}
-                  onQuarterChange={setSelectedQuarter}
-                  onMonthChange={setSelectedMonth}
-                  onClose={() => setSelectedTeamDetail(null)}
+                  onTeamSelect={setSelectedTeamDetail}
                 />
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  표시할 팀 데이터가 없습니다.
+                </div>
               )}
-            </div>
-          )}
-        </>
+
+              {/* 선택된 팀의 직원별 상세 정보 */}
+              {selectedTeamDetail && (
+                <div ref={teamDetailRef} className="scroll-mt-6 animate-in slide-in-from-top-4 duration-500">
+                  {isLoadingTeamEmployees ? (
+                    <div className="text-center text-gray-500 py-8">
+                      직원 데이터를 불러오는 중...
+                    </div>
+                  ) : (
+                    <TeamDetailView
+                      selectedTeamDetail={selectedTeamDetail}
+                      selectedTeamMembers={selectedTeamMembers}
+                      selectedPeriod={selectedPeriod}
+                      selectedYear={selectedYear}
+                      selectedQuarter={selectedQuarter}
+                      selectedMonth={selectedMonth}
+                      yearOptions={yearOptions}
+                      quarterOptions={quarterOptions}
+                      monthOptions={monthOptions}
+                      chartConfig={CHART_CONFIG}
+                      onPeriodChange={setSelectedPeriod}
+                      onYearChange={setSelectedYear}
+                      onQuarterChange={setSelectedQuarter}
+                      onMonthChange={setSelectedMonth}
+                      onClose={() => setSelectedTeamDetail(null)}
+                    />
+                  )}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="employee" className="focus:outline-none">
+               <EmployeePerformanceView />
+            </TabsContent>
+          </Tabs>
+        </div>
       )}
     </DataTablePageLayout>
   );

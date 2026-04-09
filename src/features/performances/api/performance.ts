@@ -134,3 +134,38 @@ export async function getTeamEmployees(
   }
 }
 
+/**
+ * 모든 활성 직원 목록 조회
+ */
+export async function getEmployees(): Promise<any[]> {
+  try {
+    const response = await api.get<{
+      success: boolean;
+      data: any[];
+    }>("/performance/employees");
+    return response.data.data;
+  } catch (error: any) {
+    console.error("직원 목록 조회 실패:", error);
+    throw error;
+  }
+}
+
+/**
+ * 특정 직원의 월별 실적 추이 조회
+ */
+export async function getEmployeePerformance(
+  accountId: string,
+  year: number
+): Promise<any> {
+  try {
+    const response = await api.get<{
+      success: boolean;
+      data: any;
+    }>(`/performance/employees/${accountId}?year=${year}`);
+    return response.data.data;
+  } catch (error: any) {
+    console.error("영업자별 실적 추이 조회 실패:", error);
+    throw error;
+  }
+}
+
