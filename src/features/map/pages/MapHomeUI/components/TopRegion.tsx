@@ -5,6 +5,7 @@ import { cn } from "@/lib/cn";
 import SearchForm from "@/features/map/components/SearchForm/SearchForm";
 import { SalePinSearchModal } from "@/features/map/components/SalePinSearchModal/SalePinSearchModal";
 import TopRightControls from "@/features/map/components/TopRightControls";
+import { MapQuickFilter } from "@/features/map/components/MapQuickFilter";
 import type { MapMenuKey } from "@/features/map/components/menu/types/mapMenu.types";
 import { PoiKind } from "@/features/map/poi/lib/poiTypes";
 
@@ -134,6 +135,15 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
           loading={saleLoading}
           onSelect={onSelectSalePin}
         />
+
+        {/* 🚀 퀵 필터 툴바 (전체, 신축, 구옥 등) */}
+        <div className="pointer-events-auto mt-1">
+          <MapQuickFilter
+             active={activeMenu}
+             onChange={onChangeFilter}
+             className="md:max-w-fit"
+          />
+        </div>
 
         <div className="pointer-events-auto flex items-center justify-between">
           <div

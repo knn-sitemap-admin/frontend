@@ -26,6 +26,7 @@ export function ContractImageSection({
   readOnly = false,
 }: ContractImageSectionProps) {
   const [images, setImages] = useState<ImageItem[]>(initialImages ?? []);
+  const [erroredImages, setErroredImages] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -48,6 +49,7 @@ export function ContractImageSection({
     // initialImages가 undefined가 아닐 때만 업데이트 (빈 배열도 허용)
     if (initialImages !== undefined) {
       setImages(initialImages);
+      setErroredImages(new Set()); // 다른 계약 정보를 불러올 때 기존 에러 상태 초기화
     }
   }, [initialImagesKey, initialImages]);
 
@@ -210,25 +212,39 @@ export function ContractImageSection({
                     <div className="w-full h-full flex items-center justify-center bg-gray-200">
                       <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                     </div>
-                  ) : image.preview &&
-                    (image.preview.startsWith("http://") ||
-                      image.preview.startsWith("https://") ||
-                      image.preview.startsWith("blob:")) ? (
-                    <img
-                      src={image.preview}
-                      alt={image.file?.name || "contract image"}
-                      className="w-full h-full object-cover select-none"
-                      onContextMenu={(e) => e.preventDefault()}
-                      onDragStart={(e) => e.preventDefault()}
-                      onError={(e) => {
-                        console.error(
-                          "계약 이미지 로드 실패:",
-                          image.preview,
-                          "id:",
-                          image.id
-                        );
-                      }}
-                    />
+                  ) : (image.preview?.startsWith("http://") ||
+                      image.preview?.startsWith("https://") ||
+                      image.preview?.startsWith("blob:")) ? (
+                    <div className="w-full h-full relative">
+                      {erroredImages.has(image.id) ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-400 p-2 gap-1">
+                          <ImageIcon className="h-5 w-5 opacity-20" />
+                          <span className="text-[10px] text-center leading-tight">불러오기 실패</span>
+                          <a 
+                            href={image.preview} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[9px] text-blue-500 hover:underline"
+                          >
+                            원본 보기
+                          </a>
+                        </div>
+                      ) : (
+                        <img
+                          src={image.preview}
+                          alt={image.file?.name || "contract image"}
+                          className="w-full h-full object-cover select-none"
+                          referrerPolicy="no-referrer"
+                          onContextMenu={(e) => e.preventDefault()}
+                          onDragStart={(e) => e.preventDefault()}
+                          onError={() => {
+                            // 콘솔 에러 출력을 제거하여 로그 노이즈 감소
+                            setErroredImages(prev => new Set(prev).add(image.id));
+                          }}
+                        />
+                      )}
+                    </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-xs text-center p-2">
                       {image.preview ? (
@@ -282,6 +298,7 @@ export function ContractImageSection({
               alt="계약서 원본"
               className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm animate-in zoom-in-95 duration-300 transition-transform duration-200"
               style={{ transform: `rotate(${rotation}deg)` }}
+              referrerPolicy="no-referrer"
               onContextMenu={(e) => e.preventDefault()}
               onDragStart={(e) => e.preventDefault()}
             />

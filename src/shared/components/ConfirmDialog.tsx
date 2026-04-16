@@ -45,7 +45,7 @@ export function ConfirmDialog({
           <DialogTitle className="text-xl font-bold tracking-tight">
             {title}
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground leading-relaxed">
+          <DialogDescription className="text-muted-foreground leading-relaxed whitespace-pre-line">
             {description}
           </DialogDescription>
         </DialogHeader>

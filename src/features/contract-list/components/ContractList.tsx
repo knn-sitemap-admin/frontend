@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from "@/components/atoms/Select/Select"; // Corrected import path
 import { Button } from "@/components/atoms/Button/Button"; // Import Button component
-import { Plus } from "lucide-react";
+import { Plus, List, Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 interface ContractListProps {
   title: string;
@@ -63,6 +64,7 @@ export function ContractList({
   const [selectedContract, setSelectedContract] =
     useState<SalesContractData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const { toast } = useToast();
 
   // 필터나 검색어가 변경되면 1페이지로 이동
@@ -188,12 +190,13 @@ export function ContractList({
     completed: "계약완료",
     cancelled: "해약",
   };
-
   return (
     <>
       <div className="mx-auto max-w-[1600px] p-6 space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+          </div>
           <div className="flex flex-col sm:flex-row gap-2 items-center">
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="w-full sm:w-[120px]">
@@ -257,7 +260,7 @@ export function ContractList({
                   setSelectedContract(null);
                   setIsModalOpen(true);
                 }}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto ml-0 sm:ml-2"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 신규 계약
@@ -271,10 +274,10 @@ export function ContractList({
           columns={
             salaryColumnLabel
               ? contractTableColumns.map((col) =>
-                col.key === "salesPersonSalary"
-                  ? { ...col, label: salaryColumnLabel }
-                  : col,
-              )
+                  col.key === "salesPersonSalary"
+                    ? { ...col, label: salaryColumnLabel }
+                    : col
+                )
               : contractTableColumns
           }
           pagination={pagination}

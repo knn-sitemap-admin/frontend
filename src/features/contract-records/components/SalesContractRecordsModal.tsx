@@ -892,6 +892,7 @@ export function SalesContractRecordsModal({
               totalCalculation={data.totalCalculation}
               totalRebate={data.financialInfo.totalRebate}
               teamMembers={myTeamMembers || []}
+              userRole={profile?.role}
               readOnly={!isEditMode}
             />
 

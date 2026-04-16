@@ -25,7 +25,7 @@ type SidebarSectionProps = BaseProps & {
   onFocusSubItemMap?: (subItem: any) => void;
 };
 
-const NOOP = () => {};
+const NOOP = () => { };
 
 export function SidebarSection(props: SidebarSectionProps) {
   const {
@@ -149,7 +149,7 @@ export function SidebarSection(props: SidebarSectionProps) {
           aria-controls={regionId}
           aria-expanded={isExpanded}
           variant="ghost"
-          className="flex h-11 w-full items-center gap-2 px-4 text-gray-700 justify-start hover:bg-gray-50 hover:text-gray-900"
+          className="flex h-11 w-full items-center gap-2 px-2 text-gray-700 justify-start hover:bg-gray-50 hover:text-gray-900"
           onClick={toggleExpanded}
         >
           {isExpanded ? (
@@ -161,28 +161,24 @@ export function SidebarSection(props: SidebarSectionProps) {
         </Button>
       </CardHeader>
 
-      {/* 🔽 부드러운 열림/닫힘용 래퍼 (항상 렌더) */}
+      {/* 🔽 부드러운 열림/닫힘용 래퍼 (CSS Grid를 활용한 가변 높이 애니메이션) */}
       <CardContent
         id={regionId}
         role="region"
         aria-labelledby={headerId}
-        className="pt-0 pb-0"
+        className={cn(
+          "grid transition-[grid-template-rows,opacity,padding] duration-300 ease-in-out",
+          isExpanded ? "grid-rows-[1fr] opacity-100 pb-3" : "grid-rows-[0fr] opacity-0 pb-0"
+        )}
       >
-        <div
-          className={cn(
-            "overflow-hidden transition-[max-height,opacity] duration-200 ease-out",
-            isExpanded
-              ? "max-h-[600px] opacity-100 pt-2 pb-2"
-              : "max-h-0 opacity-0"
-          )}
-        >
-          <div className="space-y-1">
+        <div className="overflow-hidden">
+          <div className="space-y-1 pt-1">
             {/* 즐겨찾기(그룹) */}
             {nestedNodes}
 
             {/* 비어있을 때 */}
             {isEmpty ? (
-              <p className="py-2 text-center text-sm text-muted-foreground">
+              <p className="py-2 text-center text-sm text-muted-foreground bg-gray-50/50 rounded-lg mx-2 border border-dashed border-gray-200">
                 목록이 비어있습니다
               </p>
             ) : (

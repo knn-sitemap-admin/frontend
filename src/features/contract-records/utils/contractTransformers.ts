@@ -284,7 +284,7 @@ export function transformContractResponseToSalesContract(
           return null;
         }
         return {
-          id: `img-${index}`,
+          id: `contract-${contract.id}-img-${index}`,
           preview: accessibleUrl,
           file: new File([], `contract-image-${index}`),
         };

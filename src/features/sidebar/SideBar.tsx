@@ -11,6 +11,7 @@ import { SidebarSection } from "./components/SidebarSection";
 import { ContractRecordsButton } from "./components/ContractRecordsButton";
 import { AdminButton } from "./components/AdminButton";
 import { MyPageButton } from "./components/MyPageButton";
+import { SchedulesButton } from "./components/SchedulesButton";
 
 import { useScheduledReservations } from "../survey-reservations/hooks/useScheduledReservations";
 import { useReorderReservations } from "../survey-reservations/hooks/useReorderReservations";
@@ -19,6 +20,7 @@ import { useSignout } from "../auth/hooks/useSignout";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile } from "../users/api/account";
 import { cn } from "@/lib/cn";
+import { SalesContractRecordsModal } from "../contract-records";
 
 /** ✅ MapHomeUI에서 내려줄 지도이동 콜백들을 포함한 Sidebar props */
 type SidebarProps = ToggleSidebarProps & {
@@ -35,17 +37,21 @@ export function Sidebar({
   onFocusSubItemMap,
 }: SidebarProps) {
   // 0) 안전 기본값
-    const {
-      nestedFavorites = [],
-      favoritesLoading,
-      setNestedFavorites,
-      handleDeleteNestedFavorite,
-      handleDeleteSubFavorite,
-      handleContractRecordsClick,
-      updateFavoriteGroupTitle,
-      // 🔸 추가: 임시핀(Drafts)
-      siteReservations = [],
-    } = useSidebar();
+  const {
+    nestedFavorites = [],
+    favoritesLoading,
+    setNestedFavorites,
+    handleDeleteNestedFavorite,
+    handleDeleteSubFavorite,
+    handleContractRecordsClick,
+    updateFavoriteGroupTitle,
+    // 🔸 추가: 임시핀(Drafts)
+    siteReservations = [],
+    isContractModalOpen,
+    setIsContractModalOpen,
+    selectedContract,
+    setSelectedContract,
+  } = useSidebar();
 
   // 1) 훅 호출(조건문 밖)
   const { items, setItems, refetch } = useScheduledReservations();
@@ -74,7 +80,7 @@ export function Sidebar({
   // 2) 파생 리스트 구성 (임시핀 + 확정 예약)
   const listItems: ListItem[] = useMemo(() => {
     const isAdmin = profile?.role === "admin" || profile?.role === "manager";
-    
+
     // 2-a) 확정 예약 필터링 & 매핑
     const filteredScheduled = (items ?? []).filter((r) => {
       if (isAdmin) return true; // 관리자는 전체
@@ -152,11 +158,11 @@ export function Sidebar({
   if (!isSidebarOn) return null;
 
   const rootClass = cn(
-    "fixed z-[80] bg-white shadow-xl border border-gray-300 overflow-hidden",
+    "fixed z-[80] bg-white/60 backdrop-blur-xl shadow-2xl border border-white/60 overflow-hidden",
     // 📱 모바일: 바텀시트
-    "max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:rounded-t-2xl max-md:rounded-b-none max-md:border-x-0 max-md:border-t",
+    "max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:rounded-t-[32px] max-md:rounded-b-none max-md:border-x-0 max-md:border-t-white/40",
     // 🖥 데스크탑: 기존 위치 유지
-    "md:top-16 md:right-4 md:bottom-auto md:left-auto md:w-80 md:rounded-lg"
+    "md:top-16 md:right-4 md:bottom-auto md:left-auto md:w-80 md:rounded-[32px]"
   );
 
   return (
@@ -175,66 +181,92 @@ export function Sidebar({
 
       {/* 📱 드래그 핸들 (모바일 전용) */}
       <div
-        className="max-md:block hidden pt-2 pb-1"
+        className="max-md:block hidden pt-3 pb-1"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="mx-auto h-1 w-12 rounded-full bg-gray-300" />
+        <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-300/50" />
       </div>
 
       {/* 내용 스크롤 영역 */}
-      <div className="flex flex-col gap-2 p-1 max-h-[80vh] max-md:max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-track-white scrollbar-thumb-black hover:scrollbar-thumb-gray-800 scrollbar-no-arrows">
-        {/* ✅ 답사지 예약 섹션 */}
-        <SidebarSection
-          title="답사지 예약"
-          items={listItems}
-          onItemsChange={handleListItemsChange}
-          onDeleteItem={(id) => onCancel(id)}
-          onReorderIds={onReorder}
-          expanded={openSection === "exploration"}
-          onToggleExpanded={toggleExploration}
-          // ✅ 리스트 아이템 클릭 시 지도 이동 콜백 전달 (ExplorationItem에서 사용)
-          onFocusItemMap={onFocusItemMap}
-        />
+      <div className="flex flex-col h-full max-h-[85vh] md:max-h-[80vh]">
+        <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 scrollbar-no-arrows">
+          {/* ✅ 답사지 예약 섹션 */}
+          <SidebarSection
+            title="답사지 예약"
+            items={listItems}
+            onItemsChange={handleListItemsChange}
+            onDeleteItem={(id) => onCancel(id)}
+            onReorderIds={onReorder}
+            expanded={openSection === "exploration"}
+            onToggleExpanded={toggleExploration}
+            onFocusItemMap={onFocusItemMap}
+          />
 
-        {/* 즐겨찾기 */}
-        <SidebarSection
-          title={favoritesLoading ? "즐겨찾기 (로딩 중...)" : "즐겨찾기"}
-          items={[]} // 평면 리스트 없음
-          nestedItems={favoritesLoading ? [] : nestedFavorites}
-          onItemsChange={() => {}}
-          onDeleteItem={() => {}}
-          onNestedItemsChange={setNestedFavorites}
-          onDeleteNestedItem={handleDeleteNestedFavorite}
-          onDeleteSubItem={handleDeleteSubFavorite}
-          onUpdateGroupTitle={updateFavoriteGroupTitle}
-          expanded={openSection === "favorites"}
-          onToggleExpanded={toggleFavorites}
-          // ✅ 즐겨찾기 하위 매물(SubListItem) 클릭 시 지도 이동 콜백 전달
-          onFocusSubItemMap={onFocusSubItemMap}
-        />
+          {/* 즐겨찾기 */}
+          <SidebarSection
+            title={favoritesLoading ? "즐겨찾기 (로딩 중...)" : "즐겨찾기"}
+            items={[]}
+            nestedItems={favoritesLoading ? [] : nestedFavorites}
+            onItemsChange={() => { }}
+            onDeleteItem={() => { }}
+            onNestedItemsChange={setNestedFavorites}
+            onDeleteNestedItem={handleDeleteNestedFavorite}
+            onDeleteSubItem={handleDeleteSubFavorite}
+            onUpdateGroupTitle={updateFavoriteGroupTitle}
+            expanded={openSection === "favorites"}
+            onToggleExpanded={toggleFavorites}
+            onFocusSubItemMap={onFocusSubItemMap}
+          />
 
-        <ContractRecordsButton onClick={handleContractRecordsClick} />
-        <MyPageButton />
-        {profile?.role === "admin" && <AdminButton />}
+          <div className="space-y-2 mt-2 pb-2">
+            <ContractRecordsButton onClick={handleContractRecordsClick} />
+            <SchedulesButton />
+            <MyPageButton />
+            {profile?.role === "admin" && <AdminButton />}
+          </div>
+        </div>
 
-        <div className="flex justify-between items-center p-2 border-t border-gray-200">
-          <span className="text-base font-medium text-gray-700">
-            {profile?.account?.name || "사용자 계정"}
-          </span>
+        {/* 👤 사용자 섹션 (하단 고정 및 컴팩트 레이아웃) */}
+        <div className="px-4 py-3 bg-white/50 backdrop-blur-md border-t border-white/60 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 font-bold text-xs shadow-inner border border-emerald-500/20">
+              {profile?.account?.name?.[0] || "U"}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-gray-800 leading-none">
+                {profile?.account?.name || "사용자"}
+              </span>
+              <span className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-tighter font-semibold">
+                {profile?.role || "USER"}
+              </span>
+            </div>
+          </div>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => doSignout()}
             disabled={isSigningOut}
-            className="p-0"
+            className="w-8 h-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all active:scale-95"
             title="로그아웃"
           >
             <LogOut size={16} />
           </Button>
         </div>
       </div>
+
+      <SalesContractRecordsModal
+        isOpen={isContractModalOpen}
+        onClose={() => {
+          setIsContractModalOpen(false);
+          setSelectedContract(null);
+        }}
+        data={selectedContract ?? undefined}
+        onDataChange={() => {
+          refetch(); // 계약 저장 후 답사지 예약 목록 새로고침
+        }}
+      />
     </div>
   );
 }

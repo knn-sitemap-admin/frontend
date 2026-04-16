@@ -111,6 +111,21 @@ const useKakaoMap = ({
           });
           mapRef.current = map;
 
+          // 터치 및 드래그 관련 명시적 활성화 (태블릿/모바일 최적화)
+          map.setDraggable(true);
+          map.setZoomable(true);
+          if (map.setScrollWheel) map.setScrollWheel(true);
+          
+          // 태블릿 상하 스크롤 간섭 방지 및 부드러운 핸들링을 위한 스타일 보정
+          if (containerRef.current) {
+            const style = containerRef.current.style;
+            style.touchAction = "auto";
+            style.userSelect = "none";
+            // 구형 WebKit 브라우저 대응 (TS 에러 방지를 위해 any 캐스팅)
+            (style as any).webkitUserSelect = "none";
+            (style as any).webkitTouchCallout = "none";
+          }
+
           if (typeof window !== "undefined") {
             (window as any).kakaoMapInstance = map;
           }
@@ -367,13 +382,17 @@ const useKakaoMap = ({
         maxLng = KOREA_BOUNDS.ne.lng;
       }
 
-      if (lat < minLat - 0.0001) { lat = minLat; isChanged = true; }
-      else if (lat > maxLat + 0.0001) { lat = maxLat; isChanged = true; }
+      // 임계값을 약간 높여(약 50~100m) 미세한 떨림이나 부득이한 바운스 방지
+      const threshold = 0.0005;
 
-      if (lng < minLng - 0.0001) { lng = minLng; isChanged = true; }
-      else if (lng > maxLng + 0.0001) { lng = maxLng; isChanged = true; }
+      if (lat < minLat - threshold) { lat = minLat; isChanged = true; }
+      else if (lat > maxLat + threshold) { lat = maxLat; isChanged = true; }
+
+      if (lng < minLng - threshold) { lng = minLng; isChanged = true; }
+      else if (lng > maxLng + threshold) { lng = maxLng; isChanged = true; }
 
       if (isChanged) {
+        // 급격한 화면 튕김을 막기 위해 0.01도(약 1km) 이상 벗어난 경우에만 강제 보정
         map.setCenter(new kakao.maps.LatLng(lat, lng));
       }
     };

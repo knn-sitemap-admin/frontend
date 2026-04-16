@@ -15,6 +15,7 @@ import type { MapViewProps } from "./mapView.types";
 import { PoiKind } from "../../engine/overlays/poiOverlays";
 import usePoiLayer from "../../poi/hooks/usePoiLayer";
 import { PoiLayerToggle } from "../../poi/components/PoiLayerToggle";
+import { MapZoomSlider } from "./MapZoomSlider";
 import { PIN_MENU_MAX_LEVEL } from "../../shared/constants/mapLevels";
 
 type Props = MapViewProps;
@@ -85,13 +86,29 @@ const MapView = React.memo(React.forwardRef<MapViewHandle, Props>(function MapVi
     [searchPlace, panTo]
   );
 
-  // 현재 지도 레벨 추적 (지역 클러스터링 용도)
-  const currentZoomLevel = map?.getLevel?.() ?? level;
+  // 현재 지도 레벨 추적 (상태로 관리하여 UI 동기화)
+  const [zoomLevel, setZoomLevel] = React.useState(level);
+
+  useEffect(() => {
+    if (!kakao || !map) return;
+    
+    // 초기 레벨 설정
+    setZoomLevel(map.getLevel());
+
+    const zoomHandler = () => {
+      setZoomLevel(map.getLevel());
+    };
+
+    kakao.maps.event.addListener(map, "zoom_changed", zoomHandler);
+    return () => {
+      kakao.maps.event.removeListener(map, "zoom_changed", zoomHandler);
+    };
+  }, [kakao, map]);
 
   // 지역별 클러스터링 계산 (V3 계층형: 레벨 9 이상 활성화)
   const { isRegionClusteringActive, regionClusters } = useRegionClusters({
     markers,
-    zoomLevel: currentZoomLevel,
+    zoomLevel,
     triggerLevel: 9,
   });
 
@@ -245,6 +262,14 @@ const MapView = React.memo(React.forwardRef<MapViewHandle, Props>(function MapVi
         onMouseDownCapture={(e) => {
           lastClickPointRef.current = { x: e.clientX, y: e.clientY };
         }}
+        onTouchStartCapture={(e) => {
+          if (e.touches[0]) {
+            lastClickPointRef.current = {
+              x: e.touches[0].clientX,
+              y: e.touches[0].clientY,
+            };
+          }
+        }}
       />
       {isRegionClusteringActive && (
         <React.Suspense fallback={null}>
@@ -256,6 +281,20 @@ const MapView = React.memo(React.forwardRef<MapViewHandle, Props>(function MapVi
           />
         </React.Suspense>
       )}
+      {/* 줌 컨트롤 슬라이더 (우측 하단 - 모바일 제외) */}
+      <div className="hidden sm:flex absolute bottom-6 right-6 z-[1000] animate-in slide-in-from-right-4 fade-in duration-500">
+        <MapZoomSlider
+          currentLevel={zoomLevel}
+          minLevel={1}
+          maxLevel={12}
+          onLevelChange={(lv) => {
+            if (map) {
+              map.setLevel(lv, { animate: true });
+              setZoomLevel(lv);
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }));

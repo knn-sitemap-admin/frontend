@@ -89,6 +89,8 @@ export function useSidebarState() {
     [],
   );
   const [favoritesLoading, setFavoritesLoading] = useState(true);
+  const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
   const favoriteIndexRef = useRef<
     Record<string, { groupId: string; itemId: string }>
   >({});
@@ -622,7 +624,8 @@ export function useSidebarState() {
   );
 
   const handleContractRecordsClick = () => {
-    console.log("영업자 계약기록 버튼 클릭됨");
+    setSelectedContract(null);
+    setIsContractModalOpen(true);
   };
 
   return {
@@ -676,6 +679,10 @@ export function useSidebarState() {
 
     // misc
     handleContractRecordsClick,
+    isContractModalOpen,
+    setIsContractModalOpen,
+    selectedContract,
+    setSelectedContract,
   };
 }
 

@@ -32,6 +32,7 @@ interface StaffAllocationSectionProps {
     positionRank?: string | null;
     teamRole?: string | null;
   }>;
+  userRole?: "admin" | "manager" | "staff";
   readOnly?: boolean;
 }
 
@@ -41,6 +42,7 @@ export function StaffAllocationSection({
   totalCalculation,
   totalRebate,
   teamMembers = [],
+  userRole,
   readOnly = false,
 }: StaffAllocationSectionProps) {
   // 총 퍼센티지 계산
@@ -153,6 +155,20 @@ export function StaffAllocationSection({
     }
 
     return availableOptions.sort((a, b) => a - b);
+  };
+
+  // 담당자별 선택 가능한 사원 목록 필터링
+  const getFilteredEmployees = (staffId: string) => {
+    const employeeIndex = staffAllocations
+      .filter((s) => s.type === "employee")
+      .findIndex((s) => s.id === staffId);
+
+    // 담당자 2(index 1)이고, 일반사원(staff)으로 로그인한 경우 해당 팀의 팀장만 선택 가능
+    if (employeeIndex === 1 && userRole?.toLowerCase() === "staff") {
+      return teamMembers.filter((m) => m.teamRole === "manager");
+    }
+
+    return teamMembers;
   };
 
   // 총합계 수당과 최종수당 자동 계산 (총합계는 원래 총합계, 최종수당은 총합계에서 비율로 계산)
@@ -272,21 +288,23 @@ export function StaffAllocationSection({
                       onValueChange={(value) =>
                         handleEmployeeSelect(staff.id, value)
                       }
-                      // 첫 번째 담당자(주 담당자)는 사원 변경 불가능
+                      // 일반사원(staff)인 경우 첫 번째 담당자(본인)는 변경 불가능
                       disabled={
                         readOnly ||
-                        staffAllocations
-                          .filter((s) => s.type === "employee")
-                          .findIndex((s) => s.id === staff.id) === 0
+                        (userRole?.toLowerCase() === "staff" &&
+                          staffAllocations
+                            .filter((s) => s.type === "employee")
+                            .findIndex((s) => s.id === staff.id) === 0)
                       }
                     >
                       <SelectTrigger
                         className="h-5 text-xs border-gray-300"
                         disabled={
                           readOnly ||
-                          staffAllocations
-                            .filter((s) => s.type === "employee")
-                            .findIndex((s) => s.id === staff.id) === 0
+                          (userRole?.toLowerCase() === "staff" &&
+                            staffAllocations
+                              .filter((s) => s.type === "employee")
+                              .findIndex((s) => s.id === staff.id) === 0)
                         }
                       >
                         <SelectValue placeholder="사원 선택">
@@ -297,7 +315,7 @@ export function StaffAllocationSection({
                         data-contract-records-portal="true"
                         className="!z-[2200]"
                       >
-                        {teamMembers.map((employee) => (
+                        {getFilteredEmployees(staff.id).map((employee) => (
                           <SelectItem
                             key={employee.accountId}
                             value={employee.accountId}
