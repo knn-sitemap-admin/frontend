@@ -57,6 +57,20 @@ export default function ScheduleCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAgendaOpen, setIsAgendaOpen] = useState(false);
   const [filterMode, setFilterMode] = useState<"all" | "mine">("all");
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientY;
+    if (touchEnd - touchStart > 80) { // 80px 이상 아래로 내리면 닫기
+      setIsAgendaOpen(false);
+    }
+    setTouchStart(null);
+  };
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -457,18 +471,28 @@ export default function ScheduleCalendar() {
               : "h-screen w-[400px] sm:max-w-md bg-white/95 backdrop-blur-xl border-l border-gray-100"
           )}
         >
-          {/* 드래그 핸들 (모바일 전용) */}
+          {/* 드래그 핸들 (모바일 전용) - 터치 이벤트 연결 */}
           {sheetSide === "bottom" && (
-            <div className="w-full flex justify-center py-2 shrink-0 bg-white">
-              <div className="w-10 h-1 bg-gray-200 rounded-full" />
+            <div 
+              className="w-full flex justify-center py-4 shrink-0 bg-white cursor-row-resize touch-none"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
             </div>
           )}
 
           <div className="flex-1 flex flex-col overflow-hidden">
-            <SheetHeader className={cn(
-              "px-5 py-3 flex flex-row items-center justify-between text-left space-y-0 border-b bg-white/50 backdrop-blur-sm",
-              sheetSide === "right" && "pt-6"
-            )}>
+            <SheetHeader 
+              className={cn(
+                "px-5 py-3 flex flex-row items-center justify-between text-left space-y-0 border-b bg-white/50 backdrop-blur-sm",
+                sheetSide === "right" && "pt-6",
+                sheetSide === "bottom" && "touch-none" // 모바일 헤더 영역에서 드래그 시 닫기 위해
+              )}
+              onTouchStart={sheetSide === "bottom" ? handleTouchStart : undefined}
+              onTouchEnd={sheetSide === "bottom" ? handleTouchEnd : undefined}
+            >
+
               <div className="flex flex-col">
                 <SheetTitle className="text-xl font-black text-gray-900 leading-tight">
                   {format(selectedDate, "M월 d일 E요일", { locale: ko })}
