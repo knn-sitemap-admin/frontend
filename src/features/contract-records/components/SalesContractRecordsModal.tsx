@@ -622,7 +622,7 @@ export function SalesContractRecordsModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         data-contract-records-modal-root
-        className="w-[100vw] max-w-[1240px] h-[95vh] max-h-[900px] p-0 flex flex-col"
+        className="w-[98vw] sm:w-full sm:max-w-[1240px] h-[98dvh] sm:h-[90vh] sm:max-h-[900px] p-0 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border-none shadow-2xl"
       >
         {/* 고정 헤더 */}
         <DialogHeader className="pb-1 flex-shrink-0 p-4 border-b">
@@ -645,7 +645,7 @@ export function SalesContractRecordsModal({
         </DialogHeader>
 
         {/* 스크롤 가능한 콘텐츠 영역 */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 premium-scrollbar">
           <div className="flex flex-col gap-2">
             {/* 계약일자, 잔금일자, 계약 상태 */}
             <Card className="flex-shrink-0">

@@ -120,40 +120,28 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
       setIsDragging(true);
     }, []);
 
+    const dragYRef = React.useRef(0);
+
     const handleDragMove = React.useCallback((e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent) => {
-      // isDragging 상태를 ref나 functional update 등으로 체크할 수도 있으나, 
-      // 여기서는 useEffect 가 latest handler를 참조하도록 하거나 state를 dependency에 넣음
-      // 여기서는 간단하게 state dependency 포함 useCallback 사용
       if (startYRef.current == null) return;
       if ('stopPropagation' in e) e.stopPropagation();
       const y = getClientY(e);
       const delta = y - startYRef.current;
-      if (delta > 0) {
-        setDragY(delta); // 아래로만
-      } else {
-        setDragY(0);
-      }
+      const finalY = delta > 0 ? delta : 0;
+      setDragY(finalY);
+      dragYRef.current = finalY;
     }, []);
 
     const handleDragEnd = React.useCallback(() => {
       startYRef.current = null;
-      setIsDragging((prevDragging) => {
-        if (!prevDragging) return false;
-        
-        // dragY가 threshold(80)를 넘었는지 체크하기 위해 
-        // functional update 대신 클로저의 dragY를 쓰면 stale할 수 있으므로
-        // 여기서는 ref로 관리하거나 그냥 클로저를 따름 (useEffect에서 갱신됨)
-        return false;
-      });
+      setIsDragging(false);
 
-      // dragY 체크 및 처리 (이 부분은 state version 보다는 ref version 이나 
-      // useEffect cleanup + re-bind 가 안전함)
-      setDragY((currY) => {
-        if (currY > 80) {
-          handleClose();
-        }
-        return 0;
-      });
+      if (dragYRef.current > 80) {
+        handleClose();
+      }
+      
+      setDragY(0);
+      dragYRef.current = 0;
     }, [handleClose]);
 
     // ✅ 모바일에서 preventDefault()를 쓰기 위해 non-passive 리스너 수동 등록

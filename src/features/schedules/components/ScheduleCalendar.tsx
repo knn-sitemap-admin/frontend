@@ -57,19 +57,34 @@ export default function ScheduleCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAgendaOpen, setIsAgendaOpen] = useState(false);
   const [filterMode, setFilterMode] = useState<"all" | "mine">("all");
-  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragYRef = React.useRef(0);
+  const startYRef = React.useRef<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientY);
+    startYRef.current = e.targetTouches[0].clientY;
+    setIsDragging(true);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStart === null) return;
-    const touchEnd = e.changedTouches[0].clientY;
-    if (touchEnd - touchStart > 80) { // 80px 이상 아래로 내리면 닫기
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startYRef.current === null) return;
+    const currentY = e.targetTouches[0].clientY;
+    const delta = currentY - startYRef.current;
+    if (delta > 0) {
+      setDragY(delta);
+      dragYRef.current = delta;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    startYRef.current = null;
+    setIsDragging(false);
+    if (dragYRef.current > 100) {
       setIsAgendaOpen(false);
     }
-    setTouchStart(null);
+    setDragY(0);
+    dragYRef.current = 0;
   };
 
   const { data: profile } = useQuery({
@@ -470,12 +485,17 @@ export default function ScheduleCalendar() {
               ? "h-[100dvh] rounded-t-[24px]"
               : "h-screen w-[400px] sm:max-w-md bg-white/95 backdrop-blur-xl border-l border-gray-100"
           )}
+          style={{
+            transform: sheetSide === "bottom" && dragY > 0 ? `translateY(${dragY}px)` : undefined,
+            transition: isDragging ? "none" : "transform 0.2s cubic-bezier(0, 0, 0.2, 1)",
+          }}
         >
           {/* 드래그 핸들 (모바일 전용) - 터치 이벤트 연결 */}
           {sheetSide === "bottom" && (
             <div 
               className="w-full flex justify-center py-4 shrink-0 bg-white cursor-row-resize touch-none"
               onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
               <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
@@ -490,6 +510,7 @@ export default function ScheduleCalendar() {
                 sheetSide === "bottom" && "touch-none" // 모바일 헤더 영역에서 드래그 시 닫기 위해
               )}
               onTouchStart={sheetSide === "bottom" ? handleTouchStart : undefined}
+              onTouchMove={sheetSide === "bottom" ? handleTouchMove : undefined}
               onTouchEnd={sheetSide === "bottom" ? handleTouchEnd : undefined}
             >
 

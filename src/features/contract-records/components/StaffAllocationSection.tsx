@@ -271,7 +271,7 @@ export function StaffAllocationSection({
                 <div className="space-y-1">
                   <Label
                     htmlFor={`staff-name-${staff.id}`}
-                    className="text-xs text-gray-600"
+                    className="text-xs text-gray-600 font-bold"
                   >
                     담당자
                   </Label>
@@ -280,7 +280,7 @@ export function StaffAllocationSection({
                       id={`staff-name-${staff.id}`}
                       value="회사"
                       readOnly
-                      className="h-5 text-xs w-full bg-green-100 border-green-200"
+                      className="h-9 text-sm w-full bg-green-100/50 border-green-200 font-bold"
                     />
                   ) : (
                     <Select
@@ -298,7 +298,7 @@ export function StaffAllocationSection({
                       }
                     >
                       <SelectTrigger
-                        className="h-5 text-xs border-gray-300"
+                        className="h-9 text-sm border-gray-300 font-medium"
                         disabled={
                           readOnly ||
                           (userRole?.toLowerCase() === "staff" &&
@@ -327,11 +327,11 @@ export function StaffAllocationSection({
                     </Select>
                   )}
                 </div>
-
+ 
                 <div className="space-y-1">
                   <Label
                     htmlFor={`staff-percentage-${staff.id}`}
-                    className="text-xs text-gray-600"
+                    className="text-xs text-gray-600 font-bold"
                   >
                     비율체크
                   </Label>
@@ -350,12 +350,12 @@ export function StaffAllocationSection({
                                 e.target.value
                               )
                             }
-                            className="h-5 text-xs pr-4 border-blue-300 focus:border-blue-500"
+                            className="h-9 text-sm pr-6 border-blue-300 focus:border-blue-500 font-bold"
                             placeholder="0"
                             readOnly={readOnly}
                             disabled={readOnly}
                           />
-                          <span className="absolute right-1 top-1/2 transform -translate-y-1/2 text-xs text-blue-600">
+                          <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 font-bold">
                             %
                           </span>
                         </div>
@@ -368,7 +368,7 @@ export function StaffAllocationSection({
                           disabled={readOnly}
                         >
                           <SelectTrigger
-                            className="h-5 text-xs border-gray-300"
+                            className="h-9 text-sm border-gray-300 font-bold"
                             disabled={readOnly}
                           >
                             <SelectValue placeholder="%" />
@@ -396,14 +396,14 @@ export function StaffAllocationSection({
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleDirectInput(staff.id)}
-                      className="h-5 px-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                      className="h-9 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-bold"
                       disabled={readOnly}
                     >
                       {staff.isDirectInput ? "선택" : "직접"}
                     </Button>
                   </div>
                 </div>
-
+ 
                 <div className="space-y-1">
                   <Label
                     htmlFor={`rebate-allowance-${staff.id}`}
@@ -415,10 +415,10 @@ export function StaffAllocationSection({
                     id={`rebate-allowance-${staff.id}`}
                     value={formatCurrency(staff.rebateAllowance)}
                     readOnly
-                    className="bg-yellow-50 border-yellow-200 text-xs h-5"
+                    className="bg-yellow-50 border-yellow-200 text-sm h-9 font-bold text-yellow-800"
                   />
                 </div>
-
+ 
                 <div className="space-y-1">
                   <Label
                     htmlFor={`final-allowance-${staff.id}`}
@@ -434,7 +434,7 @@ export function StaffAllocationSection({
                     id={`final-allowance-${staff.id}`}
                     value={formatCurrency(staff.finalAllowance)}
                     readOnly
-                    className="bg-purple-50 border-purple-200 text-xs h-5"
+                    className="bg-purple-50 border-purple-200 text-sm h-9 font-bold text-purple-800"
                   />
                 </div>
               </div>

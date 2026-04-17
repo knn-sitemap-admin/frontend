@@ -27,12 +27,12 @@ export function ContractSiteSection({
       <CardHeader className="pb-1 pt-2 px-3">
         <CardTitle className="text-sm">계약현장</CardTitle>
       </CardHeader>
-      <CardContent className="p-3 pt-1">
-        <div className="grid grid-cols-4 gap-3">
-          <div className="col-span-2 space-y-1">
+      <CardContent className="p-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div className="sm:col-span-2 space-y-1">
             <Label
               htmlFor="contract-site-address"
-              className="text-xs text-muted-foreground"
+              className="text-xs text-muted-foreground font-bold"
             >
               주소
             </Label>
@@ -45,7 +45,7 @@ export function ContractSiteSection({
                   address: e.target.value,
                 })
               }
-              className="h-7 text-xs"
+              className="h-10 text-sm font-medium"
               placeholder="주소 입력"
               readOnly={readOnly}
               disabled={readOnly}
@@ -54,7 +54,7 @@ export function ContractSiteSection({
           <div className="space-y-1">
             <Label
               htmlFor="contract-site-name"
-              className="text-xs text-muted-foreground"
+              className="text-xs text-muted-foreground font-bold"
             >
               현장명
             </Label>
@@ -67,7 +67,7 @@ export function ContractSiteSection({
                   siteName: e.target.value,
                 })
               }
-              className="h-7 text-xs"
+              className="h-10 text-sm font-medium"
               placeholder="현장명 입력"
               readOnly={readOnly}
               disabled={readOnly}
@@ -76,7 +76,7 @@ export function ContractSiteSection({
           <div className="space-y-1">
             <Label
               htmlFor="contract-site-team-contact"
-              className="text-xs text-muted-foreground"
+              className="text-xs text-muted-foreground font-bold"
             >
               분양팀 연락처
             </Label>
@@ -89,7 +89,7 @@ export function ContractSiteSection({
                   teamContact: formatPhone(e.target.value),
                 })
               }
-              className="h-7 text-xs"
+              className="h-10 text-sm font-medium"
               placeholder="010-1234-5678"
               readOnly={readOnly}
               disabled={readOnly}

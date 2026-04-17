@@ -27,18 +27,18 @@ export function PersonalInfoSection({
   readOnly = false,
 }: PersonalInfoSectionProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {/* 고객 정보 카드 */}
       <Card className="flex-shrink-0 md:col-span-2">
         <CardHeader className="pb-1 pt-2 px-3">
           <CardTitle className="text-sm">고객정보</CardTitle>
         </CardHeader>
-        <CardContent className="p-3 pt-1">
-          <div className="grid grid-cols-3 gap-3">
+        <CardContent className="p-4 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
               <Label
                 htmlFor="customer-name"
-                className="text-xs text-muted-foreground"
+                className="text-xs text-muted-foreground font-bold"
               >
                 성함
               </Label>
@@ -51,16 +51,16 @@ export function PersonalInfoSection({
                     name: e.target.value,
                   })
                 }
-                className="h-7 text-xs"
+                className="h-10 text-sm font-medium"
                 placeholder="고객명 입력"
                 readOnly={readOnly}
                 disabled={readOnly}
               />
             </div>
-            <div className="col-span-2 space-y-1">
+            <div className="sm:col-span-2 space-y-1">
               <Label
                 htmlFor="customer-contact"
-                className="text-xs text-muted-foreground"
+                className="text-xs text-muted-foreground font-bold"
               >
                 연락처
               </Label>
@@ -73,7 +73,7 @@ export function PersonalInfoSection({
                     contact: formatPhone(e.target.value),
                   })
                 }
-                className="h-7 text-xs"
+                className="h-10 text-sm font-medium"
                 placeholder="010-1234-5678"
                 readOnly={readOnly}
                 disabled={readOnly}
@@ -83,17 +83,17 @@ export function PersonalInfoSection({
           </div>
         </CardContent>
       </Card>
-
+ 
       {/* 담당자 카드 */}
       <Card className="flex-shrink-0">
         <CardHeader className="pb-1 pt-2 px-3">
           <CardTitle className="text-sm">담당자</CardTitle>
         </CardHeader>
-        <CardContent className="p-3 pt-1">
+        <CardContent className="p-4 pt-2">
           <div className="space-y-1">
             <Label
               htmlFor="sales-person-name"
-              className="text-xs text-muted-foreground"
+              className="text-xs text-muted-foreground font-bold"
             >
               이름
             </Label>
@@ -101,7 +101,7 @@ export function PersonalInfoSection({
               id="sales-person-name"
               value={salesPerson.name}
               readOnly
-              className="h-7 text-xs bg-muted"
+              className="h-10 text-sm bg-muted font-bold"
             />
           </div>
         </CardContent>

@@ -79,10 +79,10 @@ export function FinancialInfoSection({
       <CardHeader className="pb-1 pt-2 px-3">
         <CardTitle className="text-sm">금액 정보</CardTitle>
       </CardHeader>
-      <CardContent className="p-3 pt-1">
-        <div className="flex items-end gap-4 flex-wrap overflow-x-auto">
+      <CardContent className="p-4 pt-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:items-end gap-3 sm:gap-4">
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">중개보수금</Label>
+            <Label className="text-xs text-muted-foreground font-bold">중개보수금</Label>
             <div className="flex items-center gap-1">
               <Input
                 type="text"
@@ -96,17 +96,17 @@ export function FinancialInfoSection({
                 onChange={(e) =>
                   handleFormattedInputChange("brokerageFee", e.target.value)
                 }
-                className="h-7 text-xs min-w-24 w-auto"
+                className="h-10 text-sm w-full lg:w-32"
                 placeholder="0"
                 readOnly={readOnly}
                 disabled={readOnly}
               />
-              <span className="text-xs text-muted-foreground">원</span>
+              <span className="text-[11px] font-bold text-gray-400 shrink-0">원</span>
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">부가세</Label>
+            <Label className="text-xs text-muted-foreground font-bold">부가세</Label>
             <Select
               value={financialInfo.vatStatus || "vat-included"}
               onValueChange={(value) =>
@@ -118,7 +118,7 @@ export function FinancialInfoSection({
               disabled={readOnly}
             >
               <SelectTrigger
-                className="h-7 text-xs min-w-24 w-auto"
+                className="h-10 text-sm w-full lg:w-32"
                 disabled={readOnly}
               >
                 <SelectValue />
@@ -138,7 +138,7 @@ export function FinancialInfoSection({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">
+            <Label className="text-xs text-muted-foreground font-bold">
               중개보수금합계
             </Label>
             <div className="flex items-center gap-1">
@@ -157,17 +157,17 @@ export function FinancialInfoSection({
                     e.target.value
                   )
                 }
-                className="h-7 text-xs min-w-24 w-auto"
+                className="h-10 text-sm w-full lg:w-32"
                 placeholder="0"
                 readOnly={readOnly}
                 disabled={readOnly}
               />
-              <span className="text-xs text-muted-foreground">원</span>
+              <span className="text-[11px] font-bold text-gray-400 shrink-0">원</span>
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">
+            <Label className="text-xs text-muted-foreground font-bold">
               총리베이트(R)
             </Label>
             <div className="flex items-center gap-1">
@@ -180,24 +180,24 @@ export function FinancialInfoSection({
                     : financialInfo.totalRebate / 1000000
                 }
                 onChange={(e) => handleRebateInputChange(e.target.value)}
-                className="h-7 text-xs min-w-24 w-auto"
+                className="h-10 text-sm w-full lg:w-28"
                 placeholder="0"
                 readOnly={readOnly}
                 disabled={readOnly}
               />
-              <span className="text-xs text-muted-foreground">R</span>
+              <span className="text-[11px] font-bold text-gray-400 shrink-0">R</span>
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">과세 여부</Label>
+            <Label className="text-xs text-muted-foreground font-bold">과세 여부</Label>
             <Select
               value={financialInfo.taxStatus}
               onValueChange={handleTaxStatusChange}
               disabled={readOnly}
             >
               <SelectTrigger
-                className="h-7 text-xs min-w-20 w-auto"
+                className="h-10 text-sm w-full lg:w-28"
                 disabled={readOnly}
               >
                 <SelectValue />
@@ -217,7 +217,7 @@ export function FinancialInfoSection({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">지원금액</Label>
+            <Label className="text-xs text-muted-foreground font-bold">지원금액</Label>
             <div className="flex items-center gap-1">
               <Input
                 type="text"
@@ -234,17 +234,17 @@ export function FinancialInfoSection({
                     e.target.value
                   )
                 }
-                className="h-7 text-xs min-w-24 w-auto"
+                className="h-10 text-sm w-full lg:w-32"
                 placeholder="0"
                 readOnly={readOnly}
                 disabled={readOnly}
               />
-              <span className="text-xs text-muted-foreground">원</span>
+              <span className="text-[11px] font-bold text-gray-400 shrink-0">원</span>
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">현금지원금액</Label>
+            <Label className="text-xs text-muted-foreground font-bold">현금지원금액</Label>
             <div className="flex items-center gap-1">
               <Input
                 type="text"
@@ -261,35 +261,35 @@ export function FinancialInfoSection({
                     e.target.value
                   )
                 }
-                className="h-7 text-xs min-w-24 w-auto"
+                className="h-10 text-sm w-full lg:w-32"
                 placeholder="0"
                 readOnly={readOnly}
                 disabled={readOnly}
               />
-              <span className="text-xs text-muted-foreground">원</span>
+              <span className="text-[11px] font-bold text-gray-400 shrink-0">원</span>
             </div>
           </div>
         </div>
 
         {/* 고객 계좌 정보 */}
         <div className="mt-4 space-y-3">
-          <div className="text-sm font-medium text-gray-700">고객 계좌</div>
-          <div className="flex items-end gap-4 flex-wrap">
+          <div className="text-sm font-bold text-gray-700">고객 계좌</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-end gap-3 sm:gap-4">
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">은행</Label>
+              <Label className="text-xs text-muted-foreground font-bold">은행</Label>
               <Input
                 value={financialInfo.customerBank || ""}
                 onChange={(e) =>
                   handleStringInputChange("customerBank", e.target.value)
                 }
-                className="h-7 text-xs min-w-32 w-auto"
+                className="h-10 text-sm w-full lg:w-40"
                 placeholder="은행명 입력"
                 readOnly={readOnly}
                 disabled={readOnly}
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">계좌번호</Label>
+            <div className="space-y-1 lg:flex-1">
+              <Label className="text-xs text-muted-foreground font-bold">계좌번호</Label>
               <Input
                 value={financialInfo.customerAccountNumber || ""}
                 onChange={(e) =>
@@ -298,7 +298,7 @@ export function FinancialInfoSection({
                     e.target.value
                   )
                 }
-                className="h-7 text-xs min-w-40 w-80"
+                className="h-10 text-sm w-full"
                 placeholder="계좌번호 입력"
                 readOnly={readOnly}
                 disabled={readOnly}
