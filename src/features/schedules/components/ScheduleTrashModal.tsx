@@ -6,7 +6,7 @@ import { ko } from "date-fns/locale";
 import { RotateCcw, Trash2, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getDeletedSchedules, restoreSchedule, Schedule } from "@/features/schedules/api/schedules";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/atoms/Dialog/Dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/atoms/Dialog/Dialog";
 import { Button } from "@/components/atoms/Button/Button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -48,7 +48,9 @@ export function ScheduleTrashModal({ isOpen, onClose, onRestored }: ScheduleTras
                 <Trash2 className="w-6 h-6 text-red-500" />
                 삭제된 일정 (휴지통)
               </DialogTitle>
-              <p className="text-sm text-gray-500 mt-1">삭제된 일정은 30일 후 영구적으로 삭제됩니다.</p>
+              <DialogDescription className="text-sm text-gray-500 mt-1">
+                삭제된 일정은 30일 후 영구적으로 삭제됩니다.
+              </DialogDescription>
             </div>
           </DialogHeader>
 

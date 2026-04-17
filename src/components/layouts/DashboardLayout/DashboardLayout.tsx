@@ -11,6 +11,7 @@ import {
   SheetTrigger,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from "@/components/atoms/Sheet/Sheet";
 import { MenuIcon, SearchIcon } from "lucide-react";
 
@@ -109,6 +110,7 @@ export function DashboardLayout({
             <SheetContent side="left" className="w-72 p-0">
               <SheetHeader className="px-4 py-3">
                 <SheetTitle className="text-base">{logo}</SheetTitle>
+                <SheetDescription className="hidden">사이드바 메뉴</SheetDescription>
               </SheetHeader>
               {SidebarContent}
             </SheetContent>

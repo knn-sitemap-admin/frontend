@@ -41,10 +41,10 @@ import { getKoreanHoliday } from "../utils/holiday";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
+  SheetDescription,
+  SheetHeader,
 } from "@/components/atoms/Sheet/Sheet";
-import { ScheduleListView } from "./ScheduleListView";
 
 export default function ScheduleCalendar() {
   const router = useRouter();
@@ -114,40 +114,7 @@ export default function ScheduleCalendar() {
       });
   };
 
-  // 일정별 전역 슬림 상태 계산 (계단 현상 방지)
-  const slimSchedulesMap = useMemo(() => {
-    const map = new Set<number>();
-    
-    // 1단계: 모든 날짜의 바쁨 상태 미리 계산
-    const dayCounts: Record<string, number> = {};
-    days.forEach(day => {
-      const dateStr = format(day, "yyyy-MM-dd");
-      const schedulesOnDay = schedules.filter(s => {
-        const start = startOfDay(new Date(s.startDate));
-        const end = endOfDay(new Date(s.endDate));
-        const d = startOfDay(day);
-        return d >= start && d <= end;
-      });
-      dayCounts[dateStr] = schedulesOnDay.length;
-    });
-
-    // 2단계: 일정이 걸쳐있는 날 중 하루라도 바쁘면(>3) 해당 일정은 '전역 슬림' 확정
-    schedules.forEach(s => {
-      const start = startOfDay(new Date(s.startDate));
-      const end = endOfDay(new Date(s.endDate));
-      
-      const hasBusyDay = eachDayOfInterval({ start, end }).some(day => {
-        const dateStr = format(day, "yyyy-MM-dd");
-        return (dayCounts[dateStr] || 0) > 3;
-      });
-
-      if (hasBusyDay) {
-        map.add(s.id);
-      }
-    });
-
-    return map;
-  }, [schedules, days]);
+  // slim logic removed as per user request to always show full labels and expand row height
 
   const [sheetSide, setSheetSide] = useState<"bottom" | "right">("bottom");
 
@@ -346,28 +313,23 @@ export default function ScheduleCalendar() {
         ))}
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
         {/* 달력 그리드 영역 */}
         <div className={cn(
-          "grid grid-cols-7 auto-rows-fr overflow-hidden",
-          "h-[45vh] sm:h-full sm:flex-1" // 모바일에서는 상단 고정, PC에서는 전체 차지
+          "grid grid-cols-7 auto-rows-min min-h-0",
+          "h-auto sm:h-auto" // 고정 높이 제거하여 모든 일정 노출
         )}>
           {days.map((day, i) => {
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const daySchedules = getDaySchedules(day);
             const isSelected = isSameDay(day, selectedDate);
 
-            // 해당 주차(7일)의 바쁨 상태 체크 (계단 현상 방지)
-            const weekStartIndex = Math.floor(i / 7) * 7;
-            const weekDays = days.slice(weekStartIndex, weekStartIndex + 7);
-            const isWeekBusy = weekDays.some(d => getDaySchedules(d).length > 3);
-
             return (
               <div
                 key={day.toISOString()}
                 onClick={() => handleDayClick(day)}
                 className={cn(
-                  "min-h-0 border-r border-b border-gray-100 flex flex-col hover:bg-gray-50/60 transition-all cursor-pointer group relative",
+                  "min-h-[100px] sm:min-h-[150px] border-r border-b border-gray-100 flex flex-col hover:bg-gray-50/60 transition-all cursor-pointer group relative",
                   !isCurrentMonth && "bg-gray-50/20 opacity-30",
                   isSelected && "bg-emerald-50/50 ring-1 ring-inset ring-emerald-500/20"
                 )}
@@ -411,54 +373,30 @@ export default function ScheduleCalendar() {
                 </div>
 
                 <div className="flex flex-col gap-0.5 w-full">
-                  {/* PC 버전: 일정 개별 상태에 따른 지능형 렌더링 (전역 연속성 보장) */}
-                  <div className="hidden sm:flex flex-col gap-0.5 w-full px-1">
+                  {/* PC 버전: 모든 일정 상세 바(Detailed Bar)로 렌더링 */}
+                  <div className="hidden sm:flex flex-col gap-0.5 w-full pb-2">
                     {daySchedules.map((s) => {
                       const isStart = isSameDay(new Date(s.startDate), day);
                       const isEnd = isSameDay(new Date(s.endDate), day);
                       const isMultiDay = !isSameDay(new Date(s.startDate), new Date(s.endDate));
-                      
-                      // 전역 슬림 상태 또는 현재 주가 전반적으로 바쁜 경우 슬림하게 표현
-                      const isSlimItem = slimSchedulesMap.has(s.id) || isWeekBusy;
 
-                      return isSlimItem ? (
-                        // 슬림 바(Slim Bar) 모드: 높이 4px로 연속성 강조
+                      return (
                         <div
                           key={s.id}
                           onClick={(e) => handleScheduleClick(e, s)}
                           className={cn(
-                            "h-[4px] transition-all relative z-10 mb-[2px]",
-                            getScheduleColor(s.category, s.color).dark,
-                            isMultiDay ? (
-                              cn(
-                                isStart ? "rounded-l-full ml-0.5" : "-ml-[1px]",
-                                isEnd ? "rounded-r-full mr-0.5" : "-mr-[1px]",
-                                !isStart && !isEnd && "rounded-none"
-                              )
-                            ) : (
-                              "rounded-full mx-1"
-                            )
-                          )}
-                          title={`${s.meetingType} - ${s.location}`}
-                        />
-                      ) : (
-                        // 상세 바(Detailed Bar) 모드: 높이 20px로 정보 노출
-                        <div
-                          key={s.id}
-                          onClick={(e) => handleScheduleClick(e, s)}
-                          className={cn(
-                            "relative flex items-center transition-all text-[11px] font-bold tracking-tight select-none h-[20px] mb-[1px]",
+                            "relative flex items-center transition-all text-[12px] font-bold select-none h-[22px] mb-[1px] shrink-0",
                             isMultiDay ? (
                               cn(
                                 "text-white shadow-sm border-t border-b border-white/10 z-10",
                                 getScheduleColor(s.category, s.color).dark,
-                                isStart ? "rounded-l-md ml-0.5" : "-ml-[1px]",
-                                isEnd ? "rounded-r-md mr-0.5" : "-mr-[1px]",
+                                isStart ? "rounded-l-md ml-1" : "-ml-[1px]",
+                                isEnd ? "rounded-r-md mr-1" : "-mr-[1px]",
                                 !isStart && !isEnd && "rounded-none",
                               )
                             ) : (
                               cn(
-                                "rounded-md mx-0.5 font-bold flex items-center shadow-sm border border-black/[0.03]",
+                                "rounded-md mx-1 font-bold flex items-center shadow-sm border border-black/[0.03]",
                                 getScheduleColor(s.category, s.color).bg,
                                 getScheduleColor(s.category, s.color).text
                               )
@@ -468,25 +406,22 @@ export default function ScheduleCalendar() {
                           {isStart && (
                             <div className={cn("absolute left-0 top-0 bottom-0 w-[2px] z-20", getUserColor(s.creator?.id || ""))} />
                           )}
-                          {(isStart || (i % 7 === 0 && !isStart)) && (
-                            <div className={cn("flex items-center justify-between gap-1 w-full", isStart || !isMultiDay ? "pl-1.5 pr-1" : "pl-1 pr-1")}>
-                              <div className="flex items-center gap-1 truncate">
-                                {!isMultiDay && <div className={cn("w-1.5 h-1.5 rounded-full shrink-0 shadow-sm", getScheduleColor(s.category, s.color).dot)} />}
-                                <span className="truncate">
-                                  [{s.meetingType || "신규"}/{s.category || "기타"}] {s.location || ""} {s.customerPhoneLast4 ? `${s.customerPhoneLast4}` : ""}
+                            {(isStart || (i % 7 === 0 && !isStart)) && (
+                              <div className={cn("flex items-center justify-between gap-1 w-full min-w-0", isStart || !isMultiDay ? "pl-1.5 pr-1" : "pl-1 pr-1")}>
+                                <div className="flex items-center gap-1 min-w-0 flex-1">
+                                  {!isMultiDay && <div className={cn("w-1.5 h-1.5 rounded-full shrink-0 shadow-sm", getScheduleColor(s.category, s.color).dot)} />}
+                                  <span className="truncate">
+                                    [{s.category === "휴무" ? "휴무" : `${s.meetingType || "신규"}/${s.category || "기타"}`}] {s.location || ""} {s.customerPhoneLast4 || ""}
+                                  </span>
+                                </div>
+                                <span className="shrink-0 text-[11px] font-black opacity-90 ml-1">
+                                  {s.creator?.name || "유저"}
                                 </span>
                               </div>
-                            </div>
-                          )}
+                            )}
                         </div>
                       );
                     })}
-                    
-                    {daySchedules.length > 5 && (
-                      <div className="mt-1 text-[9px] font-black text-gray-300 text-center uppercase tracking-tighter">
-                        +{daySchedules.length}
-                      </div>
-                    )}
                   </div>
 
                   {/* 모바일 버전: 컬러 도트로 간결하게 표시 */}
@@ -538,6 +473,9 @@ export default function ScheduleCalendar() {
                 <SheetTitle className="text-xl font-black text-gray-900 leading-tight">
                   {format(selectedDate, "M월 d일 E요일", { locale: ko })}
                 </SheetTitle>
+                <SheetDescription className="hidden">
+                  선택한 날짜의 상세 일정 목록입니다.
+                </SheetDescription>
                 {getKoreanHoliday(selectedDate) && (
                   <span className="text-[11px] font-bold text-red-500 mt-0.5">{getKoreanHoliday(selectedDate)}</span>
                 )}
@@ -578,13 +516,15 @@ export default function ScheduleCalendar() {
                         <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-bold text-gray-900 truncate">
-                              <span className="text-blue-600 mr-1">[{s.meetingType}/{s.category}]</span>
+                              <span className="text-blue-600 mr-1">
+                                [{s.category === "휴무" ? "휴무" : `${s.meetingType}/${s.category}`}]
+                              </span>
                               {s.location}
+                              {s.customerPhoneLast4 && (
+                                <span className="text-gray-400 ml-1.5 font-medium">({s.customerPhoneLast4})</span>
+                              )}
                             </span>
                           </div>
-                          {s.customerPhoneLast4 && (
-                            <span className="text-[10px] font-bold text-gray-400 mt-0.5">고객뒷번호: {s.customerPhoneLast4}</span>
-                          )}
                         </div>
                       </div>
                       <div className={cn(

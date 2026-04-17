@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/atoms/Dialog/Dialog";
 
 type NoResultDialogProps = {
@@ -36,9 +37,9 @@ export function NoResultDialog({
           <DialogTitle>조건에 맞는 매물이 없습니다</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-muted-foreground mt-2">
+        <DialogDescription className="text-sm text-muted-foreground mt-2">
           필터 조건을 조금 완화해서 다시 검색해 보세요.
-        </p>
+        </DialogDescription>
 
         <DialogFooter className="mt-4 flex gap-2 justify-end">
           {onResetFilters && (
