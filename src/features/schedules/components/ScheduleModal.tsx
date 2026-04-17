@@ -14,6 +14,13 @@ import { Button } from "@/components/atoms/Button/Button";
 import { Input } from "@/components/atoms/Input/Input";
 import { Label } from "@/components/atoms/Label/Label";
 import { Textarea } from "@/components/atoms/Textarea/Textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/atoms/Select/Select";
 import { useToast } from "@/hooks/use-toast";
 import {
   Schedule,
@@ -21,7 +28,8 @@ import {
   updateSchedule,
   deleteSchedule,
 } from "../api/schedules";
-import { CalendarIcon, Trash2, Clock, ChevronRight } from "lucide-react";
+import { getEmployeesList, EmployeeListItem } from "@/features/users/api/account";
+import { CalendarIcon, Trash2, Clock, User } from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
   Popover,
@@ -30,8 +38,9 @@ import {
 } from "@/components/atoms/Popover/Popover";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Calendar } from "@/components/atoms/Calendar/Calendar";
-import { format, parse, parseISO } from "date-fns";
+import { format, parse } from "date-fns";
 import { ko } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -46,7 +55,6 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0")
 const MINUTES = ["00", "10", "20", "30", "40", "50"];
 
 export const SCHEDULE_COLORS = [
-  // Red & Pink
   { id: "red", label: "빨강", bg: "bg-red-50", border: "border-red-200", text: "text-red-700", dot: "bg-red-400", dark: "bg-red-500" },
   { id: "rose", label: "로즈", bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", dot: "bg-rose-400", dark: "bg-rose-500" },
   { id: "pink", label: "분홍", bg: "bg-pink-50", border: "border-pink-200", text: "text-pink-700", dot: "bg-pink-400", dark: "bg-pink-500" },
@@ -108,16 +116,27 @@ export function ScheduleModal({
   const [isAllDay, setIsAllDay] = useState(false);
   const [color, setColor] = useState("blue");
   const [meetingType, setMeetingType] = useState("신규");
+  const [assignedAccountId, setAssignedAccountId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const { toast } = useToast();
 
+  const isPowerful = React.useMemo(() => {
+    return userProfile?.role === "admin" || userProfile?.role === "manager";
+  }, [userProfile]);
+
   const canEdit = React.useMemo(() => {
     if (!schedule) return true;
-    const isAdminOrManager = userProfile?.role === "admin" || userProfile?.role === "manager";
     const isOwner = String(schedule.creator?.id) === String(userProfile?.account?.id);
-    return isAdminOrManager || isOwner;
-  }, [schedule, userProfile]);
+    return isPowerful || isOwner;
+  }, [schedule, userProfile, isPowerful]);
+
+  // 직원 목록 조회 (권한 있는 경우에만)
+  const { data: employees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: () => getEmployeesList(),
+    enabled: !!isPowerful && isOpen,
+  });
 
   useEffect(() => {
     if (schedule && isOpen) {
@@ -134,6 +153,7 @@ export function ScheduleModal({
       setMeetingType(schedule.meetingType || "신규");
       setTitle(schedule.title || "");
       setContent(schedule.content || "");
+      setAssignedAccountId(schedule.creator?.id || "");
 
       try {
         const s = new Date(schedule.startDate);
@@ -156,6 +176,7 @@ export function ScheduleModal({
       setMeetingType("신규");
       setTitle("");
       setContent("");
+      setAssignedAccountId(userProfile?.account?.id || "");
       const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
       setStartDate(dateStr);
       setEndDate(dateStr);
@@ -164,7 +185,7 @@ export function ScheduleModal({
       setIsAllDay(false);
       setColor("blue");
     }
-  }, [schedule, selectedDate, isOpen]);
+  }, [schedule, selectedDate, isOpen, userProfile]);
 
   const handleSave = async () => {
     const finalCategory = category === "기타" ? customCategory : category;
@@ -194,7 +215,7 @@ export function ScheduleModal({
 
     setIsLoading(true);
     try {
-      const payload = {
+      const payload: any = {
         title: title || (category === "휴무" ? `[휴무] ${location}` : `${meetingType}(${finalCategory})${location}${customerPhoneLast4 ? "-" + customerPhoneLast4 : ""}`).trim(),
         content,
         category: finalCategory,
@@ -206,6 +227,11 @@ export function ScheduleModal({
         isAllDay,
         color,
       };
+
+      // 관리자/매니저인 경우 생성/수정할 대상 계정 지정 가능
+      if (isPowerful && assignedAccountId) {
+        payload.createdByAccountId = assignedAccountId;
+      }
 
       if (schedule) {
         await updateSchedule(schedule.id, payload);
@@ -245,17 +271,16 @@ export function ScheduleModal({
     }
   };
 
-  // Improved Time Picker Component
   const TimePickerContent = ({ current, onChange }: { current: string, onChange: (val: string) => void }) => {
     const [h, m] = current.split(":");
     return (
       <div className="flex bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-2xl divide-x divide-gray-50">
-        <div 
-          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar py-2 w-[70px] bg-white"
+        <div
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[70px] bg-white"
           onWheel={(e) => e.stopPropagation()}
         >
-          <div className="text-[10px] font-black text-gray-300 text-center mb-1 sticky top-0 bg-white py-1">시</div>
-          <div className="flex flex-col px-1">
+          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10">시</div>
+          <div className="flex flex-col px-1 pb-2">
             {HOURS.map(hour => (
               <button
                 key={hour} type="button"
@@ -270,12 +295,12 @@ export function ScheduleModal({
             ))}
           </div>
         </div>
-        <div 
-          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar py-2 w-[70px] bg-white"
+        <div
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[70px] bg-white"
           onWheel={(e) => e.stopPropagation()}
         >
-          <div className="text-[10px] font-black text-gray-300 text-center mb-1 sticky top-0 bg-white py-1">분</div>
-          <div className="flex flex-col px-1">
+          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10">분</div>
+          <div className="flex flex-col px-1 pb-2">
             {MINUTES.map(minute => (
               <button
                 key={minute} type="button"
@@ -308,6 +333,31 @@ export function ScheduleModal({
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* 관리자/매니저 전용 사원 선택 컴포넌트 */}
+            {isPowerful && (
+              <div className="space-y-3 bg-emerald-50/50 p-5 rounded-[28px] border border-emerald-100/50 animate-in fade-in slide-in-from-top-4">
+                <Label className="text-xs font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
+                  <User className="w-3.5 h-3.5" />
+                  일정 대상자 설정
+                </Label>
+                <Select value={assignedAccountId} onValueChange={setAssignedAccountId}>
+                  <SelectTrigger className="h-12 border-none bg-white shadow-sm rounded-2xl font-bold text-gray-700 focus:ring-2 focus:ring-emerald-500/20">
+                    <SelectValue placeholder="사원을 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-none shadow-2xl">
+                    {employees?.map((emp) => (
+                      <SelectItem key={emp.accountId} value={emp.accountId} className="rounded-xl font-bold text-sm py-3">
+                        {emp.name} ({emp.teamName})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] font-bold text-emerald-600/60 ml-1">
+                  * 관리자 권한으로 다른 사원의 일정을 직접 관리할 수 있습니다.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-3">
               <Label className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -420,19 +470,19 @@ export function ScheduleModal({
                 </div>
                 <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
                   <span className="text-[10px] font-black text-gray-400">종일</span>
-                    <input
-                      type="checkbox"
-                      checked={isAllDay}
-                      onChange={(e) => {
-                        setIsAllDay(e.target.checked);
-                        if (!e.target.checked && (!startTime || startTime === "00:00")) {
-                          setStartTime("09:00");
-                          setEndTime("10:00");
-                        }
-                      }}
-                      className="w-10 h-5 appearance-none bg-gray-200 rounded-full cursor-pointer relative checked:bg-emerald-500 transition-colors duration-300 after:content-[''] after:absolute after:w-3.5 after:h-3.5 after:bg-white after:rounded-full after:top-[3px] after:left-[3px] checked:after:left-[23px] after:transition-all after:duration-300 after:shadow-sm"
-                      disabled={!canEdit}
-                    />
+                  <input
+                    type="checkbox"
+                    checked={isAllDay}
+                    onChange={(e) => {
+                      setIsAllDay(e.target.checked);
+                      if (!e.target.checked && (!startTime || startTime === "00:00")) {
+                        setStartTime("09:00");
+                        setEndTime("10:00");
+                      }
+                    }}
+                    className="w-10 h-5 appearance-none bg-gray-200 rounded-full cursor-pointer relative checked:bg-emerald-500 transition-colors duration-300 after:content-[''] after:absolute after:w-3.5 after:h-3.5 after:bg-white after:rounded-full after:top-[3px] after:left-[3px] checked:after:left-[23px] after:transition-all after:duration-300 after:shadow-sm"
+                    disabled={!canEdit}
+                  />
                 </div>
               </div>
 
@@ -492,7 +542,7 @@ export function ScheduleModal({
                               if (date) {
                                 const newDateStr = format(date, "yyyy-MM-dd");
                                 setStartDate(newDateStr);
-                                
+
                                 // 종료일 자동 조정 (종료일이 시작일보다 빠르면 시작일로 맞춤)
                                 if (new Date(newDateStr) > new Date(endDate)) {
                                   setEndDate(newDateStr);
@@ -517,20 +567,20 @@ export function ScheduleModal({
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="p-0 border-none bg-transparent shadow-none" sideOffset={8}>
-                             <TimePickerContent 
-                               current={startTime} 
-                               onChange={(val) => {
-                                 setStartTime(val);
-                                 // 종료 시간 자동 조정
-                                 const newStart = new Date(`${startDate}T${val}`);
-                                 const currentEnd = new Date(`${endDate}T${endTime}`);
-                                 if (newStart >= currentEnd) {
-                                   const adjustedEnd = new Date(newStart.getTime() + 60 * 60 * 1000);
-                                   setEndDate(format(adjustedEnd, "yyyy-MM-dd"));
-                                   setEndTime(format(adjustedEnd, "HH:mm"));
-                                 }
-                               }} 
-                             />
+                            <TimePickerContent
+                              current={startTime}
+                              onChange={(val) => {
+                                setStartTime(val);
+                                // 종료 시간 자동 조정
+                                const newStart = new Date(`${startDate}T${val}`);
+                                const currentEnd = new Date(`${endDate}T${endTime}`);
+                                if (newStart >= currentEnd) {
+                                  const adjustedEnd = new Date(newStart.getTime() + 60 * 60 * 1000);
+                                  setEndDate(format(adjustedEnd, "yyyy-MM-dd"));
+                                  setEndTime(format(adjustedEnd, "HH:mm"));
+                                }
+                              }}
+                            />
                           </PopoverContent>
                         </Popover>
                       )}
@@ -602,7 +652,7 @@ export function ScheduleModal({
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="p-0 border-none bg-transparent shadow-none" sideOffset={8}>
-                             <TimePickerContent current={endTime} onChange={setEndTime} />
+                            <TimePickerContent current={endTime} onChange={setEndTime} />
                           </PopoverContent>
                         </Popover>
                       )}
