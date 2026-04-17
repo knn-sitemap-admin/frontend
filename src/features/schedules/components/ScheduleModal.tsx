@@ -21,10 +21,17 @@ import {
   updateSchedule,
   deleteSchedule,
 } from "../api/schedules";
-import { format, parseISO } from "date-fns";
-import { ko } from "date-fns/locale";
-import { CalendarIcon, Trash2, User } from "lucide-react";
+import { CalendarIcon, Trash2, Clock, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/atoms/Popover/Popover";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { Calendar } from "@/components/atoms/Calendar/Calendar";
+import { format, parse, parseISO } from "date-fns";
+import { ko } from "date-fns/locale";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -34,6 +41,9 @@ interface ScheduleModalProps {
   onDataChange: () => void;
   userProfile?: any;
 }
+
+const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
+const MINUTES = ["00", "10", "20", "30", "40", "50"];
 
 export const SCHEDULE_COLORS = [
   // Red & Pink
@@ -110,7 +120,7 @@ export function ScheduleModal({
   }, [schedule, userProfile]);
 
   useEffect(() => {
-    if (schedule) {
+    if (schedule && isOpen) {
       const cats = ["휴무", "직방", "다방", "네이버"];
       if (cats.includes(schedule.category)) {
         setCategory(schedule.category || "기타");
@@ -124,7 +134,7 @@ export function ScheduleModal({
       setMeetingType(schedule.meetingType || "신규");
       setTitle(schedule.title || "");
       setContent(schedule.content || "");
-      
+
       try {
         const s = new Date(schedule.startDate);
         const e = new Date(schedule.endDate);
@@ -135,10 +145,10 @@ export function ScheduleModal({
       } catch (err) {
         console.error("Date parsing failed", err);
       }
-      
+
       setIsAllDay(!!schedule.isAllDay);
       setColor(schedule.color || "blue");
-    } else {
+    } else if (isOpen) {
       setCategory("직방");
       setCustomCategory("");
       setLocation("");
@@ -163,7 +173,6 @@ export function ScheduleModal({
       return;
     }
 
-    // 미팅 장소 및 고객뒷번호 유효성 검사 (휴무가 아닐 때)
     if (finalCategory !== "휴무") {
       if (!location.trim()) {
         toast({ title: "입력 오류", description: "미팅 장소를 입력해주세요.", variant: "destructive" });
@@ -175,15 +184,13 @@ export function ScheduleModal({
       }
     }
 
-    // 카테고리에 따른 색상 자동 매핑
-    let autoColor = "purple";
-    if (finalCategory === "휴무") autoColor = "gray";
-    else if (finalCategory === "직방") autoColor = "orange";
-    else if (finalCategory === "다방") autoColor = "blue";
-    else if (finalCategory === "네이버") autoColor = "green";
+    const fullStartDate = isAllDay
+      ? new Date(`${startDate}T00:00:00`).toISOString()
+      : new Date(`${startDate}T${startTime}:00`).toISOString();
 
-    const fullStartDate = isAllDay ? `${startDate}T00:00:00` : `${startDate}T${startTime}:00`;
-    const fullEndDate = isAllDay ? `${endDate}T23:59:59` : `${endDate}T${endTime}:00`;
+    const fullEndDate = isAllDay
+      ? new Date(`${endDate}T23:59:59`).toISOString()
+      : new Date(`${endDate}T${endTime}:00`).toISOString();
 
     setIsLoading(true);
     try {
@@ -238,10 +245,59 @@ export function ScheduleModal({
     }
   };
 
+  // Improved Time Picker Component
+  const TimePickerContent = ({ current, onChange }: { current: string, onChange: (val: string) => void }) => {
+    const [h, m] = current.split(":");
+    return (
+      <div className="flex bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-2xl divide-x divide-gray-50">
+        <div 
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar py-2 w-[70px] bg-white"
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div className="text-[10px] font-black text-gray-300 text-center mb-1 sticky top-0 bg-white py-1">시</div>
+          <div className="flex flex-col px-1">
+            {HOURS.map(hour => (
+              <button
+                key={hour} type="button"
+                onClick={() => onChange(`${hour}:${m}`)}
+                className={cn(
+                  "py-2 text-sm font-bold transition-all rounded-lg",
+                  h === hour ? "bg-emerald-500 text-white" : "text-gray-400 hover:bg-gray-50"
+                )}
+              >
+                {hour}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div 
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar py-2 w-[70px] bg-white"
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div className="text-[10px] font-black text-gray-300 text-center mb-1 sticky top-0 bg-white py-1">분</div>
+          <div className="flex flex-col px-1">
+            {MINUTES.map(minute => (
+              <button
+                key={minute} type="button"
+                onClick={() => onChange(`${h}:${minute}`)}
+                className={cn(
+                  "py-2 text-sm font-bold transition-all rounded-lg",
+                  m === minute ? "bg-emerald-500 text-white" : "text-gray-400 hover:bg-gray-50"
+                )}
+              >
+                {minute}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
-        <div className="bg-white p-8 space-y-8 max-h-[85vh] overflow-y-auto no-scrollbar">
+        <div className="bg-white p-8 space-y-8 max-h-[85vh] overflow-y-auto premium-scrollbar">
           <DialogHeader className="space-y-2 text-left">
             <DialogTitle className="text-3xl font-black tracking-tighter text-gray-900">
               {schedule ? "일정 수정" : "새 일정 등록"}
@@ -252,7 +308,6 @@ export function ScheduleModal({
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* 1. 일정구분 */}
             <div className="space-y-3">
               <Label className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -264,7 +319,6 @@ export function ScheduleModal({
                     key={cat}
                     onClick={() => {
                       setCategory(cat);
-                      // 카테고리 선택 시 기본 색상 추천
                       if (cat === "휴무") setColor("gray");
                       else if (cat === "직방") setColor("orange");
                       else if (cat === "다방") setColor("blue");
@@ -294,7 +348,6 @@ export function ScheduleModal({
               )}
             </div>
 
-            {/* 영업 구분 (신규/재미팅) */}
             {category !== "휴무" && (
               <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
@@ -322,7 +375,6 @@ export function ScheduleModal({
               </div>
             )}
 
-            {/* 2. 미팅장소 & 3. 고객뒷번호 (휴무가 아닐 때만 표시) */}
             {category !== "휴무" && (
               <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="space-y-3">
@@ -358,65 +410,208 @@ export function ScheduleModal({
               </div>
             )}
 
-            {/* 날짜 설정 */}
-            <div className="space-y-4 bg-gray-50/50 p-5 rounded-[24px] border border-gray-100">
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-bold text-gray-900 italic">일정 *</Label>
+            <div className="space-y-6 bg-gray-50/50 p-6 rounded-[32px] border border-gray-100 relative">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-gray-400">종일</span>
-                  <input
-                    type="checkbox"
-                    checked={isAllDay}
-                    onChange={(e) => setIsAllDay(e.target.checked)}
-                    className="w-10 h-6 appearance-none bg-gray-200 rounded-full cursor-pointer relative checked:bg-emerald-500 transition-colors after:content-[''] after:absolute after:w-4 after:h-4 after:bg-white after:rounded-full after:top-1 after:left-1 checked:after:left-5 after:transition-all"
-                    disabled={!canEdit}
-                  />
+                  <div className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                    <CalendarIcon className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <Label className="text-base font-black text-gray-900">기간 설정</Label>
+                </div>
+                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                  <span className="text-[10px] font-black text-gray-400">종일</span>
+                    <input
+                      type="checkbox"
+                      checked={isAllDay}
+                      onChange={(e) => {
+                        setIsAllDay(e.target.checked);
+                        if (!e.target.checked && (!startTime || startTime === "00:00")) {
+                          setStartTime("09:00");
+                          setEndTime("10:00");
+                        }
+                      }}
+                      className="w-10 h-5 appearance-none bg-gray-200 rounded-full cursor-pointer relative checked:bg-emerald-500 transition-colors duration-300 after:content-[''] after:absolute after:w-3.5 after:h-3.5 after:bg-white after:rounded-full after:top-[3px] after:left-[3px] checked:after:left-[23px] after:transition-all after:duration-300 after:shadow-sm"
+                      disabled={!canEdit}
+                    />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="flex-1 h-11 border-white shadow-sm rounded-xl font-bold text-gray-600"
-                      disabled={!canEdit}
-                    />
-                    {!isAllDay && (
-                      <Input
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        className="w-32 h-11 border-white shadow-sm rounded-xl font-bold text-gray-600"
-                        disabled={!canEdit}
-                      />
-                    )}
+              <div className="space-y-8">
+                <div className="relative pl-6 border-l-2 border-emerald-500/30">
+                  <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full border-4 border-white bg-emerald-500 shadow-sm" />
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-[11px] font-black text-emerald-600 tracking-widest bg-emerald-50 px-2 py-0.5 rounded">
+                      <span>시작</span>
+                      {!isAllDay && canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const now = new Date();
+                            const newDateStr = format(now, "yyyy-MM-dd");
+                            const newTimeStr = format(now, "HH:mm");
+                            setStartDate(newDateStr);
+                            setStartTime(newTimeStr);
+
+                            // 자동 조정
+                            const currentEnd = new Date(`${endDate}T${endTime}`);
+                            if (now >= currentEnd) {
+                              const adjustedEnd = new Date(now.getTime() + 60 * 60 * 1000);
+                              setEndDate(format(adjustedEnd, "yyyy-MM-dd"));
+                              setEndTime(format(adjustedEnd, "HH:mm"));
+                            }
+                          }}
+                          className="text-[10px] font-bold text-gray-400 hover:text-emerald-600 transition-colors cursor-pointer"
+                        >
+                          현재 시간
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={!canEdit}
+                            className={cn(
+                              "flex-1 h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white hover:bg-gray-50 transition-all px-4 gap-3",
+                              !startDate && "text-gray-400"
+                            )}
+                          >
+                            <CalendarIcon className="w-4 h-4 text-emerald-500" />
+                            {startDate ? format(parse(startDate, "yyyy-MM-dd", new Date()), "PPP", { locale: ko }) : <span>시작 날짜</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
+                          <Calendar
+                            mode="single"
+                            locale={ko}
+                            selected={startDate ? parse(startDate, "yyyy-MM-dd", new Date()) : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                const newDateStr = format(date, "yyyy-MM-dd");
+                                setStartDate(newDateStr);
+                                
+                                // 종료일 자동 조정 (종료일이 시작일보다 빠르면 시작일로 맞춤)
+                                if (new Date(newDateStr) > new Date(endDate)) {
+                                  setEndDate(newDateStr);
+                                }
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      {!isAllDay && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              disabled={!canEdit}
+                              className="w-[110px] h-12 border-white shadow-sm rounded-2xl font-black text-emerald-700 bg-white hover:bg-gray-50 px-3 transition-all focus:ring-0 gap-2"
+                            >
+                              <Clock className="w-4 h-4 text-emerald-500" />
+                              {startTime}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0 border-none bg-transparent shadow-none" sideOffset={8}>
+                             <TimePickerContent 
+                               current={startTime} 
+                               onChange={(val) => {
+                                 setStartTime(val);
+                                 // 종료 시간 자동 조정
+                                 const newStart = new Date(`${startDate}T${val}`);
+                                 const currentEnd = new Date(`${endDate}T${endTime}`);
+                                 if (newStart >= currentEnd) {
+                                   const adjustedEnd = new Date(newStart.getTime() + 60 * 60 * 1000);
+                                   setEndDate(format(adjustedEnd, "yyyy-MM-dd"));
+                                   setEndTime(format(adjustedEnd, "HH:mm"));
+                                 }
+                               }} 
+                             />
+                          </PopoverContent>
+                        </Popover>
+                      )}
+
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="flex-1 h-11 border-white shadow-sm rounded-xl font-bold text-gray-600"
-                      disabled={!canEdit}
-                    />
-                    {!isAllDay && (
-                      <Input
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        className="w-32 h-11 border-white shadow-sm rounded-xl font-bold text-gray-600"
-                        disabled={!canEdit}
-                      />
-                    )}
+                </div>
+
+                <div className="relative pl-6 border-l-2 border-rose-500/20">
+                  <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full border-4 border-white bg-rose-400 shadow-sm" />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-rose-500 tracking-widest bg-rose-50 px-2 py-0.5 rounded">종료</span>
+                      {!isAllDay && canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const base = new Date(`${startDate}T${startTime}:00`);
+                            const end = new Date(base.getTime() + 60 * 60 * 1000);
+                            setEndDate(format(end, "yyyy-MM-dd"));
+                            setEndTime(format(end, "HH:mm"));
+                          }}
+                          className="text-[10px] font-bold text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
+                        >
+                          +1시간 추가
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={!canEdit}
+                            className={cn(
+                              "flex-1 h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white hover:bg-gray-50 transition-all px-4 gap-3",
+                              !endDate && "text-gray-400"
+                            )}
+                          >
+                            <CalendarIcon className="w-4 h-4 text-rose-400" />
+                            {endDate ? format(parse(endDate, "yyyy-MM-dd", new Date()), "PPP", { locale: ko }) : <span>종료 날짜</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
+                          <Calendar
+                            mode="single"
+                            locale={ko}
+                            selected={endDate ? parse(endDate, "yyyy-MM-dd", new Date()) : undefined}
+                            onSelect={(date) => {
+                              if (date) setEndDate(format(date, "yyyy-MM-dd"));
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      {!isAllDay && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              disabled={!canEdit}
+                              className="w-[110px] h-12 border-white shadow-sm rounded-2xl font-black text-rose-700 bg-white hover:bg-gray-50 px-3 transition-all focus:ring-0 gap-2"
+                            >
+                              <Clock className="w-4 h-4 text-rose-400" />
+                              {endTime}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0 border-none bg-transparent shadow-none" sideOffset={8}>
+                             <TimePickerContent current={endTime} onChange={setEndTime} />
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 라벨 테마 컬러 팔레트 */}
             <div className="space-y-4">
               <Label className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
@@ -431,8 +626,8 @@ export function ScheduleModal({
                     disabled={!canEdit}
                     className={cn(
                       "group relative w-full aspect-square rounded-xl transition-all duration-300",
-                      color === c.id 
-                        ? "ring-4 ring-emerald-500/20 border-2 border-emerald-500 scale-110 z-10 shadow-lg shadow-emerald-100" 
+                      color === c.id
+                        ? "ring-4 ring-emerald-500/20 border-2 border-emerald-500 scale-110 z-10 shadow-lg shadow-emerald-100"
                         : "opacity-40 hover:opacity-100 hover:scale-110"
                     )}
                   >
@@ -448,7 +643,6 @@ export function ScheduleModal({
               </div>
             </div>
 
-            {/* 상세 메모 */}
             <div className="space-y-6">
               <div className="space-y-3">
                 <Label className="text-sm font-bold text-gray-900">상세 메모</Label>

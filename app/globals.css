@@ -26,6 +26,22 @@ body {
     user-select: none;         /* 기본 user-select */
     -webkit-user-drag: none;    /* Chrome/Safari 드래그 방지 */
   }
+
+  /* 프리미엄 씬 스크롤바 */
+  .premium-scrollbar::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+  .premium-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .premium-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+  }
+  .premium-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
+  }
 }
 
 /* === shadcn 팔레트: root/dark '한 번만' 선언 === */

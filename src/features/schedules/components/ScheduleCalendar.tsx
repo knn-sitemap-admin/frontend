@@ -282,7 +282,7 @@ export default function ScheduleCalendar() {
       </div>
 
       {/* 필터 탭 (모바일 대응) */}
-      <div className="flex gap-2 px-4 sm:px-6 py-3 bg-gray-50/50 border-b overflow-x-auto no-scrollbar">
+      <div className="flex gap-2 px-4 sm:px-6 py-3 bg-gray-50/50 border-b overflow-x-auto premium-scrollbar">
         <button
           onClick={() => setFilterMode("all")}
           className={cn(
@@ -313,7 +313,7 @@ export default function ScheduleCalendar() {
         ))}
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto premium-scrollbar">
         {/* 달력 그리드 영역 */}
         <div className={cn(
           "grid grid-cols-7 auto-rows-min min-h-0",
@@ -493,7 +493,7 @@ export default function ScheduleCalendar() {
               </Button>
             </SheetHeader>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 no-scrollbar pb-10">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 premium-scrollbar pb-10">
               {getDaySchedules(selectedDate).length > 0 ? (
                 getDaySchedules(selectedDate).map((s) => {
                   const color = getScheduleColor(s.category, s.color);
