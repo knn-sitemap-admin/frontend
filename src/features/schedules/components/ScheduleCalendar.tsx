@@ -259,9 +259,9 @@ export default function ScheduleCalendar() {
               value={String(getYear(currentMonth))}
               onValueChange={(v) => setCurrentMonth(setYear(currentMonth, Number(v)))}
             >
-              <SelectTrigger className="w-fit h-9 border-none bg-transparent font-black text-lg sm:text-2xl p-0 px-1 focus:ring-0 gap-0.5 hover:bg-gray-50 rounded-lg transition-colors shrink-0">
+              <SelectTrigger className="w-fit h-11 sm:h-9 border-none bg-transparent font-black text-xl sm:text-2xl p-0 px-1 focus:ring-0 gap-0.5 hover:bg-gray-50 rounded-lg transition-colors shrink-0">
                 <SelectValue />
-                <span className="text-gray-400 font-medium text-xs sm:text-base ml-0.5">년</span>
+                <span className="text-gray-400 font-medium text-xs sm:text-base ml-1">년</span>
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: 11 }, (_, i) => getYear(new Date()) - 5 + i).map(y => (
@@ -275,9 +275,9 @@ export default function ScheduleCalendar() {
               value={String(getMonth(currentMonth))}
               onValueChange={(v) => setCurrentMonth(setMonth(currentMonth, Number(v)))}
             >
-              <SelectTrigger className="w-fit h-9 border-none bg-transparent font-black text-lg sm:text-2xl p-0 px-1 focus:ring-0 gap-0.5 hover:bg-gray-50 rounded-lg transition-colors ml-0.5 shrink-0">
+              <SelectTrigger className="w-fit h-11 sm:h-9 border-none bg-transparent font-black text-xl sm:text-2xl p-0 px-1 focus:ring-0 gap-0.5 hover:bg-gray-50 rounded-lg transition-colors ml-1 shrink-0">
                 <SelectValue />
-                <span className="text-gray-400 font-medium text-xs sm:text-base ml-0.5">월</span>
+                <span className="text-gray-400 font-medium text-xs sm:text-base ml-1">월</span>
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: 12 }, (_, i) => i).map(m => (
@@ -315,7 +315,7 @@ export default function ScheduleCalendar() {
         <button
           onClick={() => setFilterMode("all")}
           className={cn(
-            "flex items-center px-4 py-2 rounded-full bg-white border text-xs font-bold gap-2 transition-all shadow-sm whitespace-nowrap shrink-0",
+            "flex items-center px-5 py-2.5 rounded-full bg-white border text-xs sm:text-sm font-bold gap-2 transition-all shadow-sm whitespace-nowrap shrink-0",
             filterMode === "all" ? "border-emerald-500 ring-2 ring-emerald-500/20 text-emerald-700" : "border-gray-200 text-gray-400"
           )}
         >
@@ -325,7 +325,7 @@ export default function ScheduleCalendar() {
         <button
           onClick={() => setFilterMode("mine")}
           className={cn(
-            "flex items-center px-4 py-2 rounded-full bg-white border text-xs font-bold gap-2 transition-all shadow-sm whitespace-nowrap shrink-0",
+            "flex items-center px-5 py-2.5 rounded-full bg-white border text-xs sm:text-sm font-bold gap-2 transition-all shadow-sm whitespace-nowrap shrink-0",
             filterMode === "mine" ? "border-blue-500 ring-2 ring-blue-500/20 text-blue-700" : "border-gray-200 text-gray-400"
           )}
         >

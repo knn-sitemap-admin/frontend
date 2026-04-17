@@ -359,6 +359,7 @@ export type PositionRank =
 export type EmployeeListQuery = {
   sort?: "name" | "rank";
   name?: string;
+  onlyActive?: boolean;
 };
 
 export type EmployeeListItem = {
@@ -400,6 +401,9 @@ export async function getEmployeesList(
     }
     if (query?.name) {
       params.append("name", query.name);
+    }
+    if (query?.onlyActive) {
+      params.append("activeOnly", "true");
     }
 
     const queryString = params.toString();

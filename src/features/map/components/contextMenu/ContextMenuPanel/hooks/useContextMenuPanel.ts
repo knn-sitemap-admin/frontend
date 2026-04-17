@@ -56,8 +56,8 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
 
   // 대리 예약 시 대상 직원 목록 조회
   const { data: employees } = useQuery({
-    queryKey: ["employees-list"],
-    queryFn: () => getEmployeesList({ sort: "name" }),
+    queryKey: ["employees-list", "active"],
+    queryFn: () => getEmployeesList({ sort: "name", onlyActive: true }),
     enabled: isPrivileged,
   });
 

@@ -12,7 +12,23 @@ const DEV_FAKE_MODE = process.env.NEXT_PUBLIC_DEV_FAKE_MODE === "true";
 /* ────────────────────────────────────────────────────────────
    Axios 인스턴스 (배포/로컬 백엔드로 직접 요청)
    ──────────────────────────────────────────────────────────── */
-const API_BASE = process.env.NEXT_PUBLIC_IS_DEV === "true" ? "http://localhost:3050" : (process.env.NEXT_PUBLIC_API_BASE || "");
+const getApiBase = () => {
+  if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_BASE || "";
+  
+  const isLocalhost = 
+    window.location.hostname === "localhost" || 
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname.startsWith("192.168.") ||
+    window.location.hostname.startsWith("10.");
+
+  if (process.env.NEXT_PUBLIC_IS_DEV === "true" && isLocalhost) {
+    return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
+  }
+  
+  return process.env.NEXT_PUBLIC_API_BASE || "";
+};
+
+const API_BASE = getApiBase();
 // 예: .env.local 에서
 // NEXT_PUBLIC_API_BASE="https://배포-백엔드-도메인"
   

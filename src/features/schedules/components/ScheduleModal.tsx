@@ -134,7 +134,7 @@ export function ScheduleModal({
   // 직원 목록 조회 (권한 있는 경우에만)
   const { data: employees } = useQuery({
     queryKey: ["employees"],
-    queryFn: () => getEmployeesList(),
+    queryFn: () => getEmployeesList({ onlyActive: true }),
     enabled: !!isPowerful && isOpen,
   });
 
@@ -276,18 +276,22 @@ export function ScheduleModal({
     return (
       <div className="flex bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-2xl divide-x divide-gray-50">
         <div
-          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[70px] bg-white"
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[75px] bg-white touch-pan-y overscroll-contain"
           onWheel={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerMove={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
         >
-          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10">시</div>
-          <div className="flex flex-col px-1 pb-2">
+          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50">시</div>
+          <div className="flex flex-col px-1.5 pb-2">
             {HOURS.map(hour => (
               <button
                 key={hour} type="button"
                 onClick={() => onChange(`${hour}:${m}`)}
                 className={cn(
-                  "py-2 text-sm font-bold transition-all rounded-lg",
-                  h === hour ? "bg-emerald-500 text-white" : "text-gray-400 hover:bg-gray-50"
+                  "py-3 text-sm font-bold transition-all rounded-lg touch-manipulation",
+                  h === hour ? "bg-emerald-500 text-white shadow-md scale-[1.05] z-10" : "text-gray-400 hover:bg-gray-50"
                 )}
               >
                 {hour}
@@ -296,18 +300,22 @@ export function ScheduleModal({
           </div>
         </div>
         <div
-          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[70px] bg-white"
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[75px] bg-white touch-pan-y overscroll-contain"
           onWheel={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerMove={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
         >
-          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10">분</div>
-          <div className="flex flex-col px-1 pb-2">
+          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50">분</div>
+          <div className="flex flex-col px-1.5 pb-2">
             {MINUTES.map(minute => (
               <button
                 key={minute} type="button"
                 onClick={() => onChange(`${h}:${minute}`)}
                 className={cn(
-                  "py-2 text-sm font-bold transition-all rounded-lg",
-                  m === minute ? "bg-emerald-500 text-white" : "text-gray-400 hover:bg-gray-50"
+                  "py-3 text-sm font-bold transition-all rounded-lg touch-manipulation",
+                  m === minute ? "bg-emerald-500 text-white shadow-md scale-[1.05] z-10" : "text-gray-400 hover:bg-gray-50"
                 )}
               >
                 {minute}
@@ -321,8 +329,8 @@ export function ScheduleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
-        <div className="bg-white p-8 space-y-8 max-h-[85vh] overflow-y-auto premium-scrollbar">
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-[24px] sm:rounded-[32px] border-none shadow-2xl">
+        <div className="bg-white p-5 sm:p-8 space-y-6 sm:space-y-8 max-h-[85vh] overflow-y-auto premium-scrollbar">
           <DialogHeader className="space-y-2 text-left">
             <DialogTitle className="text-3xl font-black tracking-tighter text-gray-900">
               {schedule ? "일정 수정" : "새 일정 등록"}
@@ -341,11 +349,11 @@ export function ScheduleModal({
                   일정 대상자 설정
                 </Label>
                 <Select value={assignedAccountId} onValueChange={setAssignedAccountId}>
-                  <SelectTrigger className="h-12 border-none bg-white shadow-sm rounded-2xl font-bold text-gray-700 focus:ring-2 focus:ring-emerald-500/20">
+                  <SelectTrigger className="h-14 sm:h-12 border-none bg-white shadow-sm rounded-2xl font-bold text-gray-700 focus:ring-2 focus:ring-emerald-500/20">
                     <SelectValue placeholder="사원을 선택하세요" />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl border-none shadow-2xl">
-                    {employees?.map((emp) => (
+                    {employees?.filter(emp => !emp.isDisabled).map((emp) => (
                       <SelectItem key={emp.accountId} value={emp.accountId} className="rounded-xl font-bold text-sm py-3">
                         {emp.name} ({emp.teamName})
                       </SelectItem>
@@ -377,9 +385,9 @@ export function ScheduleModal({
                     }}
                     disabled={!canEdit}
                     className={cn(
-                      "h-10 text-xs font-bold rounded-xl border transition-all",
+                      "h-11 sm:h-10 text-[10px] sm:text-xs font-bold rounded-xl border transition-all",
                       category === cat
-                        ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100 scale-[1.05]"
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100 scale-[1.02] sm:scale-[1.05]"
                         : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-white hover:border-emerald-200"
                     )}
                   >
@@ -392,7 +400,7 @@ export function ScheduleModal({
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
                   placeholder="기타 일정을 입력하세요"
-                  className="h-11 border-gray-100 focus:border-emerald-500 rounded-xl"
+                  className="h-12 sm:h-11 border-gray-100 focus:border-emerald-500 rounded-xl font-bold"
                   disabled={!canEdit}
                 />
               )}
@@ -436,7 +444,7 @@ export function ScheduleModal({
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="미팅 장소 입력"
-                    className="h-11 border-gray-100 focus:border-emerald-500 rounded-xl"
+                    className="h-12 sm:h-11 border-gray-100 focus:border-emerald-500 rounded-xl font-bold"
                     disabled={!canEdit}
                   />
                 </div>
@@ -453,7 +461,7 @@ export function ScheduleModal({
                     }}
                     placeholder="번호 4자리"
                     maxLength={4}
-                    className="h-11 border-gray-100 focus:border-emerald-500 rounded-xl"
+                    className="h-12 sm:h-11 border-gray-100 focus:border-emerald-500 rounded-xl font-bold"
                     disabled={!canEdit}
                   />
                 </div>
@@ -512,7 +520,7 @@ export function ScheduleModal({
                               setEndTime(format(adjustedEnd, "HH:mm"));
                             }
                           }}
-                          className="text-[10px] font-bold text-gray-400 hover:text-emerald-600 transition-colors cursor-pointer"
+                          className="text-[10px] sm:text-[10px] font-bold text-gray-400 hover:text-emerald-600 transition-colors cursor-pointer bg-gray-100/50 sm:bg-transparent px-2 py-0.5 rounded sm:p-0"
                         >
                           현재 시간
                         </button>
@@ -525,7 +533,7 @@ export function ScheduleModal({
                             variant="outline"
                             disabled={!canEdit}
                             className={cn(
-                              "flex-1 h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white hover:bg-gray-50 transition-all px-4 gap-3",
+                              "flex-1 h-14 sm:h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white hover:bg-gray-50 transition-all px-4 gap-3",
                               !startDate && "text-gray-400"
                             )}
                           >
@@ -533,7 +541,11 @@ export function ScheduleModal({
                             {startDate ? format(parse(startDate, "yyyy-MM-dd", new Date()), "PPP", { locale: ko }) : <span>시작 날짜</span>}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
+                        <PopoverContent 
+                          className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" 
+                          align="start"
+                          onOpenAutoFocus={(e) => e.preventDefault()}
+                        >
                           <Calendar
                             mode="single"
                             locale={ko}
@@ -560,13 +572,19 @@ export function ScheduleModal({
                             <Button
                               variant="outline"
                               disabled={!canEdit}
-                              className="w-[110px] h-12 border-white shadow-sm rounded-2xl font-black text-emerald-700 bg-white hover:bg-gray-50 px-3 transition-all focus:ring-0 gap-2"
+                              className="w-[110px] h-14 sm:h-12 border-white shadow-sm rounded-2xl font-black text-emerald-700 bg-white hover:bg-gray-50 px-3 transition-all focus:ring-0 gap-2"
                             >
                               <Clock className="w-4 h-4 text-emerald-500" />
                               {startTime}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="p-0 border-none bg-transparent shadow-none" sideOffset={8}>
+                          <PopoverContent 
+                            className="p-0 border-none bg-transparent shadow-none" 
+                            sideOffset={8}
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                          >
                             <TimePickerContent
                               current={startTime}
                               onChange={(val) => {
@@ -605,7 +623,7 @@ export function ScheduleModal({
                             setEndDate(format(end, "yyyy-MM-dd"));
                             setEndTime(format(end, "HH:mm"));
                           }}
-                          className="text-[10px] font-bold text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
+                          className="text-[10px] sm:text-[10px] font-bold text-gray-400 hover:text-rose-500 transition-colors cursor-pointer bg-gray-100/50 sm:bg-transparent px-2 py-0.5 rounded sm:p-0"
                         >
                           +1시간 추가
                         </button>
@@ -618,7 +636,7 @@ export function ScheduleModal({
                             variant="outline"
                             disabled={!canEdit}
                             className={cn(
-                              "flex-1 h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white hover:bg-gray-50 transition-all px-4 gap-3",
+                              "flex-1 h-14 sm:h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white hover:bg-gray-50 transition-all px-4 gap-3",
                               !endDate && "text-gray-400"
                             )}
                           >
@@ -626,7 +644,11 @@ export function ScheduleModal({
                             {endDate ? format(parse(endDate, "yyyy-MM-dd", new Date()), "PPP", { locale: ko }) : <span>종료 날짜</span>}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" align="start">
+                        <PopoverContent 
+                          className="w-auto p-0 rounded-3xl overflow-hidden border-none shadow-2xl" 
+                          align="start"
+                          onOpenAutoFocus={(e) => e.preventDefault()}
+                        >
                           <Calendar
                             mode="single"
                             locale={ko}
@@ -645,13 +667,19 @@ export function ScheduleModal({
                             <Button
                               variant="outline"
                               disabled={!canEdit}
-                              className="w-[110px] h-12 border-white shadow-sm rounded-2xl font-black text-rose-700 bg-white hover:bg-gray-50 px-3 transition-all focus:ring-0 gap-2"
+                              className="w-[110px] h-14 sm:h-12 border-white shadow-sm rounded-2xl font-black text-rose-700 bg-white hover:bg-gray-50 px-3 transition-all focus:ring-0 gap-2"
                             >
                               <Clock className="w-4 h-4 text-rose-400" />
                               {endTime}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="p-0 border-none bg-transparent shadow-none" sideOffset={8}>
+                          <PopoverContent 
+                            className="p-0 border-none bg-transparent shadow-none" 
+                            sideOffset={8}
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                          >
                             <TimePickerContent current={endTime} onChange={setEndTime} />
                           </PopoverContent>
                         </Popover>
@@ -723,11 +751,11 @@ export function ScheduleModal({
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={isLoading} className="rounded-xl px-6 h-11 border-gray-300 font-semibold">
+            <Button variant="outline" onClick={onClose} disabled={isLoading} className="rounded-xl px-4 sm:px-6 h-12 sm:h-11 border-gray-300 font-semibold">
               닫기
             </Button>
             {canEdit && (
-              <Button onClick={handleSave} disabled={isLoading} className="rounded-xl px-8 h-11 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-200">
+              <Button onClick={handleSave} disabled={isLoading} className="rounded-xl px-5 sm:px-8 h-12 sm:h-11 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-200">
                 {isLoading ? "처리 중..." : (schedule ? "일정 수정" : "일정 등록")}
               </Button>
             )}
