@@ -14,9 +14,9 @@ const DEV_FAKE_MODE = process.env.NEXT_PUBLIC_DEV_FAKE_MODE === "true";
    ──────────────────────────────────────────────────────────── */
 const getApiBase = () => {
   if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_BASE || "";
-  
-  const isActuallyLocal = 
-    window.location.hostname === "localhost" || 
+
+  const isActuallyLocal =
+    window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
 
   // 로컬 호스트 접속이 아니면 무조건 운영 서버 주소 강제 고정
@@ -31,7 +31,7 @@ const getApiBase = () => {
 const API_BASE = getApiBase();
 // 예: .env.local 에서
 // NEXT_PUBLIC_API_BASE="https://배포-백엔드-도메인"
-  
+
 export const api = axios.create({
   baseURL: API_BASE, // ✅ 항상 백엔드 주소 기준으로 요청
   withCredentials: true, // 세션 쿠키 포함
