@@ -292,32 +292,31 @@ export default function LightboxModal({
               }
             }}
             onMouseMove={(e) => {
-              if (panStartRef.current) {
+              const start = panStartRef.current;
+              if (start) {
                 setZoom((z) => ({
                   ...z,
-                  x: panStartRef.current!.tx + (e.clientX - panStartRef.current!.x),
-                  y: panStartRef.current!.ty + (e.clientY - panStartRef.current!.y),
+                  x: start.tx + (e.clientX - start.x),
+                  y: start.ty + (e.clientY - start.y),
                 }));
               }
             }}
             onMouseUp={() => {
-              if (panStartRef.current) {
-                panStartRef.current = null;
-              }
+              panStartRef.current = null;
             }}
             onMouseLeave={() => {
-              if (panStartRef.current) panStartRef.current = null;
+              panStartRef.current = null;
             }}
             onTouchStart={(e) => {
               e.stopPropagation();
               if (e.touches.length === 2) {
                 const d = getTouchDistance(e.touches);
-                const { x: cx, y: cy } = getTouchCenter(e.touches);
+                const center = getTouchCenter(e.touches);
                 pinchStartRef.current = {
                   distance: d,
                   scale: zoom.scale,
-                  cx,
-                  cy,
+                  cx: center.x,
+                  cy: center.y,
                 };
               } else if (e.touches.length === 1) {
                 if (zoom.scale > 1) {
@@ -332,21 +331,26 @@ export default function LightboxModal({
             }}
             onTouchMove={(e) => {
               e.stopPropagation();
-              if (e.touches.length === 2 && pinchStartRef.current) {
-                e.preventDefault();
+              
+              // 핀치 줌 처리 (두 손가락)
+              const pinch = pinchStartRef.current;
+              if (e.touches.length === 2 && pinch) {
+                if (e.cancelable) e.preventDefault();
                 const d = getTouchDistance(e.touches);
                 if (d <= 0) return;
-                const k = pinchStartRef.current.distance > 0
-                  ? d / pinchStartRef.current.distance
-                  : 1;
-                const nextScale = Math.max(1, Math.min(4, pinchStartRef.current.scale * k));
+                const k = pinch.distance > 0 ? d / pinch.distance : 1;
+                const nextScale = Math.max(1, Math.min(4, pinch.scale * k));
                 setZoom((z) => ({ ...z, scale: nextScale }));
-              } else if (e.touches.length === 1) {
-                if (panStartRef.current) {
+              } 
+              // 이동 처리 (한 손가락)
+              else if (e.touches.length === 1) {
+                const start = panStartRef.current;
+                if (start && zoom.scale > 1) {
+                  const touch = e.touches[0];
                   setZoom((z) => ({
                     ...z,
-                    x: panStartRef.current!.tx + (e.touches[0].clientX - panStartRef.current!.x),
-                    y: panStartRef.current!.ty + (e.touches[0].clientY - panStartRef.current!.y),
+                    x: start.tx + (touch.clientX - start.x),
+                    y: start.ty + (touch.clientY - start.y),
                   }));
                 }
               }

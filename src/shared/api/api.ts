@@ -22,22 +22,13 @@ const getApiBase = () => {
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
 
-  let finalUrl = "";
-
   // 모바일 앱이거나 실제 로컬 PC 접속이 아니면 무조건 운영 서버 주소 강제 고정
   if (isMobile || !isActuallyLocal) {
-    finalUrl = "https://backend-prod-production-a562.up.railway.app";
-  } else {
-    // 실제 로컬 PC 개발 환경일 때만 로컬 백엔드 주소 사용
-    finalUrl = process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
+    return "https://backend-prod-production-a562.up.railway.app";
   }
 
-  // [디버깅용] 앱 배포 후 실제 폰에서 이 메시지가 뜨는지 확인해 주세요.
-  if (typeof window !== "undefined" && isMobile) {
-    window.alert(`앱 서버 주소: ${finalUrl}`);
-  }
-
-  return finalUrl;
+  // 실제 로컬 PC 개발 환경일 때만 로컬 백엔드 주소 사용
+  return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
 };
 
 const API_BASE = getApiBase();
