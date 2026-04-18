@@ -22,10 +22,15 @@ const getApiBase = () => {
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
 
-  // 모바일이거나 로컬 PC가 아니면 운영 서버 주소 사용
-  const finalUrl = isMobile || !isActuallyLocal
-    ? "https://backend-test-production-2188.up.railway.app" 
-    : (process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050");
+  let finalUrl = "";
+
+  // 모바일 앱이거나 실제 로컬 PC 접속이 아니면 무조건 운영 서버 주소 강제 고정
+  if (isMobile || !isActuallyLocal) {
+    finalUrl = "https://backend-prod-production-a562.up.railway.app";
+  } else {
+    // 실제 로컬 PC 개발 환경일 때만 로컬 백엔드 주소 사용
+    finalUrl = process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
+  }
 
   // [디버깅용] 앱 배포 후 실제 폰에서 이 메시지가 뜨는지 확인해 주세요.
   if (typeof window !== "undefined" && isMobile) {
@@ -242,15 +247,19 @@ async function ensureSessionOnce() {
 }
 
 // 요청 전 인터셉터: 토큰 자동 주입 및 세션 관리
-api.interceptors.request.use(async (config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("notemap:access-token");
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    // [앱 전용] localStorage에 토큰이 있다면 모든 요청에 Authorization 헤더 추가
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("notemap_token");
+      if (token && token !== "undefined") {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
-  }
-  return config;
-});
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // 응답 후: 401/419에서만 1회 재시도, 그 외엔 재전송 금지
 api.interceptors.response.use(
