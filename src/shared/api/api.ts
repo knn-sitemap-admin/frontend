@@ -242,9 +242,14 @@ async function ensureSessionOnce() {
   return __ensureSessionPromise;
 }
 
-// 요청 전 인터셉터 (현재는 세션 프리플라이트 비활성)
+// 요청 전 인터셉터: 토큰 자동 주입 및 세션 관리
 api.interceptors.request.use(async (config) => {
-  // 필요하면 여기서 ensureSessionOnce() 조건부 호출 가능
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("notemap:access-token");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
   return config;
 });
 
