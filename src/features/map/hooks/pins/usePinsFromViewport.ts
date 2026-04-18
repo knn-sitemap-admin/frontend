@@ -124,36 +124,39 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
 
   // 🏠 캐시에서 데이터 추출 및 클라이언트 사이드 필터링
   const { points, drafts, markers } = useMemo(() => {
-    const pListAll = Array.from(globalPinCache.values());
-    const dListAll = Array.from(globalDraftCache.values());
+    const pMarkers: MapMarker[] = [];
+    const dMarkers: MapMarker[] = [];
+    const filteredPoints: any[] = [];
+    const filteredDrafts: any[] = [];
 
-    // 1) 클라이언트 사이드 필터링 적용 (속도 혁명 🚀)
-    const filteredPoints = pListAll.filter((p: any) => {
+    // 1) 핀 필터링 및 마커 변환 (단일 패스 🚀)
+    for (const p of globalPinCache.values()) {
       // 신축/구옥 필터
       const isNewActive = p.isNew ?? p.ageType === "NEW";
       const isOldActive = p.isOld ?? p.ageType === "OLD";
 
-      if (isNew === true && !isNewActive) return false;
-      if (isOld === true && !isOldActive) return false;
+      if (isNew === true && !isNewActive) continue;
+      if (isOld === true && !isOldActive) continue;
 
-      // 입주완료 필터 (기본값 설정 로직 포함)
+      // 입주완료 필터
       if (isCompleted === true) {
-        if (!p.isCompleted) return false;
+        if (!p.isCompleted) continue;
       } else {
-        // 기본적으로(undefined 또는 false)은 입주 완료된 매물 제외
-        if (p.isCompleted) return false;
+        if (p.isCompleted) continue;
       }
 
-      return true;
-    });
+      filteredPoints.push(p);
+      pMarkers.push(pinPointToMarker(p, "pin"));
+    }
 
-    // 2) 임시핀(Draft) 필터링
-    // 신축/구옥/입주완료 모드에서는 임시핀을 숨김
+    // 2) 임시핀(Draft) 필터링 (단일 패스 🚀)
     const isSpecialPropMode = isNew || isOld || isCompleted;
-    const filteredDrafts = isSpecialPropMode ? [] : dListAll;
-
-    const pMarkers = filteredPoints.map((p) => pinPointToMarker(p, "pin"));
-    const dMarkers = filteredDrafts.map((d) => pinPointToMarker(d, "draft"));
+    if (!isSpecialPropMode) {
+      for (const d of globalDraftCache.values()) {
+        filteredDrafts.push(d);
+        dMarkers.push(pinPointToMarker(d, "draft"));
+      }
+    }
 
     return {
       points: filteredPoints,
