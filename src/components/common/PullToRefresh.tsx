@@ -86,7 +86,7 @@ export default function PullToRefresh({
   return (
     <div
       ref={scrollContainerRef}
-      className={`relative h-full w-full overflow-y-auto ${className} scrollbar-hide`}
+      className={`relative min-h-[100dvh] w-full overflow-y-auto ${className} scrollbar-hide`}
       style={{ overscrollBehaviorY: "contain" }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

@@ -12,9 +12,7 @@ export default function ProtectedLayout({
   return (
     <ClientSessionGuard redirectTo="/login">
       <SidebarProviders>
-        <PullToRefresh className="bg-white">
-          {children}
-        </PullToRefresh>
+        {children}
       </SidebarProviders>
     </ClientSessionGuard>
   );
