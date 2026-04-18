@@ -24,16 +24,28 @@ const getApiBase = () => {
     window.location.hostname.startsWith("10.");
 
   // 모바일 기기 여부 확인
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-  // 로컬 개발 모드이고, 호스트가 localhost이거나 (모바일이 아닌 상태에서) 사설 IP일 때만 로컬 백엔드 사용
-  if (process.env.NEXT_PUBLIC_IS_DEV === "true") {
-    if (isLocalhost || (isPrivateIp && !isMobile)) {
-      return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
+  let finalUrl = "";
+  // 로컬 개발 모드이고, 호스트가 실제 localhost/127.0.0.1 일 때만 로컬 백엔드 사용
+  // 모바일 앱(App) 환경에서는 무조건 운영 서버를 바라보게 함
+  if (process.env.NEXT_PUBLIC_IS_DEV === "true" && !isMobile) {
+    if (isLocalhost || isPrivateIp) {
+      finalUrl = process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
     }
   }
   
-  return process.env.NEXT_PUBLIC_API_BASE || "";
+  if (!finalUrl) {
+    // 실제 운영 중인 Railway 백엔드 주소로 강제 고정
+    finalUrl = process.env.NEXT_PUBLIC_API_BASE || "https://backend-test-production-2188.up.railway.app";
+  }
+
+  // 빌드 시점에 API 주소가 어디로 잡혔는지 체크 (모바일 앱 디버깅용)
+  if (typeof window !== "undefined") {
+    (window as any).__NOTEMAP_API_URL = finalUrl;
+  }
+  
+  return finalUrl;
 };
 
 const API_BASE = getApiBase();
