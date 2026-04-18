@@ -17,12 +17,20 @@ const getApiBase = () => {
   
   const isLocalhost = 
     window.location.hostname === "localhost" || 
-    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "127.0.0.1";
+
+  const isPrivateIp = 
     window.location.hostname.startsWith("192.168.") ||
     window.location.hostname.startsWith("10.");
 
-  if (process.env.NEXT_PUBLIC_IS_DEV === "true" && isLocalhost) {
-    return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
+  // 모바일 기기 여부 확인
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // 로컬 개발 모드이고, 호스트가 localhost이거나 (모바일이 아닌 상태에서) 사설 IP일 때만 로컬 백엔드 사용
+  if (process.env.NEXT_PUBLIC_IS_DEV === "true") {
+    if (isLocalhost || (isPrivateIp && !isMobile)) {
+      return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
+    }
   }
   
   return process.env.NEXT_PUBLIC_API_BASE || "";
