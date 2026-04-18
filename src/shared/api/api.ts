@@ -15,17 +15,24 @@ const DEV_FAKE_MODE = process.env.NEXT_PUBLIC_DEV_FAKE_MODE === "true";
 const getApiBase = () => {
   if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_BASE || "";
 
+  // 모바일 기기 확인
+  const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   const isActuallyLocal =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
 
-  // 로컬 호스트 접속이 아니면 무조건 운영 서버 주소 강제 고정
-  if (!isActuallyLocal) {
-    return "https://backend-test-production-2188.up.railway.app";
+  // 모바일이거나 로컬 PC가 아니면 운영 서버 주소 사용
+  const finalUrl = isMobile || !isActuallyLocal
+    ? "https://backend-test-production-2188.up.railway.app" 
+    : (process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050");
+
+  // [디버깅용] 앱 배포 후 실제 폰에서 이 메시지가 뜨는지 확인해 주세요.
+  if (typeof window !== "undefined" && isMobile) {
+    window.alert(`앱 서버 주소: ${finalUrl}`);
   }
 
-  // 로컬 개발 환경일 때의 설정
-  return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
+  return finalUrl;
 };
 
 const API_BASE = getApiBase();
