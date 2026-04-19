@@ -242,10 +242,10 @@ api.interceptors.request.use(
   (config) => {
     // [앱 전용] localStorage에 토큰이 있다면 모든 요청에 Authorization 헤더 추가
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("notemap_token");
+      const token = window.localStorage.getItem("notemap_token");
       
       if (token && token !== "undefined" && token !== "null") {
-        config.headers.Authorization = `Bearer ${token}`;
+        config.headers["Authorization"] = `Bearer ${token}`;
       }
     }
     return config;
