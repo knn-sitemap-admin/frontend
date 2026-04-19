@@ -40,13 +40,21 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// [최우선] 모든 요청에 토큰 주입
+// [최우선] 모든 요청에 토큰 주입 (인터셉터 + 기본값 동시 적용)
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
       const token = window.localStorage.getItem("notemap_token");
       if (token && token !== "undefined" && token !== "null") {
-        config.headers.set("Authorization", `Bearer ${token}`);
+        const bearer = `Bearer ${token}`;
+        config.headers.set("Authorization", bearer);
+        // 인스턴스 기본값에도 세팅하여 인터셉터를 우회하는 하위 호출도 커버하도록 함
+        api.defaults.headers.common["Authorization"] = bearer;
+      }
+
+      // [추가] /auth/me 요청 시 브라우저 캐시 방지 (난수 추가)
+      if (config.url?.includes("/auth/me")) {
+        config.params = { ...config.params, _t: Date.now() };
       }
     }
     return config;
