@@ -18,7 +18,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="ko" translate="no">
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
       <body className="font-sans">
         <ReactQueryProvider>
           {children}
