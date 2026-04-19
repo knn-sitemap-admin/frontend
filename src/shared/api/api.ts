@@ -36,26 +36,22 @@ const API_BASE = getApiBase();
 // NEXT_PUBLIC_API_BASE="https://배포-백엔드-도메인"
 
 export const api = axios.create({
-  baseURL: API_BASE, // ✅ 항상 백엔드 주소 기준으로 요청
-  withCredentials: true, // 세션 쿠키 포함
+  baseURL: API_BASE,
+  withCredentials: true,
 });
 
-// [최우선 순위] 모든 요청에 토큰 주입 인터셉터
+// [최우선] 모든 요청에 토큰 주입
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
       const token = window.localStorage.getItem("notemap_token");
       if (token && token !== "undefined" && token !== "null") {
-        config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
-        console.log(`[AUTH_TRACE] Token Attached: ${config.url}`);
-      } else {
-        console.warn(`[AUTH_TRACE] No Token: ${config.url}`);
+        config.headers.set("Authorization", `Bearer ${token}`);
       }
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (err) => Promise.reject(err)
 );
 
 if (process.env.NODE_ENV !== "production") {

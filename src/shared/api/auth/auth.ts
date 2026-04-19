@@ -81,10 +81,7 @@ export async function signOut() {
 
 // 내 정보 (실제 호출 함수)
 async function fetchMe() {
-  const { data } = await api.get<MeResponse>("/auth/me", {
-    withCredentials: true,
-  });
-
+  const { data } = await api.get<MeResponse>("/auth/me");
   return data.data; // MeData (null 가능)
 }
 
