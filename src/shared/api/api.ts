@@ -4,8 +4,18 @@ import axios, {
   type InternalAxiosRequestConfig,
   type AxiosInstance
 } from "axios";
-
-// 👮 범인 검거 및 강제 주입: 전역 fetch 가로채기
+/**
+ * 👮 [보안/인증 안정화] 전역 fetch 가로채기 훅
+ * 
+ * [왜 존재하는가?]
+ * 일부 라이브러리나 Next.js 내부 로직이 Axios 인스턴스를 거치지 않고 브라우저 생(Native) fetch를 사용하여 
+ * 인증이 필요한 엔드포인트(/auth/me 등)를 호출하는 경우가 발견되었습니다. 
+ * Cross-Site 도메인 환경에서는 쿠키가 차단되므로, 모든 형태의 요청에 토큰을 강제로 주입하기 위해 이 훅이 존재합니다.
+ * 
+ * [장기적 해결책]
+ * 1. fetch를 사용하는 라이브러리를 찾아 Axios 기반으로 교체하거나 해당 라이브러리의 공식 인증 설정(Provider 등)을 사용하십시오.
+ * 2. 모든 요청이 한 곳의 API 관리 모듈을 통하도록 리팩토링한 후 이 훅을 제거하는 것이 가장 안전합니다.
+ */
 if (typeof window !== "undefined") {
   const originalFetch = window.fetch;
   window.fetch = async (...args) => {
@@ -13,8 +23,11 @@ if (typeof window !== "undefined") {
     const init = args[1] || {};
     const url = typeof input === "string" ? input : (input as any).url;
 
-    // /auth/me 요청이 감지되면 헤더에 토큰 강제 주입
-    if (url && url.includes("/auth/me")) {
+    // ✅ [보안] 도메인 화이트리스트 체크: 우리 백엔드(API_BASE)로 향하는 요청에만 토큰 주입
+    // 외부 도메인(예: google-analytics, cloud-storage 등)으로 우리 토큰이 유출되는 것을 방지합니다.
+    const isOurApi = url && (url.startsWith(API_BASE) || url.startsWith("/"));
+    
+    if (isOurApi && url.includes("/auth/me")) {
       const token = window.localStorage.getItem("notemap_token");
       if (token && token !== "undefined" && token !== "null") {
         const headers = new Headers(init.headers || {});
@@ -51,10 +64,6 @@ const API_BASE = getApiBase();
 const G = (typeof window !== "undefined" ? window : globalThis) as any;
 const API_INSTANCE_KEY = "__MASTER_API_INSTANCE__";
 
-if (typeof window !== "undefined") {
-  console.log("!!! api.ts Module Initializing !!! ID:", Math.random());
-}
-
 let apiInstance = G[API_INSTANCE_KEY] as AxiosInstance;
 
 if (!apiInstance) {
@@ -76,10 +85,6 @@ if (!apiInstance) {
           config.headers.set("Authorization", bearer);
           apiInstance.defaults.headers.common["Authorization"] = bearer;
         }
-
-        console.log(`[${(apiInstance as any).instanceId}] Request: ${config.url}`, {
-          hasAuth: !!config.headers.get("Authorization"),
-        });
 
         if (config.url?.includes("/auth/me")) {
           config.params = { ...config.params, _t: Date.now() };

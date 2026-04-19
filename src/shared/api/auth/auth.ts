@@ -81,9 +81,6 @@ export async function signOut() {
 
 // 내 정보 (실제 호출 함수)
 async function fetchMe() {
-  // [진단 로그] 이 함수가 실행될 때 사용 중인 api 인스턴스의 ID를 출력합니다.
-  console.log(`[fetchMe Trace] Calling /auth/me with instance: ${(api as any).instanceId || 'UNKNOWN'}`);
-
   const token = typeof window !== "undefined" ? window.localStorage.getItem("notemap_token") : null;
   const headers: Record<string, string> = {};
   if (token && token !== "undefined" && token !== "null") {
