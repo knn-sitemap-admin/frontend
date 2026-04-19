@@ -243,13 +243,15 @@ api.interceptors.request.use(
     if (typeof window !== "undefined") {
       const token = window.localStorage.getItem("notemap_token");
       
-      // 디버깅을 위한 로그 (콘솔에서 확인 가능)
-      if (!token || token === "undefined" || token === "null") {
-        console.warn("[API Interceptor] No valid token found in localStorage.");
-      } else {
-        // 캐시된 인스턴스 설정이 아닌 각 요청의 헤더에 직접 주입
+      if (token && token !== "undefined" && token !== "null") {
+        // config.headers가 존재함을 보장하고 Authorization 주입
+        config.headers = config.headers || {};
         config.headers["Authorization"] = `Bearer ${token}`;
-        // console.debug("[API Interceptor] Token injected into headers.");
+        
+        // 콘솔에서 직접 확인 가능하도록 로그 추가
+        console.log(`[API Interceptor] Token injected for: ${config.url}`);
+      } else {
+        console.warn(`[API Interceptor] No token found for: ${config.url}`);
       }
     }
     return config;
