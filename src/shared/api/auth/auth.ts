@@ -81,7 +81,9 @@ export async function signOut() {
 
 // 내 정보 (실제 호출 함수)
 async function fetchMe() {
-  // [실무 대응] 인터셉터가 어째서인지 안 돌 때를 대비해 명시적으로 토큰을 헤더에 집어넣습니다.
+  // [진단 로그] 이 함수가 실행될 때 사용 중인 api 인스턴스의 ID를 출력합니다.
+  console.log(`[fetchMe Trace] Calling /auth/me with instance: ${(api as any).instanceId || 'UNKNOWN'}`);
+
   const token = typeof window !== "undefined" ? window.localStorage.getItem("notemap_token") : null;
   const headers: Record<string, string> = {};
   if (token && token !== "undefined" && token !== "null") {
@@ -91,7 +93,7 @@ async function fetchMe() {
   const { data } = await api.get<MeResponse>("/auth/me", {
     headers: {
       ...headers,
-      "_t": Date.now().toString() // 캐시 방지
+      "_t": Date.now().toString()
     }
   });
   return data.data; // MeData (null 가능)

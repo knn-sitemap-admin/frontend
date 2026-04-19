@@ -38,6 +38,7 @@ export function useAuthSessionGuard(options: Options = {}) {
       if (isChecking || destroyed) return;
       isChecking = true;
       try {
+        console.log(`[Guard Trace] Checking /auth/me with instance: ${(api as any).instanceId || 'UNKNOWN'}`);
         await api.get("/auth/me"); // 200 이면 OK
       } catch (e: any) {
         // 401, 419 등 나오면 세션 만료로 판단
