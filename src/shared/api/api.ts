@@ -2,6 +2,7 @@ import axios, {
   AxiosError,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
+  type AxiosInstance
 } from "axios";
 
 /* ────────────────────────────────────────────────────────────
@@ -14,61 +15,62 @@ const DEV_FAKE_MODE = process.env.NEXT_PUBLIC_DEV_FAKE_MODE === "true";
    ──────────────────────────────────────────────────────────── */
 const getApiBase = () => {
   if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_BASE || "";
-
-  // 모바일 기기 확인
   const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-  const isActuallyLocal =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1";
-
-  // 모바일 앱이거나 실제 로컬 PC 접속이 아니면 무조건 운영 서버 주소 강제 고정
+  const isActuallyLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   if (isMobile || !isActuallyLocal) {
     return "https://backend-prod-production-a562.up.railway.app";
   }
-
-  // 실제 로컬 PC 개발 환경일 때만 로컬 백엔드 주소 사용
   return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
 };
-
 const API_BASE = getApiBase();
-// 예: .env.local 에서
-// NEXT_PUBLIC_API_BASE="https://배포-백엔드-도메인"
 
-export const api = axios.create({
-  baseURL: API_BASE,
-  withCredentials: true,
-});
+// ✅ [인스턴스 파편화 방지] 전역 싱글톤 잠금
+const G = (typeof window !== "undefined" ? window : globalThis) as any;
+const API_INSTANCE_KEY = "__MASTER_API_INSTANCE__";
 
-// ✅ 진단용 고유 ID 부여
-(api as any).instanceId = "MASTER_API";
+if (typeof window !== "undefined") {
+  console.log("!!! api.ts Module Initializing !!! ID:", Math.random());
+}
 
-// [최우선] 모든 요청에 토큰 주입 및 인스턴스 추적 로그
-api.interceptors.request.use(
-  (config) => {
-    if (typeof window !== "undefined") {
-      const token = window.localStorage.getItem("notemap_token");
-      const bearer = (token && token !== "undefined" && token !== "null") ? `Bearer ${token}` : null;
-      
-      if (bearer) {
-        config.headers.set("Authorization", bearer);
-        api.defaults.headers.common["Authorization"] = bearer;
+let apiInstance = G[API_INSTANCE_KEY] as AxiosInstance;
+
+if (!apiInstance) {
+  apiInstance = axios.create({
+    baseURL: API_BASE,
+    withCredentials: true,
+  });
+  
+  (apiInstance as any).instanceId = "MASTER_API";
+
+  // 모든 요청에 토큰 주입 인터셉터
+  apiInstance.interceptors.request.use(
+    (config) => {
+      if (typeof window !== "undefined") {
+        const token = window.localStorage.getItem("notemap_token");
+        const bearer = (token && token !== "undefined" && token !== "null") ? `Bearer ${token}` : null;
+        
+        if (bearer) {
+          config.headers.set("Authorization", bearer);
+          apiInstance.defaults.headers.common["Authorization"] = bearer;
+        }
+
+        console.log(`[${(apiInstance as any).instanceId}] Request: ${config.url}`, {
+          hasAuth: !!config.headers.get("Authorization"),
+        });
+
+        if (config.url?.includes("/auth/me")) {
+          config.params = { ...config.params, _t: Date.now() };
+        }
       }
+      return config;
+    },
+    (err) => Promise.reject(err)
+  );
 
-      // 🔍 그림의 권장안: 어떤 인스턴스가 요청을 보내는지 로그 출력
-      console.log(`[${(api as any).instanceId}] Request: ${config.url}`, {
-        hasAuth: !!config.headers.get("Authorization"),
-        headers: config.headers
-      });
+  G[API_INSTANCE_KEY] = apiInstance;
+}
 
-      if (config.url?.includes("/auth/me")) {
-        config.params = { ...config.params, _t: Date.now() };
-      }
-    }
-    return config;
-  },
-  (err) => Promise.reject(err)
-);
+export const api = apiInstance;
 
 if (process.env.NODE_ENV !== "production") {
   // eslint-disable-next-line no-console
@@ -79,7 +81,6 @@ if (process.env.NODE_ENV !== "production") {
    🔒 전역(singleton) inflight Map: HMR/StrictMode에서도 1개만 사용
    ──────────────────────────────────────────────────────────── */
 type InflightMap = Map<string, Promise<AxiosResponse>>;
-const G = (typeof window !== "undefined" ? window : globalThis) as any;
 const INFLIGHT_KEY = "__APP__API_INFLIGHT_MAP__";
 
 if (!G[INFLIGHT_KEY]) {
