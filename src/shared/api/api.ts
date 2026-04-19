@@ -238,22 +238,14 @@ async function ensureSessionOnce() {
 }
 
 // 요청 전 인터셉터: 토큰 자동 주입 및 세션 관리
-let cachedToken: string | null = null;
-if (typeof window !== "undefined") {
-  cachedToken = localStorage.getItem("notemap_token");
-}
-
 api.interceptors.request.use(
   (config) => {
     // [앱 전용] localStorage에 토큰이 있다면 모든 요청에 Authorization 헤더 추가
     if (typeof window !== "undefined") {
-      // 혹시라도 토큰이 바뀌었을 것에 대비 (로그인 직후 등)
-      if (!cachedToken) {
-        cachedToken = localStorage.getItem("notemap_token");
-      }
+      const token = localStorage.getItem("notemap_token");
       
-      if (cachedToken && cachedToken !== "undefined") {
-        config.headers.Authorization = `Bearer ${cachedToken}`;
+      if (token && token !== "undefined" && token !== "null") {
+        config.headers.Authorization = `Bearer ${token}`;
       }
     }
     return config;
