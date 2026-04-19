@@ -240,12 +240,16 @@ async function ensureSessionOnce() {
 // 요청 전 인터셉터: 토큰 자동 주입 및 세션 관리
 api.interceptors.request.use(
   (config) => {
-    // [앱 전용] localStorage에 토큰이 있다면 모든 요청에 Authorization 헤더 추가
     if (typeof window !== "undefined") {
       const token = window.localStorage.getItem("notemap_token");
       
-      if (token && token !== "undefined" && token !== "null") {
+      // 디버깅을 위한 로그 (콘솔에서 확인 가능)
+      if (!token || token === "undefined" || token === "null") {
+        console.warn("[API Interceptor] No valid token found in localStorage.");
+      } else {
+        // 캐시된 인스턴스 설정이 아닌 각 요청의 헤더에 직접 주입
         config.headers["Authorization"] = `Bearer ${token}`;
+        // console.debug("[API Interceptor] Token injected into headers.");
       }
     }
     return config;
