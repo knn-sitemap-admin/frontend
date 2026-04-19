@@ -81,7 +81,19 @@ export async function signOut() {
 
 // 내 정보 (실제 호출 함수)
 async function fetchMe() {
-  const { data } = await api.get<MeResponse>("/auth/me");
+  // [실무 대응] 인터셉터가 어째서인지 안 돌 때를 대비해 명시적으로 토큰을 헤더에 집어넣습니다.
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("notemap_token") : null;
+  const headers: Record<string, string> = {};
+  if (token && token !== "undefined" && token !== "null") {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const { data } = await api.get<MeResponse>("/auth/me", {
+    headers: {
+      ...headers,
+      "_t": Date.now().toString() // 캐시 방지
+    }
+  });
   return data.data; // MeData (null 가능)
 }
 

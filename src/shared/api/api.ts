@@ -40,19 +40,27 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// [최우선] 모든 요청에 토큰 주입 (인터셉터 + 기본값 동시 적용)
+// ✅ 진단용 고유 ID 부여
+(api as any).instanceId = "MASTER_API";
+
+// [최우선] 모든 요청에 토큰 주입 및 인스턴스 추적 로그
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
       const token = window.localStorage.getItem("notemap_token");
-      if (token && token !== "undefined" && token !== "null") {
-        const bearer = `Bearer ${token}`;
+      const bearer = (token && token !== "undefined" && token !== "null") ? `Bearer ${token}` : null;
+      
+      if (bearer) {
         config.headers.set("Authorization", bearer);
-        // 인스턴스 기본값에도 세팅하여 인터셉터를 우회하는 하위 호출도 커버하도록 함
         api.defaults.headers.common["Authorization"] = bearer;
       }
 
-      // [추가] /auth/me 요청 시 브라우저 캐시 방지 (난수 추가)
+      // 🔍 그림의 권장안: 어떤 인스턴스가 요청을 보내는지 로그 출력
+      console.log(`[${(api as any).instanceId}] Request: ${config.url}`, {
+        hasAuth: !!config.headers.get("Authorization"),
+        headers: config.headers
+      });
+
       if (config.url?.includes("/auth/me")) {
         config.params = { ...config.params, _t: Date.now() };
       }
