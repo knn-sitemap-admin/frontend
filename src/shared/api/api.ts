@@ -5,6 +5,18 @@ import axios, {
   type AxiosInstance
 } from "axios";
 
+// 👮 범인 검거용: 전역 fetch 가로채기
+if (typeof window !== "undefined") {
+  const originalFetch = window.fetch;
+  window.fetch = async (...args) => {
+    const url = typeof args[0] === "string" ? args[0] : (args[0] as any).url;
+    if (url && url.includes("/auth/me")) {
+      console.warn("[NATIVE FETCH TRACE] /auth/me is being called by:", new Error().stack);
+    }
+    return originalFetch(...args);
+  };
+}
+
 /* ────────────────────────────────────────────────────────────
    환경 플래그
    ──────────────────────────────────────────────────────────── */
