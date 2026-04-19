@@ -269,7 +269,7 @@ api.interceptors.response.use(
     if (!config) throw error;
 
     // 재시도 금지 플래그가 있으면 그대로 throw
-    if (config.headers && (config.headers as any)["x-no-retry"] === "1") {
+    if (config.headers && config.headers["x-no-retry"] === "1") {
       throw error;
     }
 
@@ -277,14 +277,23 @@ api.interceptors.response.use(
       response &&
       (response.status === 401 || response.status === 419)
     ) {
-      if (!(config as any).__retried) {
-        (config as any).__retried = true;
+      if (!config.__retried) {
+        config.__retried = true;
         await ensureSessionOnce();
+
+        // ✅ 재시도 직전에 최신 토큰을 한번 더 설정 (config 객체 강제 업데이트)
+        if (typeof window !== "undefined") {
+          const token = localStorage.getItem("notemap_token");
+          if (token) {
+            config.headers.set("Authorization", `Bearer ${token}`);
+          }
+        }
+        
         return api.request(config);
       } else {
-        // ✅ 재시도 후에도 401/419인 경우: 세션 만료로 판단하여 로그인 페이지로 강제 이동
-        if (typeof window !== "undefined") {
-          console.warn("[API] Persistent 401/419 detected. Redirecting to /login...");
+        // ✅ 재시도 후에도 401/419인 경우: 세션 만료로 판단 (단, 로그인 페이지 자체는 제외)
+        if (typeof window !== "undefined" && !config.url?.includes("/signin")) {
+          console.warn("[API] Persistent 401 detected. Redirecting to /login...");
           window.location.href = "/login";
         }
       }
