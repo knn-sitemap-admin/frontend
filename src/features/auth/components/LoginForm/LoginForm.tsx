@@ -87,7 +87,10 @@ export function LoginForm({ onForgotClick, onSuccess }: LoginFormProps) {
       // ✅ 토큰 및 아이디·비밀번호 기억 저장/삭제
       try {
         if (res.data?.data?.accessToken) {
-          localStorage.setItem("notemap_token", res.data.data.accessToken);
+          const token = res.data.data.accessToken;
+          localStorage.setItem("notemap_token", token);
+          // ✅ 즉시 인스턴스 헤더에 반영 (인터셉터 대기 없이)
+          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         }
 
         if (values.remember) {

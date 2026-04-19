@@ -40,6 +40,24 @@ export const api = axios.create({
   withCredentials: true, // 세션 쿠키 포함
 });
 
+// [최우선 순위] 모든 요청에 토큰 주입 인터셉터
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== "undefined") {
+      const token = window.localStorage.getItem("notemap_token");
+      if (token && token !== "undefined" && token !== "null") {
+        config.headers = config.headers || {};
+        config.headers["Authorization"] = `Bearer ${token}`;
+        console.log(`[AUTH_TRACE] Token Attached: ${config.url}`);
+      } else {
+        console.warn(`[AUTH_TRACE] No Token: ${config.url}`);
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 if (process.env.NODE_ENV !== "production") {
   // eslint-disable-next-line no-console
   console.log("[api baseURL]", api.defaults.baseURL);
@@ -237,27 +255,7 @@ async function ensureSessionOnce() {
   return __ensureSessionPromise;
 }
 
-// 요청 전 인터셉터: 토큰 자동 주입 및 세션 관리
-api.interceptors.request.use(
-  (config) => {
-    if (typeof window !== "undefined") {
-      const token = window.localStorage.getItem("notemap_token");
-      
-      if (token && token !== "undefined" && token !== "null") {
-        // config.headers가 존재함을 보장하고 Authorization 주입
-        config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
-        
-        // 콘솔에서 직접 확인 가능하도록 로그 추가
-        console.log(`[API Interceptor] Token injected for: ${config.url}`);
-      } else {
-        console.warn(`[API Interceptor] No token found for: ${config.url}`);
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// 요청 전 인터셉터: 토큰 자동 주입 및 세션 관리 (위로 이동됨)
 
 // 응답 후: 401/419에서만 1회 재시도, 그 외엔 재전송 금지
 api.interceptors.response.use(
