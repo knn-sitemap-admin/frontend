@@ -5,15 +5,26 @@ import axios, {
   type AxiosInstance
 } from "axios";
 
-// 👮 범인 검거용: 전역 fetch 가로채기
+// 👮 범인 검거 및 강제 주입: 전역 fetch 가로채기
 if (typeof window !== "undefined") {
   const originalFetch = window.fetch;
   window.fetch = async (...args) => {
-    const url = typeof args[0] === "string" ? args[0] : (args[0] as any).url;
+    const input = args[0];
+    const init = args[1] || {};
+    const url = typeof input === "string" ? input : (input as any).url;
+
+    // /auth/me 요청이 감지되면 헤더에 토큰 강제 주입
     if (url && url.includes("/auth/me")) {
-      console.warn("[NATIVE FETCH TRACE] /auth/me is being called by:", new Error().stack);
+      const token = window.localStorage.getItem("notemap_token");
+      if (token && token !== "undefined" && token !== "null") {
+        const headers = new Headers(init.headers || {});
+        if (!headers.has("Authorization")) {
+          headers.set("Authorization", `Bearer ${token}`);
+          (init as any).headers = headers;
+        }
+      }
     }
-    return originalFetch(...args);
+    return originalFetch(input, init);
   };
 }
 
