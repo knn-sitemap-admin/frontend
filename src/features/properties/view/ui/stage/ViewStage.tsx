@@ -603,7 +603,8 @@ export default function ViewStage({
 
   return (
     <div
-      className="fixed inset-0 z-[99999]"
+      className="fixed inset-0 z-[99999] isolate transform-gpu"
+      style={{ transform: "translateZ(0)", overscrollBehavior: "none" }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={headingId}

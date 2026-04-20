@@ -150,7 +150,10 @@ export function ModalRestrictionLayout({
   onClose,
 }: ModalRestrictionLayoutProps) {
   return (
-    <div className="fixed inset-0 z-[1000] isolate">
+    <div 
+      className="fixed inset-0 z-[1000] isolate transform-gpu"
+      style={{ transform: "translateZ(0)", overscrollBehavior: "none" }}
+    >
       {/* 배경 딤 */}
       <div
         className="absolute inset-0 z-[1000] bg-black/40 pointer-events-auto"
@@ -208,7 +211,10 @@ export function ModalEditLayout({
   canSaveNow,
 }: ModalEditLayoutProps) {
   return (
-    <div className="fixed inset-0 z-[1000] isolate">
+    <div 
+      className="fixed inset-0 z-[1000] isolate transform-gpu"
+      style={{ transform: "translateZ(0)", overscrollBehavior: "none" }}
+    >
       {/* 배경 딤 */}
       <div
         className="absolute inset-0 z-[1000] bg-black/40 pointer-events-auto"
