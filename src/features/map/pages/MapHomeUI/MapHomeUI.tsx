@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/cn";
+
 
 import { useSidebar as useSidebarCtx, Sidebar } from "@/features/sidebar";
 
