@@ -80,7 +80,9 @@ export function MapHomeUI(props: MapHomeUIProps) {
     onMapReady,
     onViewportChange,
     createOpen,
+    editOpen,
     createPinKind,
+
     draftHeaderPrefill,
     selectedViewItem,
     prefillAddress,
