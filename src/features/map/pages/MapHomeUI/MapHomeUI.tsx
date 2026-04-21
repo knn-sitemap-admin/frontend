@@ -553,28 +553,36 @@ export function MapHomeUI(props: MapHomeUIProps) {
   return (
     <div className="fixed inset-0">
       <NoticeBanner />
-      <MapCanvas
-        appKey={appKey}
-        kakaoSDK={kakaoSDK}
-        mapInstance={mapInstance}
-        markers={culledMarkers}
-        fitAllOnce={didInit ? fitAllOnce : undefined}
-        poiKinds={poiKinds}
-        pinsLoading={pinsLoading || searchLoading}
-        pinsError={pinsError || searchError}
-        menuOpen={menuOpen}
-        menuAnchor={menuAnchor}
-        hideLabelForId={effectiveHideLabelForId}
-        onMarkerClick={onMarkerClick}
-        onOpenMenu={handleOpenMenuInternal}
-        onChangeHideLabelForId={onChangeHideLabelForId}
-        onMapReady={handleMapReady}
-        onViewportChange={handleViewportChange}
-        isDistrictOn={isDistrictOn}
-        showRoadviewOverlay={roadviewRoadOn}
-        onRoadviewClick={roadviewRoadOn ? handleRoadviewClickOnMap : undefined}
-        onMapClick={handleMapClickForAddress}
-      />
+      <div
+        className={cn(
+          "w-full h-full",
+          (viewOpenLocal || editOpen || createOpen) && "invisible lg:visible"
+        )}
+      >
+        <MapCanvas
+          appKey={appKey}
+          kakaoSDK={kakaoSDK}
+          mapInstance={mapInstance}
+          markers={culledMarkers}
+          fitAllOnce={didInit ? fitAllOnce : undefined}
+          poiKinds={poiKinds}
+          pinsLoading={pinsLoading || searchLoading}
+          pinsError={pinsError || searchError}
+          menuOpen={menuOpen}
+          menuAnchor={menuAnchor}
+          hideLabelForId={effectiveHideLabelForId}
+          onMarkerClick={onMarkerClick}
+          onOpenMenu={handleOpenMenuInternal}
+          onChangeHideLabelForId={onChangeHideLabelForId}
+          onMapReady={handleMapReady}
+          onViewportChange={handleViewportChange}
+          isDistrictOn={isDistrictOn}
+          showRoadviewOverlay={roadviewRoadOn}
+          onRoadviewClick={roadviewRoadOn ? handleRoadviewClickOnMap : undefined}
+          onMapClick={handleMapClickForAddress}
+        />
+      </div>
+
 
       <MapDistanceMeasure
         visible={distanceMeasureVisible}

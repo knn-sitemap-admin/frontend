@@ -101,7 +101,7 @@ export default function ModalsHost(props: {
   } = props;
 
   // 뷰 진입 가능 여부
-  const canShowView = !!viewOpen && !!selectedViewItem;
+  const canShowView = !!viewOpen;
 
   // 단일 카드 호스트 열림 여부
   const cardOpen = createOpen || canShowView;
@@ -110,7 +110,7 @@ export default function ModalsHost(props: {
   const initialPos: LatLng = draftPin ?? selectedPos ?? DEFAULT_CENTER;
 
   // 처음 열릴 때 어떤 단계로 시작할지
-  const initialStage: "create" | "view" = canShowView ? "view" : "create";
+  const initialStage: "create" | "view" = viewOpen ? "view" : "create";
 
   /** ✅ 매물정보입력(생성 모달)에서 사용할 draft 헤더 프리필용 id
    *    - createOpen 여부와 상관없이, 숫자 id만 있으면 사용

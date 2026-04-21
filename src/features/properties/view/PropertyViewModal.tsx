@@ -127,7 +127,8 @@ export default function PropertyViewModal({
 }) {
   const [stage, setStage] = useState<Stage>("view");
   const [deleting, setDeleting] = useState(false);
-  useBodyScrollLock(open && !asInner);
+  // useBodyScrollLock(open && !asInner); // 상위 PropertyCreateViewHost에서 일괄 관리
+
 
   const [editInitial, setEditInitial] = useState<any | null>(null);
   const [lastEditPayload, setLastEditPayload] = useState<any | null>(null);
