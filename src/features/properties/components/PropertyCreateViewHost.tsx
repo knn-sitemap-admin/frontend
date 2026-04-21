@@ -12,6 +12,7 @@ import { PropertyViewDetails } from "../view/types";
 import PropertyCreateModalBody from "../create/PropertyCreateModalBody";
 import { PropertyCreateResult } from "../create/lib/types";
 import PropertyViewModal from "../view/PropertyViewModal";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 type Stage = "create" | "view";
 
@@ -83,6 +84,10 @@ export default function PropertyCreateViewHost({
     initialViewData?.id ?? null
   );
 
+  // ✅ 모달이 열려있을 때 바디 스크롤 차단 (PWA 깜빡임 방지 핵심)
+  useBodyScrollLock(open);
+
+
   // 🔹 PropertyCreateModalBody 에 넘길 때 null → undefined 로 정리
   const resolvedPinDraftId: string | number | undefined =
     pinDraftId == null ? undefined : pinDraftId;
@@ -128,7 +133,18 @@ export default function PropertyCreateViewHost({
   //    - 카드: flex-col + overflow-hidden
   //    - sm에선 전체 h-screen, md 이상에서 max-h-[92vh]
   const frame = (inner: React.ReactNode) => (
-    <div className="fixed inset-0 z-[200]" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-[99999] isolate transform-gpu"
+      style={{
+        transform: "translateZ(0)",
+        overscrollBehavior: "none",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        willChange: "transform",
+      }}
+      role="dialog"
+      aria-modal="true"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/40"
@@ -140,15 +156,18 @@ export default function PropertyCreateViewHost({
         className={cn(
           "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
           "bg-white shadow-xl overflow-hidden flex flex-col",
-          "w-screen h-screen max-w-none max-h-none rounded-none",
-          "md:w-[1100px] md:max-w-[95vw] md:max-h-[92vh] md:rounded-2xl"
+          "w-full h-full max-w-none max-h-none rounded-none",
+          "lg:w-[1100px] lg:max-w-[95vw] lg:max-h-[92vh] lg:rounded-2xl"
+
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {inner}
       </div>
     </div>
+
   );
+
 
   let content: React.ReactNode;
 

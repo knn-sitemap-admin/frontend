@@ -80,7 +80,7 @@ export default function ViewStage({
   const { toast } = useToast();
 
   // ✅ 모바일 여부 & 모바일 수정 가능 여부
-  const isMobile = useIsMobileBreakpoint(768);
+  const isMobile = useIsMobileBreakpoint(1024);
   const canEditOnMobile = ALLOW_MOBILE_PROPERTY_EDIT;
   const canEditProperty = !isMobile || canEditOnMobile;
   const showEditButton = !isMobile || canEditOnMobile;
@@ -402,9 +402,10 @@ export default function ViewStage({
 
   const panelClass = cn(
     "bg-white shadow-xl overflow-hidden flex flex-col",
-    "w-screen h-screen max-w-none max-h-none rounded-none",
-    "md:w-[1100px] md:max-w-[95vw] md:max-h-[92vh] md:rounded-2xl",
+    "w-full h-full max-w-none max-h-none rounded-none",
+    "lg:w-[1100px] lg:max-w-[95vw] lg:max-h-[92vh] lg:rounded-2xl",
   );
+
 
   const positionedPanelClass = cn(
     "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
@@ -487,9 +488,9 @@ export default function ViewStage({
           <div
             className={cn(
               "flex-1 min_h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain",
-              "px-4 py-4 md:px-5 md:py-4",
-              "grid gap-4 md:gap-6",
-              "grid-cols-1 md:grid-cols-[300px_1fr]",
+              "px-4 py-4 lg:px-5 lg:py-4",
+              "grid gap-4 lg:gap-6",
+              "grid-cols-1 lg:grid-cols-[300px_1fr]",
             )}
           >
             <div className="space-y-4">
@@ -500,7 +501,7 @@ export default function ViewStage({
               />
             </div>
 
-            <div className="space-y-4 md:space-y-6">
+            <div className="space-y-4 lg:space-y-6">
               <BasicInfoViewContainer
                 address={f.address ?? ""}
                 officePhone={f.officePhone ?? ""}
@@ -566,7 +567,7 @@ export default function ViewStage({
               {/* 👇 생성자/답사자/수정자 메타 정보 (메모 밑) */}
               <MetaInfoContainer details={metaDetails} />
 
-              <div className="h-16 md:hidden" />
+              <div className="h-16 lg:hidden" />
             </div>
           </div>
 
@@ -604,7 +605,12 @@ export default function ViewStage({
   return (
     <div
       className="fixed inset-0 z-[99999] isolate transform-gpu"
-      style={{ transform: "translateZ(0)", overscrollBehavior: "none" }}
+      style={{
+        transform: "translateZ(0)",
+        overscrollBehavior: "none",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={headingId}

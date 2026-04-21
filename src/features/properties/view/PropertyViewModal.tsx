@@ -283,7 +283,8 @@ export default function PropertyViewModal({
       />
     ) : (
       <ViewStage
-        key={`view-${String(idForActions ?? "")}`}
+        key={`view-${String(effectiveId ?? idForActions ?? "")}`}
+
         data={viewData}
         metaDetails={metaDetails}
         headingId={headingId}

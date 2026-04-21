@@ -145,36 +145,30 @@ export default function ModalsHost(props: {
   return (
     <>
       {cardOpen && (
-        // 🔥 모달/검은배경을 맵 + 상단 토글보다 항상 위에 두는 래퍼
-        <div className="fixed inset-0 z-[80] pointer-events-none">
-          {/* 안쪽은 다시 이벤트 활성화해서 기존 Host 동작 그대로 */}
-          <div className="h-full w-full pointer-events-auto">
-            <PropertyCreateViewHost
-              open={cardOpen}
-              initialStage={initialStage}
-              onClose={handleCloseCard}
-              /* 생성 단계 props */
-              initialAddress={prefillAddress}
-              initialPos={initialPos}
-              pinDraftId={pinDraftId ?? null}
-              appendItem={createHostHandlers.appendItem}
-              resetAfterCreate={createHostHandlers.resetAfterCreate}
-              onAfterCreate={createHostHandlers.onAfterCreate}
-              /* 생성 모달 기본 핀종류 */
-              initialPinKind={createPinKind ?? undefined}
-              /* ✅ pin-drafts/{id} + 상위 프리필을 합친 최종 헤더 프리필 */
-              draftHeaderPrefill={effectiveDraftHeaderPrefill}
-              /* 뷰 단계 props */
-              initialViewData={selectedViewItem ?? undefined}
-              onSaveViewPatch={onSaveViewPatch}
-              onDeleteFromView={onDeleteFromView}
-              /* ✅ 뷰 → 수정 → 저장 후 map GET용 콜백 */
-              onLabelChanged={onLabelChanged}
-              /* ✅ 생성/답사예정 저장 후 map 핀 다시 불러오기 */
-              refetchPins={refetchPins}
-            />
-          </div>
-        </div>
+        <PropertyCreateViewHost
+          open={cardOpen}
+          initialStage={initialStage}
+          onClose={handleCloseCard}
+          /* 생성 단계 props */
+          initialAddress={prefillAddress}
+          initialPos={initialPos}
+          pinDraftId={pinDraftId ?? null}
+          appendItem={createHostHandlers.appendItem}
+          resetAfterCreate={createHostHandlers.resetAfterCreate}
+          onAfterCreate={createHostHandlers.onAfterCreate}
+          /* 생성 모달 기본 핀종류 */
+          initialPinKind={createPinKind ?? undefined}
+          /* ✅ pin-drafts/{id} + 상위 프리필을 합친 최종 헤더 프리필 */
+          draftHeaderPrefill={effectiveDraftHeaderPrefill}
+          /* 뷰 단계 props */
+          initialViewData={selectedViewItem ?? undefined}
+          onSaveViewPatch={onSaveViewPatch}
+          onDeleteFromView={onDeleteFromView}
+          /* ✅ 뷰 → 수정 → 저장 후 map GET용 콜백 */
+          onLabelChanged={onLabelChanged}
+          /* ✅ 생성/답사예정 저장 후 map 핀 다시 불러오기 */
+          refetchPins={refetchPins}
+        />
       )}
 
       {/* 카드가 떠 있을 땐 로드뷰 숨김 */}

@@ -119,10 +119,10 @@ export function EmbeddedEditLayout({
       {/* ✅ 스크롤 컨테이너에 ref 연결 */}
       <div
         ref={scrollRef}
-        className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 md:gap-6 px-4 md:px-5 py-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
+        className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-6 px-4 lg:px-5 py-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
       >
         <ImagesContainer images={imagesProp} />
-        <div className="space-y-4 md:space-y-6 overflow-visible">
+        <div className="space-y-4 lg:space-y-6 overflow-visible">
           <BasicInfoContainer form={form} />
           <NumbersContainer form={form} />
           {mountParking && <ParkingContainer form={parkingForm as any} />}
@@ -132,7 +132,7 @@ export function EmbeddedEditLayout({
           <StructureLinesContainer form={form} />
           <OptionsContainer form={form} />
           <MemosContainer form={form} />
-          <div className="h-16 md:hidden" />
+          <div className="h-16 lg:hidden" />
         </div>
       </div>
 
@@ -150,10 +150,17 @@ export function ModalRestrictionLayout({
   onClose,
 }: ModalRestrictionLayoutProps) {
   return (
-    <div 
-      className="fixed inset-0 z-[1000] isolate transform-gpu"
-      style={{ transform: "translateZ(0)", overscrollBehavior: "none" }}
+    <div
+      className="fixed inset-0 z-[99999] isolate transform-gpu"
+      style={{
+        transform: "translateZ(0)",
+        overscrollBehavior: "none",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        willChange: "transform",
+      }}
     >
+
       {/* 배경 딤 */}
       <div
         className="absolute inset-0 z-[1000] bg-black/40 pointer-events-auto"
@@ -211,10 +218,17 @@ export function ModalEditLayout({
   canSaveNow,
 }: ModalEditLayoutProps) {
   return (
-    <div 
-      className="fixed inset-0 z-[1000] isolate transform-gpu"
-      style={{ transform: "translateZ(0)", overscrollBehavior: "none" }}
+    <div
+      className="fixed inset-0 z-[99999] isolate transform-gpu"
+      style={{
+        transform: "translateZ(0)",
+        overscrollBehavior: "none",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        willChange: "transform",
+      }}
     >
+
       {/* 배경 딤 */}
       <div
         className="absolute inset-0 z-[1000] bg-black/40 pointer-events-auto"
@@ -228,7 +242,7 @@ export function ModalEditLayout({
         {/* embedded 버전과 동일하게 + ref 연결 */}
         <div
           ref={scrollRef}
-          className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 md:gap-6 px-4 md:px-5 py-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
+          className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-6 px-4 lg:px-5 py-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain"
         >
           {/* 좌측: 이미지 */}
           <div className="relative z-[1]">
@@ -236,7 +250,7 @@ export function ModalEditLayout({
           </div>
 
           {/* 우측: 폼 */}
-          <div className="relative z-[2] space-y-4 md:space-y-6">
+          <div className="relative z-[2] space-y-4 lg:space-y-6">
             <BasicInfoContainer form={form} />
             <NumbersContainer form={form} />
             {mountParking && <ParkingContainer form={parkingForm as any} />}
@@ -246,7 +260,7 @@ export function ModalEditLayout({
             <StructureLinesContainer form={form} />
             <OptionsContainer form={form} />
             <MemosContainer form={form} />
-            <div className="h-16 md:hidden" />
+            <div className="h-16 lg:hidden" />
           </div>
         </div>
 
