@@ -122,7 +122,11 @@ export default function MiniCarousel({
       onContextMenu={(e) => e.preventDefault()}
     >
       {/* Slides */}
-      <div className="absolute inset-0 overflow-hidden rounded-md">
+      <div 
+        className="absolute inset-0 overflow-hidden rounded-md transform-gpu"
+        style={{ transform: "translateZ(0)" }}
+      >
+
         {hasImages &&
           images.map((img, i) => {
             const raw = img.dataUrl ?? img.url;

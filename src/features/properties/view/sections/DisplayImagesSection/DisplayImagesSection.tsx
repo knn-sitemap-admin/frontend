@@ -288,9 +288,10 @@ export default function DisplayImagesSection({
         return (
           <div
             key={`card-${gi}`}
-            className="rounded-xl border bg-gray-50/60 p-3"
+            className="rounded-xl border bg-gray-50/60 p-3 transform-gpu"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
           >
-            <div className="relative aspect-video overflow-hidden rounded-md border bg-white">
+            <div className="relative aspect-video overflow-hidden rounded-md border bg-white transform-gpu" style={{ transform: "translateZ(0)" }}>
               <MiniCarousel
                 images={items}
                 aspect="video"
@@ -344,9 +345,10 @@ export default function DisplayImagesSection({
         return (
           <div
             key={`file-${gi}`}
-            className="rounded-xl border bg-gray-50/60 p-3"
+            className="rounded-xl border bg-gray-50/60 p-3 transform-gpu"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
           >
-            <div className="relative aspect-[3/4] overflow-hidden rounded-md border bg-white">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-md border bg-white transform-gpu" style={{ transform: "translateZ(0)" }}>
               <MiniCarousel
                 images={items}
                 objectFit="contain"
