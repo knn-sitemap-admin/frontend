@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PlatformStatisticsView } from "@/features/performances/components/PlatformStatisticsView";
 import { 
   Select, 
@@ -9,8 +9,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/atoms/Select/Select";
-import { buildPerformanceFilterQuery } from "@/features/performances/api/performance";
+import { buildPerformanceFilterQuery, getAvailablePeriods } from "@/features/performances/api/performance";
 import { DataTablePageLayout, DataTablePageHeader } from "@/features/data-table";
+import { useQuery } from "@tanstack/react-query";
 
 export default function PlatformStatisticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("THIS_MONTH");
@@ -18,12 +19,32 @@ export default function PlatformStatisticsPage() {
   const [selectedQuarter, setSelectedQuarter] = useState("1");
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString());
 
+  const { data: periods } = useQuery({
+    queryKey: ["available-periods"],
+    queryFn: getAvailablePeriods,
+  });
+
+  const availableYears = periods?.years || [new Date().getFullYear()];
+  const availableMonths = periods?.yearMonths
+    ? periods.yearMonths
+        .filter(pm => pm.year.toString() === selectedYear)
+        .map(pm => pm.month.toString())
+        .sort((a, b) => Number(b) - Number(a)) // 최신 월이 위로
+    : Array.from({ length: 12 }, (_, i) => (i + 1).toString());
+
   const filterQuery = buildPerformanceFilterQuery(
     selectedPeriod,
     selectedYear,
     selectedQuarter,
     selectedMonth
   );
+
+  // 선택된 연도에 해당 월 데이터가 없으면 첫 번째 가용 월로 자동 변경
+  useEffect(() => {
+    if (selectedPeriod === "MONTHLY" && availableMonths.length > 0 && !availableMonths.includes(selectedMonth)) {
+      setSelectedMonth(availableMonths[0]);
+    }
+  }, [availableMonths, selectedMonth, selectedPeriod]);
 
   return (
     <DataTablePageLayout>
@@ -51,10 +72,9 @@ export default function PlatformStatisticsPage() {
                   <SelectValue placeholder="연도" />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
-                  {Array.from({ length: 5 }, (_, i) => {
-                    const y = (new Date().getFullYear() - i).toString();
-                    return <SelectItem key={y} value={y}>{y}년</SelectItem>;
-                  })}
+                  {availableYears.map((y) => (
+                    <SelectItem key={y} value={y.toString()}>{y}년</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}
@@ -78,10 +98,9 @@ export default function PlatformStatisticsPage() {
                   <SelectValue placeholder="월" />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const m = (i + 1).toString();
-                    return <SelectItem key={m} value={m}>{m}월</SelectItem>;
-                  })}
+                  {availableMonths.map((m) => (
+                    <SelectItem key={m} value={m}>{m}월</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}

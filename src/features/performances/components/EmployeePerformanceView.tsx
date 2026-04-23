@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getEmployees, getEmployeePerformance } from "../api/performance";
+import { getEmployees, getEmployeePerformance, getAvailablePeriods } from "../api/performance";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/atoms/Card/Card";
 import { Button } from "@/components/atoms/Button/Button";
 import { 
@@ -42,7 +42,24 @@ export function EmployeePerformanceView() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
-  const yearOptions = generateYearOptions(currentYear);
+  // 가용 기간 데이터 조회
+  const { data: periods } = useQuery({
+    queryKey: ["available-periods"],
+    queryFn: getAvailablePeriods,
+  });
+
+  // 연도 옵션 생성
+  const yearOptions = useMemo(() => {
+    return (periods?.years || [currentYear]).map(y => y.toString());
+  }, [periods, currentYear]);
+
+  // 최신 연도가 로드되면 자동으로 선택 (초기값 보정)
+  useMemo(() => {
+    if (periods?.years && periods.years.length > 0 && !periods.years.includes(selectedYear)) {
+       // 현재 선택된 연도가 가용 목록에 없으면 가장 최신 연도로 변경
+       setSelectedYear(periods.years[0]);
+    }
+  }, [periods, selectedYear]);
 
   // 직원 목록 조회
   const { data: employees = [], isLoading: isLoadingEmployees } = useQuery({

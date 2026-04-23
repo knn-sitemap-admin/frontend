@@ -211,3 +211,25 @@ export async function getPlatformStatistics(
   }
 }
 
+/**
+ * 데이터가 존재하는 기간 목록 조회
+ */
+export async function getAvailablePeriods(): Promise<{
+  years: number[];
+  yearMonths: { year: number; month: number }[];
+}> {
+  try {
+    const response = await api.get<{
+      success: boolean;
+      data: {
+        years: number[];
+        yearMonths: { year: number; month: number }[];
+      };
+    }>("/performance/available-periods");
+    return response.data.data;
+  } catch (error: any) {
+    console.error("가용 기간 목록 조회 실패:", error);
+    throw error;
+  }
+}
+

@@ -22,7 +22,8 @@ import { formatCurrency } from "@/components/contract-management/utils/contractU
 import { 
   getPerformanceSummary, 
   getTeamEmployees, 
-  buildPerformanceFilterQuery 
+  buildPerformanceFilterQuery,
+  getAvailablePeriods
 } from "../api/performance";
 import { 
   transformTeamSummaryToTeamStat, 
@@ -52,12 +53,35 @@ export function Performance() {
   );
   const teamDetailRef = useRef<HTMLDivElement>(null);
 
+  // 가용 기간 데이터 조회
+  const { data: periods } = useQuery({
+    queryKey: ["available-periods"],
+    queryFn: getAvailablePeriods,
+  });
+
   // 연도 옵션 생성
-  const yearOptions = generateYearOptions(currentYear);
+  const yearOptions = useMemo(() => {
+    return (periods?.years || [currentYear]).map(y => y.toString());
+  }, [periods, currentYear]);
+
   // 분기 옵션 (1~4)
   const quarterOptions = ["1", "2", "3", "4"];
-  // 월 옵션 (1~12)
-  const monthOptions = Array.from({ length: 12 }, (_, i) => String(i + 1));
+
+  // 월 옵션 (1~12) - 선택된 연도 기준 가용 월만 필터링
+  const monthOptions = useMemo(() => {
+    if (!periods?.yearMonths) return Array.from({ length: 12 }, (_, i) => String(i + 1));
+    return periods.yearMonths
+      .filter(pm => pm.year.toString() === selectedYear)
+      .map(pm => pm.month.toString())
+      .sort((a, b) => Number(a) - Number(b));
+  }, [periods, selectedYear]);
+
+  // 선택된 연도에 해당 월 데이터가 없으면 첫 번째 가용 월로 자동 변경
+  useEffect(() => {
+    if (selectedPeriod === "monthly" && monthOptions.length > 0 && !monthOptions.includes(selectedMonth)) {
+      setSelectedMonth(monthOptions[0]);
+    }
+  }, [monthOptions, selectedMonth, selectedPeriod]);
 
   // 필터 쿼리 생성
   const filterQuery = useMemo(() => {
