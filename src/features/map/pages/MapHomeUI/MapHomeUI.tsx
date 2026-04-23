@@ -424,42 +424,78 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
   const activeMenu = (filter as MapMenuKey) ?? "all";
 
+  const { siteReservations, activeFavGroupId, nestedFavorites } = useSidebarCtx();
+
+  const handleFocusItemMap = useCallback(
+    (item: ListItem | null) => {
+      if (!item) return;
+      const lat = (item as any).lat;
+      const lng = (item as any).lng;
+      if (lat == null || lng == null) return;
+
+      focusMapToPosition({ kakaoSDK, mapInstance, lat, lng });
+    },
+    [kakaoSDK, mapInstance]
+  );
+
+  const handleFocusSubItemMap = useCallback(
+    (sub: SubListItem | null) => {
+      if (!sub) return;
+      const lat = (sub as any).lat;
+      const lng = (sub as any).lng;
+      if (lat == null || lng == null) return;
+
+      focusMapToPosition({ kakaoSDK, mapInstance, lat, lng });
+    },
+    [kakaoSDK, mapInstance]
+  );
+
+  // ✅ 특정 즐겨찾기 폴더 필터링 로직 (최종 병합된 데이터 렌더링 직전에 적용)
+  const activeFavPinIds = useMemo(() => {
+    if (!activeFavGroupId) return null;
+    const group = nestedFavorites?.find((g) => g.id === activeFavGroupId);
+    if (!group) return null;
+    return new Set(
+      group.subItems?.map((it) => String((it as any)?.pinId)).filter(Boolean) || []
+    );
+  }, [activeFavGroupId, nestedFavorites]);
+
+  const finalMergedForCulling = useMemo(() => {
+    if (!activeFavPinIds) return mergedWithTempDraft;
+    return mergedWithTempDraft.filter((m) => activeFavPinIds.has(String(m.id)));
+  }, [mergedWithTempDraft, activeFavPinIds]);
+
   // --- 마커 컬링 (Slack Culling) ---
-  // 메모리에 캐시된 수천 개의 마커 중, 현재 가시 영역(+ 여유분) 내에 있는 것만 필터링합니다.
-  // 지도가 미세하게 움직일 때는 필터링을 다시 하지 않아 렌더링 성능을 확보합니다.
-  const [culledMarkers, setCulledMarkers] = useState<typeof mergedWithTempDraft>([]);
+  const [culledMarkers, setCulledMarkers] = useState<typeof finalMergedForCulling>([]);
   const lastCullingBoundsRef = useRef<typeof bounds | null>(null);
-  const lastMergedWithTempDraftRef = useRef<typeof mergedWithTempDraft | null>(null);
+  const lastMergedWithTempDraftRef = useRef<typeof finalMergedForCulling | null>(null);
 
   useEffect(() => {
     if (!bounds) {
-      setCulledMarkers(mergedWithTempDraft);
+      setCulledMarkers(finalMergedForCulling);
       return;
     }
 
-    // 1) [V5 최적화] 지역 클러스터링 모드(줌 8 이상)일 때는 UI 단의 필터링을 생략(Bypass)합니다.
-    // 이를 통해 드래그 시 CPU 부하를 제거하고, 클러스터 숫자가 지역 전체 합계로 나오게 합니다.
     if (bounds.zoom >= 8) {
-      setCulledMarkers(mergedWithTempDraft);
+      setCulledMarkers(finalMergedForCulling);
       lastCullingBoundsRef.current = bounds;
       return;
     }
 
-    // 2) 일반 마커 모드(줌 7 이하)에서는 기존 Slack Culling 로직을 수행합니다.
     const { swLat, swLng, neLat, neLng } = bounds;
     const last = lastCullingBoundsRef.current;
 
     const latSpan = neLat - swLat;
     const lngSpan = neLng - swLng;
 
-    const isDataChanged = lastMergedWithTempDraftRef.current !== mergedWithTempDraft;
+    const isDataChanged = lastMergedWithTempDraftRef.current !== finalMergedForCulling;
 
     const shouldUpdate = !last ||
       isDataChanged ||
       Math.abs(swLat - last.swLat) > latSpan * 0.05 ||
       Math.abs(swLng - last.swLng) > lngSpan * 0.05 ||
       Math.abs(latSpan - (last.neLat - last.swLat)) > latSpan * 0.1 ||
-      last.zoom >= 8; // 모드 전환 시 즉시 업데이트
+      last.zoom >= 8;
 
     if (shouldUpdate || culledMarkers.length === 0) {
       const latMargin = latSpan * 0.1;
@@ -470,16 +506,16 @@ export function MapHomeUI(props: MapHomeUIProps) {
       const minLng = swLng - lngMargin;
       const maxLng = neLng + lngMargin;
 
-      const filtered = mergedWithTempDraft.filter((m) => {
+      const filtered = finalMergedForCulling.filter((m) => {
         const { lat, lng } = m.position;
         return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
       });
 
       setCulledMarkers(filtered);
       lastCullingBoundsRef.current = bounds;
-      lastMergedWithTempDraftRef.current = mergedWithTempDraft;
+      lastMergedWithTempDraftRef.current = finalMergedForCulling;
     }
-  }, [mergedWithTempDraft, bounds]);
+  }, [finalMergedForCulling, bounds]);
 
   // ✅ 메뉴가 열려 있으면 menuTargetId 기준으로 라벨 숨김 강제
   const effectiveHideLabelForId = useMemo(() => {
@@ -528,31 +564,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
     upsertDraftMarker,
   });
 
-  const { siteReservations } = useSidebarCtx();
 
-  const handleFocusItemMap = useCallback(
-    (item: ListItem | null) => {
-      if (!item) return;
-      const lat = (item as any).lat;
-      const lng = (item as any).lng;
-      if (lat == null || lng == null) return;
-
-      focusMapToPosition({ kakaoSDK, mapInstance, lat, lng });
-    },
-    [kakaoSDK, mapInstance]
-  );
-
-  const handleFocusSubItemMap = useCallback(
-    (sub: SubListItem | null) => {
-      if (!sub) return;
-      const lat = (sub as any).lat;
-      const lng = (sub as any).lng;
-      if (lat == null || lng == null) return;
-
-      focusMapToPosition({ kakaoSDK, mapInstance, lat, lng });
-    },
-    [kakaoSDK, mapInstance]
-  );
 
   return (
     <div className="fixed inset-0">
