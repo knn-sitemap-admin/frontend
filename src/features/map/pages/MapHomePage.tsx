@@ -85,6 +85,7 @@ export default function MapHomePage() {
     isFavoritePin,
     removeFavoriteByPinId,
     reserveVisitPlan,
+    activeFavGroupId,
   } = useSidebar();
 
   const reverseGeocode = useReverseGeocode(s.kakaoSDK);
@@ -119,7 +120,25 @@ export default function MapHomePage() {
     return map;
   }, [nestedFavorites]);
 
-  // ✅ 즐겨찾기 여부는 서버(즐겨찾기 그룹) 기준으로만 판단 (로컬 map:favs 사용 X)
+  // ✅ 특정 즐겨찾기 폴더 필터링 로직
+  const activeFavPinIds = useMemo(() => {
+    if (!activeFavGroupId) return null;
+    const group = nestedFavorites?.find((g) => g.id === activeFavGroupId);
+    if (!group) return null;
+    return new Set(
+      group.subItems?.map((it) => String((it as any)?.pinId)).filter(Boolean) || []
+    );
+  }, [activeFavGroupId, nestedFavorites]);
+
+  const filteredMarkers = useMemo(() => {
+    if (!activeFavPinIds) return s.markers;
+    return s.markers.filter((m) => activeFavPinIds.has(String(m.id)));
+  }, [s.markers, activeFavPinIds]);
+
+  const filteredItems = useMemo(() => {
+    if (!activeFavPinIds) return s.filtered;
+    return s.filtered.filter((item) => activeFavPinIds.has(String(item.id)));
+  }, [s.filtered, activeFavPinIds]);
 
   // ===== 콜백들 =====
   const onChangeQ = useCallback(
@@ -268,8 +287,8 @@ export default function MapHomePage() {
       mapInstance: s.mapInstance,
 
       items: s.items,
-      filtered: s.filtered,
-      markers: s.markers,
+      filtered: filteredItems,
+      markers: filteredMarkers,
       fitAllOnce: s.fitAllOnce,
 
       q: s.q,
@@ -354,6 +373,8 @@ export default function MapHomePage() {
       onReserveFromMenu,
       handleOpenMenu,
       menuTitle,
+      filteredItems,
+      filteredMarkers,
     ]
   );
 

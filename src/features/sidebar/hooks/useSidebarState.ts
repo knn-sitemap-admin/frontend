@@ -88,6 +88,7 @@ export function useSidebarState() {
   const [nestedFavorites, setNestedFavorites] = useState<FavorateListItem[]>(
     [],
   );
+  const [activeFavGroupId, setActiveFavGroupId] = useState<string | null>(null);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<any>(null);
@@ -683,6 +684,10 @@ export function useSidebarState() {
     setIsContractModalOpen,
     selectedContract,
     setSelectedContract,
+    
+    // 폴더 필터링 상태 추가
+    activeFavGroupId,
+    setActiveFavGroupId,
   };
 }
 

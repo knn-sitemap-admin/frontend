@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, ChevronDown, ChevronRight, Pencil, Check } from "lucide-react";
+import { X, ChevronDown, ChevronRight, Pencil, Check, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { Input } from "@/components/atoms/Input/Input";
 import type { FavorateListItem as FavorateListItemType } from "../types/sidebar";
 import { SubList } from "./SubList";
+import { cn } from "@/lib/cn";
 
 interface FavorateListItemProps {
   item: FavorateListItemType;
@@ -18,6 +19,10 @@ interface FavorateListItemProps {
   onFocusSubItemMap?: (
     subItem: FavorateListItemType["subItems"][number]
   ) => void;
+
+  /** ✅ 특정 폴더만 지도에 보기 필터 기능 */
+  isActiveFavGroup?: boolean;
+  onToggleFilterGroup?: (groupId: string) => void;
 }
 
 export function FavorateListItem({
@@ -27,6 +32,8 @@ export function FavorateListItem({
   onDeleteSubItem,
   onUpdateTitle,
   onFocusSubItemMap,
+  isActiveFavGroup,
+  onToggleFilterGroup,
 }: FavorateListItemProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -77,7 +84,6 @@ export function FavorateListItem({
         await onUpdateTitle(item.id, trimmedValue);
         setIsEditing(false);
       } catch (error) {
-        // 에러는 onUpdateTitle에서 toast로 표시됨
         handleCancelEdit();
       } finally {
         isSavingRef.current = false;
@@ -108,7 +114,7 @@ export function FavorateListItem({
 
   return (
     <div className="space-y-0.5">
-      <div className="group flex items-center gap-2 p-1.5 rounded-md border border-transparent transition-colors hover:bg-gray-200/50 hover:border-gray-200">
+      <div className={cn("group flex items-center gap-2 p-1.5 rounded-md border transition-colors", isActiveFavGroup ? "bg-blue-50/50 border-blue-100" : "border-transparent hover:bg-gray-200/50 hover:border-gray-200")}>
         <Button
           variant="ghost"
           size="sm"
@@ -134,12 +140,12 @@ export function FavorateListItem({
             maxLength={32}
           />
         ) : (
-          <span className="flex-1 text-xs font-medium text-gray-700 group-hover:text-gray-900 break-words leading-tight">
+          <span className={cn("flex-1 text-xs break-words leading-tight", isActiveFavGroup ? "font-bold text-blue-700" : "font-medium text-gray-700 group-hover:text-gray-900")}>
             {item.title}
           </span>
         )}
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className={cn("flex items-center gap-1 transition-opacity", isActiveFavGroup ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
           {isEditing ? (
             <Button
               variant="ghost"
@@ -151,6 +157,17 @@ export function FavorateListItem({
             </Button>
           ) : (
             <>
+              {onToggleFilterGroup && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn("h-5 w-5 p-0 hover:shadow-sm hover:bg-white", isActiveFavGroup ? "text-blue-500 bg-white shadow-sm" : "text-gray-400")}
+                  onClick={() => onToggleFilterGroup(item.id)}
+                  title={isActiveFavGroup ? "필터 해제" : "이 폴더의 매물만 보기"}
+                >
+                  {isActiveFavGroup ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                </Button>
+              )}
               {onUpdateTitle && (
                 <Button
                   variant="ghost"
@@ -179,7 +196,6 @@ export function FavorateListItem({
           items={item.subItems}
           onItemsChange={handleSubItemsChange}
           onDeleteItem={handleDeleteSubItem}
-          // ✅ 각 subItem 클릭 시 상위 콜백
           onClickItem={onFocusSubItemMap}
         />
       )}

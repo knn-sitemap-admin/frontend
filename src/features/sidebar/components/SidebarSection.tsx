@@ -23,6 +23,10 @@ type SidebarSectionProps = BaseProps & {
 
   /** ✅ 즐겨찾기 그룹의 subItem 클릭 → 지도 이동 */
   onFocusSubItemMap?: (subItem: any) => void;
+
+  /** ✅ 폴더 필터 기능 연동 */
+  activeFavGroupId?: string | null;
+  onToggleFilterGroup?: (groupId: string) => void;
 };
 
 const NOOP = () => { };
@@ -44,6 +48,8 @@ export function SidebarSection(props: SidebarSectionProps) {
 
     onFocusItemMap,
     onFocusSubItemMap,
+    activeFavGroupId,
+    onToggleFilterGroup,
   } = props;
 
   // 🔹 내부 기본값: 접힌 상태
@@ -96,6 +102,8 @@ export function SidebarSection(props: SidebarSectionProps) {
           onUpdateTitle={onUpdateGroupTitle}
           // ✅ 즐겨찾기 하위 매물 클릭 → 상위 콜백
           onFocusSubItemMap={onFocusSubItemMap}
+          isActiveFavGroup={activeFavGroupId === item.id}
+          onToggleFilterGroup={onToggleFilterGroup}
         />
       )),
     [
@@ -105,6 +113,8 @@ export function SidebarSection(props: SidebarSectionProps) {
       onDeleteSubItem,
       onUpdateGroupTitle,
       onFocusSubItemMap,
+      activeFavGroupId,
+      onToggleFilterGroup,
     ]
   );
 

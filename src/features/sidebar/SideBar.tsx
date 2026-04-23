@@ -51,6 +51,8 @@ export function Sidebar({
     setIsContractModalOpen,
     selectedContract,
     setSelectedContract,
+    activeFavGroupId,
+    setActiveFavGroupId,
   } = useSidebar();
 
   // 1) 훅 호출(조건문 밖)
@@ -218,6 +220,8 @@ export function Sidebar({
             expanded={openSection === "favorites"}
             onToggleExpanded={toggleFavorites}
             onFocusSubItemMap={onFocusSubItemMap}
+            activeFavGroupId={activeFavGroupId}
+            onToggleFilterGroup={(id) => setActiveFavGroupId(activeFavGroupId === id ? null : id)}
           />
 
           <div className="space-y-2 mt-2 pb-2">
