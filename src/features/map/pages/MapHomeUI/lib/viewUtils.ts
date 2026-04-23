@@ -28,10 +28,13 @@ export function focusMapToPosition({
     const current = mapInstance.getLevel?.();
 
     if (typeof current === "number" && current !== level) {
-      mapInstance.setLevel(level, { animate: true });
+      // 줌 레벨이 다를 경우(보통 첫 클릭): 애니메이션을 주면 panTo와 충돌하여 씹히므로 즉시 꽂아줌
+      mapInstance.setLevel(level);
+      mapInstance.setCenter(ll);
+    } else {
+      // 줌 레벨이 이미 같을 경우(보통 두 번째 이후 클릭): 부드럽게 스르륵 이동
+      mapInstance.panTo(ll);
     }
-
-    mapInstance.panTo(ll);
   } catch (e) {
     console.error("[focusMapToPosition] map 이동 실패:", e);
   }

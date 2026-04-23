@@ -74,7 +74,7 @@ export default function HeaderSectionView({
   const { mode: memoMode } = useMemoViewMode();
 
   return (
-    <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b supports-[backdrop-filter]:bg-white/70">
+    <header className="sticky top-0 z-10 bg-white border-b">
       <div className="flex flex-wrap items-center gap-2 md:gap-3 px-3 md:px-4 py-3 md:py-5 overflow-hidden">
         {/* 1️⃣ 신축 / 핀 / 매물평점 / 매물명 */}
         <div className="order-1 flex flex-wrap md:flex-nowrap items-center gap-2 flex-1 min-w-0">

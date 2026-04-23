@@ -37,7 +37,7 @@ export default function ViewActionsBar({
       <div
         className={cn(
           "fixed bottom-0 left-0 right-0 z-20 md:relative",
-          "bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70",
+          "bg-white",
           "border-t",
           "px-4 py-3 md:px-5 md:py-3",
           "flex items-center justify-between",

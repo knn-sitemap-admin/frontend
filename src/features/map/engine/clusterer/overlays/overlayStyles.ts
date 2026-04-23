@@ -32,6 +32,7 @@ export const applyLabelStyles = (
     userSelect: "none",
     display: "inline-flex",
     alignItems: "center",
+    contain: "layout paint style", // ✅ [최적화] 브라우저 강제 레이아웃 계산 방지
   } as CSSStyleDeclaration);
 };
 
@@ -49,6 +50,7 @@ export const applyHitboxStyles = (
     pointerEvents: "auto",
     cursor: "pointer",
     touchAction: "manipulation",
+    contain: "strict", // ✅ [최적화] 크기가 고정되어 있으므로 완벽 격리 (Reflow 차단)
   } as CSSStyleDeclaration);
 };
 

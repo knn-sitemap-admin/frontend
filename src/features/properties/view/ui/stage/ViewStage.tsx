@@ -398,9 +398,10 @@ export default function ViewStage({
   }, [canEditProperty, toast, f, data, onRequestEdit, initialForEdit]);
 
   const panelClass = cn(
-    "bg-white shadow-xl overflow-hidden flex flex-col",
+    "bg-white shadow-xl flex flex-col isolate",
     "w-full h-full max-w-none max-h-none rounded-none",
     "lg:w-[1100px] lg:max-w-[95vw] lg:max-h-[92vh] lg:rounded-2xl",
+    "transform-gpu contain-paint" // ✅ 모바일 PWA 지도 깜빡임(Flicker) 방지를 위한 강력한 GPU 레이어 격리
   );
 
 

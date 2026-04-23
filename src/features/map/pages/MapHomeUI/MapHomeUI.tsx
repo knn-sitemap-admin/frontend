@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  startTransition,
+} from "react";
 import { cn } from "@/lib/cn";
 
 
@@ -472,12 +479,16 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
   useEffect(() => {
     if (!bounds) {
-      setCulledMarkers(finalMergedForCulling);
+      startTransition(() => {
+        setCulledMarkers(finalMergedForCulling);
+      });
       return;
     }
 
     if (bounds.zoom >= 8) {
-      setCulledMarkers(finalMergedForCulling);
+      startTransition(() => {
+        setCulledMarkers(finalMergedForCulling);
+      });
       lastCullingBoundsRef.current = bounds;
       return;
     }
@@ -511,7 +522,9 @@ export function MapHomeUI(props: MapHomeUIProps) {
         return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
       });
 
-      setCulledMarkers(filtered);
+      startTransition(() => {
+        setCulledMarkers(filtered);
+      });
       lastCullingBoundsRef.current = bounds;
       lastMergedWithTempDraftRef.current = finalMergedForCulling;
     }
