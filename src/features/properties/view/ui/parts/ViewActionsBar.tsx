@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/cn";
 import { Trash2, Pencil, Star } from "lucide-react";
+import { useMemoViewMode } from "@/features/properties/view/store/useMemoViewMode";
 
 type Props = {
   showEditButton: boolean;
@@ -28,6 +29,9 @@ export default function ViewActionsBar({
   isFavorited = false,
   onToggleFavorite,
 }: Props) {
+  // ✅ 전역 메모 보기 모드 (K&N / R)
+  const { mode: memoMode, setMode: setMemoMode } = useMemoViewMode();
+
   return (
     <div className="md:static">
       <div
@@ -81,6 +85,22 @@ export default function ViewActionsBar({
               즐겨찾기
             </button>
           )}
+
+          {/* 🟡 전역 메모 보기 토글 (K&N 단일 버튼: 주황/빨강) */}
+          <button
+            type="button"
+            onClick={() => setMemoMode(memoMode === "public" ? "secret" : "public")}
+            className={cn(
+              "inline-flex items-center justify-center px-3 h-9 text-sm font-medium rounded-md border shadow-sm transition-colors",
+              memoMode === "public"
+                ? "bg-amber-500 text-white border-amber-500 hover:bg-amber-600" // 주황
+                : "bg-rose-600 text-white border-rose-600 hover:bg-rose-700" // 빨강
+            )}
+            aria-label="K&N 메모 보기 토글"
+            title="K&N / R 모드"
+          >
+            K&N
+          </button>
 
           {/* ✅ 부장 / 팀장만 삭제 버튼 노출 */}
           {canDelete && (

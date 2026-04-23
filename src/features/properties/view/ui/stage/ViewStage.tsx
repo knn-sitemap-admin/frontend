@@ -41,7 +41,7 @@ import type { FavorateListItem } from "@/features/sidebar/types/sidebar";
 function eat(e: any) {
   try {
     (window as any)?.kakao?.maps?.event?.preventMap?.();
-  } catch {}
+  } catch { }
 }
 
 type Props = {
@@ -73,7 +73,6 @@ export default function ViewStage({
   onRequestEdit,
   asInner,
   initialForEdit,
-  lastEditPayload, // 아직 안 쓰고 있지만 시그니처만 유지
 }: Props) {
   // ✅ 현재 로그인 유저 정보
   const { data: me } = useMe();
@@ -191,9 +190,8 @@ export default function ViewStage({
         await loadFavorites();
         toast({
           title: "즐겨찾기 추가 완료",
-          description: `${
-            data?.title || "매물"
-          }이(가) 즐겨찾기에 추가되었습니다.`,
+          description: `${data?.title || "매물"
+            }이(가) 즐겨찾기에 추가되었습니다.`,
         });
         setFavModalOpen(false);
       } catch (error: any) {
@@ -228,9 +226,8 @@ export default function ViewStage({
         await loadFavorites();
         toast({
           title: "즐겨찾기 추가 완료",
-          description: `${
-            data?.title || "매물"
-          }이(가) 즐겨찾기에 추가되었습니다.`,
+          description: `${data?.title || "매물"
+            }이(가) 즐겨찾기에 추가되었습니다.`,
         });
         setFavModalOpen(false);
       } catch (error: any) {
@@ -328,7 +325,7 @@ export default function ViewStage({
         document
           ?.querySelector<HTMLButtonElement>("[data-pvm-initial]")
           ?.focus();
-      } catch {}
+      } catch { }
     }, 0);
     return () => clearTimeout(t);
   }, []);
@@ -393,7 +390,7 @@ export default function ViewStage({
         baseAreaTitle: (f as any).baseAreaTitleView,
         extraAreaTitles: (f as any).extraAreaTitlesView,
         unitLines: (f as any).unitLines,
-        units: (f as any).units, 
+        units: (f as any).units,
       },
     };
 

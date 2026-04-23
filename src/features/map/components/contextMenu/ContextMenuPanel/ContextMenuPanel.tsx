@@ -72,7 +72,7 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     e.stopPropagation();
     const lat = typeof position === "object" && "getLat" in position ? position.getLat() : (position as any).lat;
     const lng = typeof position === "object" && "getLng" in position ? position.getLng() : (position as any).lng;
-    
+
     // 📍 네비게이션 시 '매물테스트' 같은 이름 대신 '지번/도로명 주소'를 우선 사용하도록 수정
     const naviName = roadAddress || jibunAddress || headerTitle || "목적지";
 
@@ -179,19 +179,17 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
               aria-label="즐겨찾기"
               variant="outline"
               size="sm"
-              className={`flex-1 h-9 gap-1.5 text-sm bg-transparent ${
-                favActive
+              className={`flex-1 h-9 gap-1.5 text-sm bg-transparent ${favActive
                   ? "border-yellow-300 text-yellow-700"
                   : "text-gray-900"
-              } hover:bg-transparent hover:text-inherit hover:border-inherit`}
+                } hover:bg-transparent hover:text-inherit hover:border-inherit`}
               ref={firstFocusableRef}
             >
               <Star
-                className={`w-4 h-4 ${
-                  favActive
+                className={`w-4 h-4 ${favActive
                     ? "fill-yellow-500 text-yellow-500"
                     : "fill-none text-gray-400"
-                }`}
+                  }`}
               />
               <span>즐겨찾기</span>
             </Button>
