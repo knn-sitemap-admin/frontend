@@ -121,8 +121,12 @@ export default function ScheduleCalendar() {
         params.onlyHolidays = true;
       } else if (staffId !== "all") {
         params.assignedStaffId = staffId;
-      } else if (filterMode === "mine" && profile?.account?.id) {
-        params.assignedStaffId = profile.account.id;
+      } else if (profile?.account?.id) {
+        // 관리자/매니저가 아니고 'all' 상태면 자신의 일정만 나오도록 (staff 기본값 강제)
+        // 또는 명시적으로 'mine'을 선택한 경우
+        if (!isPowerful || filterMode === "mine") {
+          params.assignedStaffId = profile.account.id;
+        }
       }
 
       const data = await getSchedules(params);
@@ -138,7 +142,7 @@ export default function ScheduleCalendar() {
         };
 
         let contractData;
-        if (filterMode === "mine") {
+        if (!isPowerful || filterMode === "mine") {
           contractData = await getMyContracts(contractParams);
         } else {
           contractData = await getContracts(contractParams);
