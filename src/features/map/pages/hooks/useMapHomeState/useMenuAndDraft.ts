@@ -78,12 +78,12 @@ export function useMenuAndDraft({
       _setDraftPin(p);
       try {
         localStorage.setItem(DRAFT_PIN_STORAGE_KEY, JSON.stringify(p));
-      } catch {}
+      } catch { }
     } else {
       _setDraftPin(null);
       try {
         localStorage.removeItem(DRAFT_PIN_STORAGE_KEY);
-      } catch {}
+      } catch { }
     }
   }, []);
 
@@ -197,7 +197,7 @@ export function useMenuAndDraft({
           const handler = () => {
             try {
               ev.removeListener(map, "idle", handler);
-            } catch {}
+            } catch { }
             resolve();
           };
           ev.addListener(map, "idle", handler);
@@ -315,7 +315,7 @@ export function useMenuAndDraft({
       if (mapInstance && menuAnchor) {
         showLabelsAround(mapInstance, menuAnchor.lat, menuAnchor.lng, 56);
       }
-    } catch {}
+    } catch { }
 
     setMenuOpen(false);
     setMenuTargetId(null);
@@ -334,12 +334,6 @@ export function useMenuAndDraft({
       const p = normalizeLL(pos);
       if (!p) return; // ✅ null 방어
 
-      console.log("[useMenuAndDraft] onPlanFromMenu, call refetchPins", {
-        pos,
-        normalized: p,
-        hasDraftPin: !!draftPin,
-      });
-
       // 메뉴를 열었던 draft 위치와 동일하면 draftPin 비우기
       if (draftPin && sameCoord(draftPin, p)) {
         clearDraftState();
@@ -347,11 +341,6 @@ export function useMenuAndDraft({
 
       // 메뉴 닫기 및 라벨 복원
       closeMenu();
-
-      console.log("[useMenuAndDraft] onPlanFromMenu, call refetchPins", {
-        pos: p,
-        hasRefetchPins: typeof refetchPins === "function",
-      });
 
       try {
         refetchPins?.();

@@ -33,7 +33,6 @@ export async function createNotice(
       data: NoticeResponse;
     }>("/dashboard/notices", data);
 
-    console.log("공지사항 생성 API 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("공지사항 생성 API 호출 실패:", error);
@@ -49,7 +48,6 @@ export async function getNotices(): Promise<NoticeListResponse[]> {
       data: NoticeListResponse[];
     }>("/dashboard/notices");
 
-    console.log("공지사항 목록 API 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("공지사항 목록 API 호출 실패:", error);
@@ -65,7 +63,6 @@ export async function getNotice(id: number): Promise<NoticeResponse> {
       data: NoticeResponse;
     }>(`/dashboard/notices/${id}`);
 
-    console.log("공지사항 상세 API 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("공지사항 상세 API 호출 실패:", error);
@@ -84,7 +81,6 @@ export async function updateNotice(
       data: NoticeResponse;
     }>(`/dashboard/notices/${id}`, data);
 
-    console.log("공지사항 수정 API 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("공지사항 수정 API 호출 실패:", error);
@@ -96,7 +92,6 @@ export async function updateNotice(
 export async function deleteNotice(id: number): Promise<void> {
   try {
     await api.delete(`/dashboard/notices/${id}`);
-    console.log("공지사항 삭제 성공:", id);
   } catch (error: any) {
     console.error("공지사항 삭제 API 호출 실패:", error);
     throw error;

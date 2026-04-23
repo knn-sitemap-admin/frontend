@@ -167,7 +167,6 @@ export function ContractList({
   };
 
   const handleRowClick = async (row: ContractData) => {
-    console.log("계약 클릭:", row);
     try {
       const id = Number(row.backendContractId ?? row.id);
       const contract = await getContract(id);
@@ -274,10 +273,10 @@ export function ContractList({
           columns={
             salaryColumnLabel
               ? contractTableColumns.map((col) =>
-                  col.key === "salesPersonSalary"
-                    ? { ...col, label: salaryColumnLabel }
-                    : col
-                )
+                col.key === "salesPersonSalary"
+                  ? { ...col, label: salaryColumnLabel }
+                  : col
+              )
               : contractTableColumns
           }
           pagination={pagination}

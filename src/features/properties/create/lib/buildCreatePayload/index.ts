@@ -22,11 +22,6 @@ import { toStrictAreaSet } from "./types";
 type OrientationOut = { ho: number; value: string };
 
 export function buildCreatePayload(args: BuildArgs) {
-  console.log(
-    "[buildCreatePayload] args.isNew/isOld =",
-    args.isNew,
-    args.isOld
-  );
 
   const {
     title,
@@ -104,9 +99,9 @@ export function buildCreatePayload(args: BuildArgs) {
   const directions =
     Array.isArray(orientations) && orientations.length > 0
       ? orientations
-          .map((o) => String(o?.value ?? "").trim())
-          .filter((v) => v.length > 0)
-          .map((direction) => ({ direction }))
+        .map((o) => String(o?.value ?? "").trim())
+        .filter((v) => v.length > 0)
+        .map((direction) => ({ direction }))
       : undefined;
 
   /* 3) 면적 패킹 (레거시 호환) */
@@ -266,9 +261,9 @@ export function buildCreatePayload(args: BuildArgs) {
     contactMainPhone: officePhone,
     ...(officePhone2 && officePhone2.trim() !== ""
       ? {
-          contactSubLabel: officeName?.trim() || "사무실",
-          contactSubPhone: officePhone2,
-        }
+        contactSubLabel: officeName?.trim() || "사무실",
+        contactSubPhone: officePhone2,
+      }
       : {}),
 
     ...(safeBadge ? { badge: safeBadge.slice(0, 30) } : {}),
@@ -286,13 +281,13 @@ export function buildCreatePayload(args: BuildArgs) {
     // 주차 유형: 배열 우선, 레거시 단일 값 폴백
     ...(Array.isArray(parkingTypes) && parkingTypes.length > 0
       ? {
-          parkingTypes: parkingTypes
-            .map((x) => String(x ?? "").trim())
-            .filter(Boolean),
-        }
+        parkingTypes: parkingTypes
+          .map((x) => String(x ?? "").trim())
+          .filter(Boolean),
+      }
       : s(parkingType)
-      ? { parkingTypes: [s(parkingType)] }
-      : {}),
+        ? { parkingTypes: [s(parkingType)] }
+        : {}),
 
     // 총 주차 대수: null 제외(0 허용)
     ...(normalizedTotalParkingSlots === null
@@ -384,10 +379,10 @@ export function buildCreatePayload(args: BuildArgs) {
     /* 분류/ID: buildingTypes 배열 (다중선택) — "buildingTypes": ["APT", "OP"] */
     ...(Array.isArray(buildingTypes) && buildingTypes.length > 0
       ? {
-          buildingTypes: buildingTypes
-            .map((x) => String(x ?? "").trim())
-            .filter(Boolean),
-        }
+        buildingTypes: buildingTypes
+          .map((x) => String(x ?? "").trim())
+          .filter(Boolean),
+      }
       : s(buildingType)
         ? { buildingTypes: [s(buildingType)] }
         : {}),

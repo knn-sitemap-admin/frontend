@@ -87,7 +87,6 @@ export default function AccountsPage() {
     // Optimistically update the cached list
     onMutate: async ({ credentialId, disabled }) => {
       const targetIdStr = String(credentialId);
-      console.log(`[Mutation] 계정 상태 토글 시작: id=${targetIdStr}, targetDisabled=${disabled}`);
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: ["employees-list"] });
 
@@ -164,7 +163,6 @@ export default function AccountsPage() {
     return employees.map((employee) => {
       // 디버깅 로그 추가: 특정 계정의 상태 확인
       if (employee.credentialId === "8" || String(employee.credentialId) === "8") {
-        console.log(`[Transform] 계정 8 발견, isDisabled=${employee.isDisabled}`);
       }
       return {
         id: employee.accountId, // accountId를 id로 사용
@@ -234,7 +232,6 @@ export default function AccountsPage() {
   // 역할 변경 핸들러 (현재는 사용하지 않지만 Props에 필요)
   const handleChangeRole = (id: string, role: RoleKey) => {
     // TODO: 역할 변경 기능이 필요하면 구현
-    console.log("역할 변경:", { id, role });
   };
 
   // 계정 수정 핸들러

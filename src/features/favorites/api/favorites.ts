@@ -22,11 +22,9 @@ export async function getFavoriteGroups(
   includeItems: boolean = false
 ): Promise<FavoriteGroup[]> {
   try {
-    console.log("즐겨찾기 그룹 목록 조회:", { includeItems });
     const response = await api.get<{ message: string; data: FavoriteGroup[] }>(
       `/favorite/group?includeItems=${includeItems ? "1" : "0"}`
     );
-    console.log("즐겨찾기 그룹 목록 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("즐겨찾기 그룹 목록 조회 실패:", error);
@@ -45,12 +43,10 @@ export async function updateGroupTitle(
   data: UpdateGroupTitleRequest
 ): Promise<FavoriteGroup> {
   try {
-    console.log("즐겨찾기 그룹 제목 수정:", { groupId, data });
     const response = await api.patch<{ message: string; data: FavoriteGroup }>(
       `/favorite/group/${groupId}`,
       data
     );
-    console.log("즐겨찾기 그룹 제목 수정 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("즐겨찾기 그룹 제목 수정 실패:", error);
@@ -69,12 +65,10 @@ export type ReorderGroupsRequest = {
 
 export async function reorderGroups(data: ReorderGroupsRequest): Promise<void> {
   try {
-    console.log("즐겨찾기 그룹 순서 변경:", data);
     const response = await api.patch<{ message: string }>(
       "/favorite/group/reorder",
       data
     );
-    console.log("즐겨찾기 그룹 순서 변경 응답:", response.data);
   } catch (error: any) {
     console.error("즐겨찾기 그룹 순서 변경 실패:", error);
     console.error("에러 상세:", error?.response?.data);
@@ -85,11 +79,9 @@ export async function reorderGroups(data: ReorderGroupsRequest): Promise<void> {
 // 즐겨찾기 그룹 삭제
 export async function deleteFavoriteGroup(groupId: string): Promise<void> {
   try {
-    console.log("즐겨찾기 그룹 삭제:", { groupId });
     const response = await api.delete<{ message: string }>(
       `/favorite/group/${groupId}`
     );
-    console.log("즐겨찾기 그룹 삭제 응답:", response.data);
   } catch (error: any) {
     console.error("즐겨찾기 그룹 삭제 실패:", error);
     console.error("에러 상세:", error?.response?.data);
@@ -103,11 +95,9 @@ export async function deleteFavoriteItem(
   itemId: string
 ): Promise<void> {
   try {
-    console.log("즐겨찾기 아이템 삭제:", { groupId, itemId });
     const response = await api.delete<{ message: string }>(
       `/favorite-groups/${groupId}/items/${itemId}`
     );
-    console.log("즐겨찾기 아이템 삭제 응답:", response.data);
   } catch (error: any) {
     console.error("즐겨찾기 아이템 삭제 실패:", error);
     console.error("에러 상세:", error?.response?.data);
@@ -128,12 +118,10 @@ export async function reorderItems(
   data: ReorderItemsRequest
 ): Promise<void> {
   try {
-    console.log("즐겨찾기 아이템 순서 변경:", { groupId, data });
     const response = await api.patch<{ message: string }>(
       `/favorite-groups/${groupId}/items/reorder`,
       data
     );
-    console.log("즐겨찾기 아이템 순서 변경 응답:", response.data);
   } catch (error: any) {
     console.error("즐겨찾기 아이템 순서 변경 실패:", error);
     console.error("에러 상세:", error?.response?.data);
@@ -167,12 +155,10 @@ export async function upsertFavoriteItem(
   data: UpsertFavoriteItemRequest
 ): Promise<UpsertFavoriteItemResponse> {
   try {
-    console.log("즐겨찾기 아이템 추가/수정:", data);
     const response = await api.post<{
       message: string;
       data: UpsertFavoriteItemResponse;
     }>("/favorite/upsert-item", data);
-    console.log("즐겨찾기 아이템 추가/수정 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("즐겨찾기 아이템 추가/수정 실패:", error);

@@ -554,11 +554,11 @@ function toPinPatch(f, initial) {
             ? arr
                 .map((g) => normGroup(g))
                 .filter((x) => x.title ||
-                x.exclusiveMinM2 ||
-                x.exclusiveMaxM2 ||
-                x.realMinM2 ||
-                x.realMaxM2 ||
-                (x.units && x.units.length > 0))
+                    x.exclusiveMinM2 ||
+                    x.exclusiveMaxM2 ||
+                    x.realMinM2 ||
+                    x.realMaxM2 ||
+                    (x.units && x.units.length > 0))
             : [];
         const keyOf = (g) => {
             var _a, _b, _c, _d;
@@ -599,8 +599,8 @@ function toPinPatch(f, initial) {
         const pickDirStringsFromInitial = (init) => {
             const fromArr = (Array.isArray(init === null || init === void 0 ? void 0 : init.directions) ? init.directions : [])
                 .map((d) => [d === null || d === void 0 ? void 0 : d.direction, d === null || d === void 0 ? void 0 : d.dir, d === null || d === void 0 ? void 0 : d.value, d === null || d === void 0 ? void 0 : d.name, d === null || d === void 0 ? void 0 : d.code]
-                .map((x) => (typeof x === "string" ? x.trim() : ""))
-                .find((x) => !!x) || "")
+                    .map((x) => (typeof x === "string" ? x.trim() : ""))
+                    .find((x) => !!x) || "")
                 .filter(Boolean);
             if (fromArr.length)
                 return fromArr;
@@ -619,12 +619,12 @@ function toPinPatch(f, initial) {
             const oNow = Array.isArray(bo.orientations) ? bo.orientations : [];
             let pairs = oNow
                 .map((o) => {
-                const dir = [o === null || o === void 0 ? void 0 : o.dir, o === null || o === void 0 ? void 0 : o.value, o === null || o === void 0 ? void 0 : o.direction, o === null || o === void 0 ? void 0 : o.name, o === null || o === void 0 ? void 0 : o.code]
-                    .map((x) => (typeof x === "string" ? x.trim() : ""))
-                    .find((x) => !!x) || "";
-                const ho = hoNum(o === null || o === void 0 ? void 0 : o.ho);
-                return dir ? { ho, dir } : null;
-            })
+                    const dir = [o === null || o === void 0 ? void 0 : o.dir, o === null || o === void 0 ? void 0 : o.value, o === null || o === void 0 ? void 0 : o.direction, o === null || o === void 0 ? void 0 : o.name, o === null || o === void 0 ? void 0 : o.code]
+                        .map((x) => (typeof x === "string" ? x.trim() : ""))
+                        .find((x) => !!x) || "";
+                    const ho = hoNum(o === null || o === void 0 ? void 0 : o.ho);
+                    return dir ? { ho, dir } : null;
+                })
                 .filter(Boolean);
             if (!pairs.length) {
                 const arr = [bo.aspect1, bo.aspect2, bo.aspect3]
@@ -660,51 +660,46 @@ function toPinPatch(f, initial) {
     if (unitsChanged(initialUnits, currentUnits)) {
         const units = (currentUnits !== null && currentUnits !== void 0 ? currentUnits : [])
             .map((u) => {
-            var _a, _b, _c, _d, _e, _f;
-            let minPrice = toNumOrNull((_a = u === null || u === void 0 ? void 0 : u.minPrice) !== null && _a !== void 0 ? _a : u === null || u === void 0 ? void 0 : u.primary);
-            let maxPrice = toNumOrNull((_b = u === null || u === void 0 ? void 0 : u.maxPrice) !== null && _b !== void 0 ? _b : u === null || u === void 0 ? void 0 : u.secondary);
-            if (minPrice !== null && maxPrice === null)
-                maxPrice = minPrice;
-            if (maxPrice !== null && minPrice === null)
-                minPrice = maxPrice;
-            const n = {
-                rooms: toNumOrNull(u === null || u === void 0 ? void 0 : u.rooms),
-                baths: toNumOrNull(u === null || u === void 0 ? void 0 : u.baths),
-                hasLoft: !!((_c = u === null || u === void 0 ? void 0 : u.hasLoft) !== null && _c !== void 0 ? _c : u === null || u === void 0 ? void 0 : u.duplex),
-                hasTerrace: !!((_d = u === null || u === void 0 ? void 0 : u.hasTerrace) !== null && _d !== void 0 ? _d : u === null || u === void 0 ? void 0 : u.terrace),
-                minPrice,
-                maxPrice,
-                note: typeof (u === null || u === void 0 ? void 0 : u.note) === "string" && u.note.trim() !== ""
-                    ? u.note.trim()
-                    : null,
-            };
-            let hasAny = n.rooms != null ||
-                n.baths != null ||
-                n.hasLoft ||
-                n.hasTerrace ||
-                n.minPrice != null ||
-                n.maxPrice != null;
-            hasAny = hasAny || ((_e = n.note) !== null && _e !== void 0 ? _e : "") !== "";
-            return hasAny
-                ? {
-                    rooms: n.rooms,
-                    baths: n.baths,
-                    hasLoft: n.hasLoft,
-                    hasTerrace: n.hasTerrace,
-                    minPrice: n.minPrice,
-                    maxPrice: n.maxPrice,
-                    note: (_f = n.note) !== null && _f !== void 0 ? _f : null,
-                }
-                : null;
-        })
+                var _a, _b, _c, _d, _e, _f;
+                let minPrice = toNumOrNull((_a = u === null || u === void 0 ? void 0 : u.minPrice) !== null && _a !== void 0 ? _a : u === null || u === void 0 ? void 0 : u.primary);
+                let maxPrice = toNumOrNull((_b = u === null || u === void 0 ? void 0 : u.maxPrice) !== null && _b !== void 0 ? _b : u === null || u === void 0 ? void 0 : u.secondary);
+                if (minPrice !== null && maxPrice === null)
+                    maxPrice = minPrice;
+                if (maxPrice !== null && minPrice === null)
+                    minPrice = maxPrice;
+                const n = {
+                    rooms: toNumOrNull(u === null || u === void 0 ? void 0 : u.rooms),
+                    baths: toNumOrNull(u === null || u === void 0 ? void 0 : u.baths),
+                    hasLoft: !!((_c = u === null || u === void 0 ? void 0 : u.hasLoft) !== null && _c !== void 0 ? _c : u === null || u === void 0 ? void 0 : u.duplex),
+                    hasTerrace: !!((_d = u === null || u === void 0 ? void 0 : u.hasTerrace) !== null && _d !== void 0 ? _d : u === null || u === void 0 ? void 0 : u.terrace),
+                    minPrice,
+                    maxPrice,
+                    note: typeof (u === null || u === void 0 ? void 0 : u.note) === "string" && u.note.trim() !== ""
+                        ? u.note.trim()
+                        : null,
+                };
+                let hasAny = n.rooms != null ||
+                    n.baths != null ||
+                    n.hasLoft ||
+                    n.hasTerrace ||
+                    n.minPrice != null ||
+                    n.maxPrice != null;
+                hasAny = hasAny || ((_e = n.note) !== null && _e !== void 0 ? _e : "") !== "";
+                return hasAny
+                    ? {
+                        rooms: n.rooms,
+                        baths: n.baths,
+                        hasLoft: n.hasLoft,
+                        hasTerrace: n.hasTerrace,
+                        minPrice: n.minPrice,
+                        maxPrice: n.maxPrice,
+                        note: (_f = n.note) !== null && _f !== void 0 ? _f : null,
+                    }
+                    : null;
+            })
             .filter(Boolean);
         patch.units = units;
     }
-    console.log("[toPinPatch] 반환 patch buildingTypes/parkingTypes:", {
-        buildingTypes: patch.buildingTypes,
-        parkingTypes: patch.parkingTypes,
-        patchKeys: Object.keys(patch),
-    });
     return patch;
 }
 /* 무의미한 null/빈값 제거: 초기 스냅샷 기준으로 noop이면 dto에서 삭제 */

@@ -98,14 +98,6 @@ export async function commitImageChangesImpl(
   const verticalNewItems = buildVerticalNewItems(verticalImagesRef.current);
 
   // eslint-disable-next-line no-console
-  console.log("[commitImageChangesImpl] Start", {
-    pendingGroupMapSize: pendingGroupMap.current.size,
-    pendingPhotoMapSize: pendingPhotoMap.current.size,
-    pendingDeleteSetSize: pendingDeleteSet.current.size,
-    newUploadPlansCount: newUploadPlans.length,
-    verticalNewItemsCount: verticalNewItems.length,
-  });
-
   if (
     groupChanges.length === 0 &&
     photoChangesPending.length === 0 &&
@@ -113,8 +105,6 @@ export async function commitImageChangesImpl(
     newUploadPlans.length === 0 &&
     verticalNewItems.length === 0
   ) {
-    // eslint-disable-next-line no-console
-    console.log("[commitImageChangesImpl] No changes detected. Aborting.");
     return false;
   }
 
@@ -320,15 +310,10 @@ export async function commitImageChangesImpl(
         };
       });
 
-      // eslint-disable-next-line no-console
-      console.log("🚀 [commitImageChangesImpl] SENDING BATCH PAYLOAD:", JSON.stringify(payload, null, 2));
 
       try {
-        const res = await batchPatchPhotos(payload);
-        // eslint-disable-next-line no-console
-        console.log("✅ [commitImageChangesImpl] BATCH SUCCESS:", res);
+        await batchPatchPhotos(payload);
       } catch (err) {
-        console.error("❌ [commitImageChangesImpl] BATCH FAILED:", err);
         throw err;
       }
     }

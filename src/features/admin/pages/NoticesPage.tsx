@@ -172,7 +172,6 @@ export function NoticesPage() {
   };
 
   const handleRowClick = (row: NoticeData) => {
-    console.log("공지사항 클릭:", row);
   };
 
   return (

@@ -46,7 +46,7 @@ export default function ImagesContainer({ images }: { images: any }) {
       objectURLsRef.current.forEach((u) => {
         try {
           URL.revokeObjectURL(u);
-        } catch {}
+        } catch { }
       });
       objectURLsRef.current = [];
     };
@@ -148,12 +148,6 @@ export default function ImagesContainer({ images }: { images: any }) {
 
   /** 5) (idx, FileList|null) → 훅 onPickFilesToFolder 호출 */
   const addToFolder = (folderIdx: number, files: FileList | null) => {
-    console.log(
-      "[ImagesContainer] addToFolder idx:",
-      folderIdx,
-      "files:",
-      files
-    );
     onPickFilesToFolder(folderIdx, files);
   };
 

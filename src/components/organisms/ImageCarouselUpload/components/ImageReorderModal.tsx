@@ -62,7 +62,7 @@ export default function ImageReorderModal({
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
-    
+
     // 실시간 순서 변경 (선택사항 - 더 부드러운 UX)
     move(draggedIndex, index);
     setDraggedIndex(index);
@@ -75,9 +75,8 @@ export default function ImageReorderModal({
 
   const handleSave = () => {
     // eslint-disable-next-line no-console
-    console.log(`[ImageReorderModal] Applying ${localItems.length} items to ${title}`);
     onApply(localItems);
-    
+
     // 약간의 지연 후 닫기 (부모 리렌더링 배려)
     setTimeout(() => {
       onClose();
@@ -109,10 +108,10 @@ export default function ImageReorderModal({
             {localItems.map((img, i) => {
               const src = img.url ?? img.dataUrl;
               const isDragging = draggedIndex === i;
-              
+
               return (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   draggable
                   onDragStart={(e) => handleDragStart(e, i)}
                   onDragEnd={handleDragEnd}
@@ -132,7 +131,7 @@ export default function ImageReorderModal({
                     <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-md border border-white/20">
                       {i + 1}
                     </div>
-                    
+
                     {/* 드래그 힌트 아이콘 (호버 시 노출) */}
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                       <div className="bg-white/90 p-2 rounded-full shadow-lg">
@@ -140,7 +139,7 @@ export default function ImageReorderModal({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* 기존 버튼은 작게 유지하거나 필요한 경우 제거 가능. 여기서는 드래그 중심 UI를 위해 제거 또는 축소 */}
                   <div className="flex items-center justify-center gap-1.5 px-1 py-1">
                     <div className="text-[9px] font-bold text-gray-400 tracking-tight uppercase">
@@ -159,24 +158,24 @@ export default function ImageReorderModal({
               <X className="w-3.5 h-3.5 text-amber-500 rotate-45" />
             </div>
             <p className="text-[13px] text-amber-700 font-bold leading-tight">
-              순서 적용 후, 메인 수정창 하단의 <br/>
+              순서 적용 후, 메인 수정창 하단의 <br />
               <span className="text-amber-800 underline decoration-2 underline-offset-2 font-black">
                 [매물정보 수정완료] 또는 [저장]
-              </span> 
+              </span>
               버튼을 꼭 눌러야 저장됩니다.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button 
-              variant="outline" 
-              onClick={onClose} 
+            <Button
+              variant="outline"
+              onClick={onClose}
               className="flex-1 sm:flex-none h-12 px-6 rounded-2xl border-gray-200 text-gray-600 font-bold"
             >
               취소
             </Button>
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               className="flex-1 sm:flex-none h-12 px-8 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-200 transition-all border-0 gap-2"
             >
               <Check className="h-5 w-5" />

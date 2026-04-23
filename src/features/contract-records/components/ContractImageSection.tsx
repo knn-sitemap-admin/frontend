@@ -40,12 +40,6 @@ export function ContractImageSection({
 
   // 초기 이미지가 변경되면 업데이트
   useEffect(() => {
-    console.log(
-      "ContractImageSection initialImages 변경:",
-      initialImages,
-      "key:",
-      initialImagesKey
-    );
     // initialImages가 undefined가 아닐 때만 업데이트 (빈 배열도 허용)
     if (initialImages !== undefined) {
       setImages(initialImages);
@@ -213,16 +207,16 @@ export function ContractImageSection({
                       <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                     </div>
                   ) : (image.preview?.startsWith("http://") ||
-                      image.preview?.startsWith("https://") ||
-                      image.preview?.startsWith("blob:")) ? (
+                    image.preview?.startsWith("https://") ||
+                    image.preview?.startsWith("blob:")) ? (
                     <div className="w-full h-full relative">
                       {erroredImages.has(image.id) ? (
                         <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-400 p-2 gap-1">
                           <ImageIcon className="h-5 w-5 opacity-20" />
                           <span className="text-[10px] text-center leading-tight">불러오기 실패</span>
-                          <a 
-                            href={image.preview} 
-                            target="_blank" 
+                          <a
+                            href={image.preview}
+                            target="_blank"
                             rel="noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             className="text-[9px] text-blue-500 hover:underline"
@@ -284,12 +278,12 @@ export function ContractImageSection({
 
       {/* 이미지 뷰어 모달 */}
       {viewerImage && (
-        <div 
+        <div
           className="fixed inset-0 z-[5000] flex items-center justify-center bg-black/90 backdrop-blur-sm cursor-zoom-out p-4 md:p-10 select-none animate-in fade-in duration-200"
           onClick={() => setViewerImage(null)}
           onContextMenu={(e) => e.preventDefault()}
         >
-          <div 
+          <div
             className="relative max-w-full max-h-full flex items-center justify-center cursor-default"
             onClick={(e) => e.stopPropagation()}
           >

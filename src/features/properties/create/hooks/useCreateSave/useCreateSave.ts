@@ -83,7 +83,6 @@ export function useCreateSave({
     } = media;
 
     try {
-      console.log("[PropertyCreate] save clicked");
 
       if (!f.title.trim()) {
         alert("매물명을 입력해 주세요.");
@@ -232,12 +231,6 @@ export function useCreateSave({
       const buildingTypesForm = Array.isArray(anyForm.buildingTypes)
         ? anyForm.buildingTypes.filter(Boolean)
         : [];
-      console.log(
-        "[CreateSave] parkingTypes:",
-        parkingTypesForm,
-        "buildingTypes:",
-        buildingTypesForm
-      );
 
       const rawMinRealMoveInCost =
         anyForm.minRealMoveInCost ??
@@ -277,23 +270,23 @@ export function useCreateSave({
         anyForm.isNew === true
           ? true
           : anyForm.isOld === true
-          ? false
-          : grade === "new"
-          ? true
-          : grade === "old"
-          ? false
-          : null;
+            ? false
+            : grade === "new"
+              ? true
+              : grade === "old"
+                ? false
+                : null;
 
       const isOldForPayload =
         anyForm.isOld === true
           ? true
           : anyForm.isNew === true
-          ? false
-          : grade === "old"
-          ? true
-          : grade === "new"
-          ? false
-          : null;
+            ? false
+            : grade === "old"
+              ? true
+              : grade === "new"
+                ? false
+                : null;
 
       const effectiveBadge =
         (f.badge ?? "").trim() ||

@@ -180,7 +180,6 @@ export default function ImagesSection({
           onOpenPicker={() => fileInputRef.current?.click()}
           inputRef={fileInputRef}
           onChangeFiles={(files) => {
-            console.log("[ImagesSection] vertical onChangeFiles:", files);
             onAddFiles(files);
           }}
           onChangeCaption={(index, text) =>

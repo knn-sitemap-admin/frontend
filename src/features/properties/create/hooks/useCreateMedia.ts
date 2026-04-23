@@ -260,10 +260,8 @@ export function useCreateMedia() {
       const groupImages: ImageItem[] = isFolderObject
         ? (folderAny.items as ImageItem[]) ?? []
         : Array.isArray(folderAny)
-        ? (folderAny as ImageItem[])
-        : [];
-
-      console.log("[persistOneCard] run", { folderIdx, groupImages });
+          ? (folderAny as ImageItem[])
+          : [];
 
       if (!groupImages.length) return;
 
@@ -321,8 +319,6 @@ export function useCreateMedia() {
     async (pinId: string | number) => {
       if (processedVerticalRef.current) return;
       processedVerticalRef.current = true;
-
-      console.log("[persistVerticalFiles] run", { fileItems });
 
       try {
         const filePromises = fileItems.map((it, i) =>

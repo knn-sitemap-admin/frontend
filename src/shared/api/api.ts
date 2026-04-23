@@ -100,10 +100,6 @@ if (!apiInstance) {
 
 export const api = apiInstance;
 
-if (process.env.NODE_ENV !== "production") {
-  // eslint-disable-next-line no-console
-  console.log("[api baseURL]", api.defaults.baseURL);
-}
 
 /* ────────────────────────────────────────────────────────────
    🔒 전역(singleton) inflight Map: HMR/StrictMode에서도 1개만 사용

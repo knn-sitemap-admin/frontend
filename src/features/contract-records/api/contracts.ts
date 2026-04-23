@@ -44,6 +44,7 @@ export type ContractResponse = {
   };
   createdAt: string;
   updatedAt: string;
+  scheduleId?: string | null;
 };
 
 // 백엔드 API 요청 타입
@@ -72,6 +73,7 @@ export type CreateContractRequest = {
     sortOrder?: number;
   }>;
   urls?: string[]; // 계약 이미지 URL
+  scheduleId?: string; // 연동된 일정 ID
 };
 
 export type UpdateContractRequest = Partial<CreateContractRequest>;
@@ -92,11 +94,14 @@ export type ContractListItemResponse = {
   id: number;
   contractNo: string;
   createdByName: string; // 담당자
+  createdByAccountId: string | null;
   customerName: string;
   customerPhone: string;
   contractDate: string; // 계약일
   finalPaymentDate: string; // 잔금일
   status: "ongoing" | "done" | "canceled" | "rejected";
+  siteName: string;
+  salesTeamPhone: string;
   // 계산에 필요한 원본 필드들
   brokerageFee: number; // 중개보수금 (원)
   vatEnabled: boolean; // 부가세 여부

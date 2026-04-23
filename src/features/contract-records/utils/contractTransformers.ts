@@ -100,28 +100,16 @@ export function transformSalesContractToCreateRequest(
     account: data.financialInfo.customerAccountNumber || undefined,
     assignees,
     urls: validUrls.length > 0 ? validUrls : undefined,
+    scheduleId: data.scheduleId,
   };
 
-  console.log("변환된 요청 데이터 상세:", request);
-  console.log("변환된 요청 데이터 - companyPercent:", request.companyPercent);
-  console.log("변환된 요청 데이터 - assignees:", request.assignees);
   if (request.assignees) {
     const assigneesSum = request.assignees.reduce(
       (sum, a) => sum + a.sharePercent,
       0,
     );
-    console.log(
-      "변환된 요청 데이터 - assignees sharePercent 합계:",
-      assigneesSum,
-    );
-    console.log(
-      "변환된 요청 데이터 - companyPercent + assigneesSum:",
-      request.companyPercent + assigneesSum,
-    );
+
   }
-  console.log("변환된 요청 데이터 - urls:", request.urls);
-  console.log("변환된 요청 데이터 - validUrls:", validUrls);
-  console.log("변환된 요청 데이터 - contractImages:", data.contractImages);
   return request;
 }
 
@@ -201,6 +189,7 @@ export function transformSalesContractToUpdateRequest(
     account: data.financialInfo.customerAccountNumber || undefined,
     assignees, // 포함 시 전체 교체
     urls: validUrls.length > 0 ? validUrls : undefined, // 포함 시 전체 교체
+    scheduleId: data.scheduleId,
   };
 
   // undefined 필드 제거 (Partial 업데이트이므로, undefined는 제외)
@@ -214,7 +203,6 @@ export function transformSalesContractToUpdateRequest(
     },
   );
 
-  console.log("변환된 수정 요청 데이터:", cleanedRequest);
   return cleanedRequest;
 }
 
@@ -359,6 +347,7 @@ export function transformContractResponseToSalesContract(
     status,
     createdAt: contract.createdAt,
     updatedAt: contract.updatedAt || contract.createdAt,
+    scheduleId: contract.scheduleId ? String(contract.scheduleId) : undefined,
   };
 }
 

@@ -6,7 +6,8 @@ export interface Schedule {
   content: string | null;
   category: string;
   location: string | null;
-  customerPhoneLast4: string | null;
+  customerPhone: string | null;
+  platform: string | null;
   meetingType: string | null;
   startDate: string;
   endDate: string;
@@ -18,6 +19,9 @@ export interface Schedule {
   };
   createdAt: string;
   updatedAt: string;
+  status: 'normal' | 'canceled';
+  contractId: number | null;
+  salesTeamPhone?: string | null;
 }
 
 export interface CreateScheduleRequest {
@@ -25,7 +29,8 @@ export interface CreateScheduleRequest {
   content?: string;
   category: string;
   location?: string;
-  customerPhoneLast4?: string;
+  customerPhone?: string;
+  platform?: string;
   meetingType?: string;
   startDate: string;
   endDate: string;
@@ -38,20 +43,23 @@ export interface UpdateScheduleRequest {
   content?: string;
   category?: string;
   location?: string;
-  customerPhoneLast4?: string;
+  customerPhone?: string;
+  platform?: string;
   meetingType?: string;
   startDate?: string;
   endDate?: string;
   isAllDay?: boolean;
   color?: string;
+  status?: 'normal' | 'canceled';
 }
 
 /** 일정 목록 조회 */
-export async function getSchedules(from?: string, to?: string) {
-  const params: any = {};
-  if (from) params.from = from;
-  if (to) params.to = to;
-  
+export async function getSchedules(params?: {
+  from?: string;
+  to?: string;
+  assignedStaffId?: string;
+  onlyHolidays?: boolean;
+}) {
   const { data } = await api.get<{ message: string; data: Schedule[] }>(
     "/schedules",
     { params }

@@ -290,8 +290,8 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
   // 엘리베이터 (초기 스냅샷 + 서버값 모두 고려)
   const initElev = toBool(
     (initial as any)?.initialHasElevator ??
-      (initial as any)?.hasElevator ??
-      (initial as any)?.elevator
+    (initial as any)?.hasElevator ??
+    (initial as any)?.elevator
   );
   const nowElev = toBool((f as any)?.elevator);
 
@@ -405,7 +405,7 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
         try {
           const badge = mapPinKindToBadge?.(nowPinKind);
           if (badge) (patch as any).badge = badge;
-        } catch {}
+        } catch { }
       }
     }
   }
@@ -654,23 +654,22 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     const pickMeaningful = (arr: unknown): AreaGroupNorm[] =>
       Array.isArray(arr)
         ? (arr as any[])
-            .map((g: any) => normGroup(g))
-            .filter(
-              (x: AreaGroupNorm) =>
-                x.title ||
-                x.exclusiveMinM2 ||
-                x.exclusiveMaxM2 ||
-                x.realMinM2 ||
-                x.realMaxM2 ||
-                (x.units && x.units.length > 0)
-            )
+          .map((g: any) => normGroup(g))
+          .filter(
+            (x: AreaGroupNorm) =>
+              x.title ||
+              x.exclusiveMinM2 ||
+              x.exclusiveMaxM2 ||
+              x.realMinM2 ||
+              x.realMaxM2 ||
+              (x.units && x.units.length > 0)
+          )
         : [];
 
     const keyOf = (g: AreaGroupNorm) => {
       const unitsStr = g.units ? JSON.stringify(g.units) : "";
-      return `${g.title}|${g.exclusiveMinM2 ?? ""}|${g.exclusiveMaxM2 ?? ""}|${
-        g.realMinM2 ?? ""
-      }|${g.realMaxM2 ?? ""}|${unitsStr}`;
+      return `${g.title}|${g.exclusiveMinM2 ?? ""}|${g.exclusiveMaxM2 ?? ""}|${g.realMinM2 ?? ""
+        }|${g.realMaxM2 ?? ""}|${unitsStr}`;
     };
 
     const sortForCmp = (arr: AreaGroupNorm[]) =>
@@ -816,25 +815,20 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
 
         return hasAny
           ? {
-              rooms: n.rooms,
-              baths: n.baths,
-              hasLoft: n.hasLoft,
-              hasTerrace: n.hasTerrace,
-              minPrice: n.minPrice,
-              maxPrice: n.maxPrice,
-              note: n.note ?? null,
-            }
+            rooms: n.rooms,
+            baths: n.baths,
+            hasLoft: n.hasLoft,
+            hasTerrace: n.hasTerrace,
+            minPrice: n.minPrice,
+            maxPrice: n.maxPrice,
+            note: n.note ?? null,
+          }
           : null;
       })
       .filter(Boolean) as NonNullable<UpdatePinDto["units"]>;
     (patch as any).units = units;
   }
 
-  console.log("[toPinPatch] 반환 patch buildingTypes/parkingTypes:", {
-    buildingTypes: (patch as any).buildingTypes,
-    parkingTypes: (patch as any).parkingTypes,
-    patchKeys: Object.keys(patch),
-  });
   return patch as UpdatePinDto;
 }
 

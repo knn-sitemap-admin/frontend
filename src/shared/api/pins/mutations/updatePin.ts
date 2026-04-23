@@ -19,13 +19,6 @@ export async function updatePin(
   dto: UpdatePinDto,
   signal?: AbortSignal
 ): Promise<{ id: string }> {
-  // 수정 저장 시 parkingTypes/buildingTypes 확인용
-  console.log(
-    "[updatePin] parkingTypes:",
-    (dto as any).parkingTypes,
-    "buildingTypes:",
-    (dto as any).buildingTypes
-  );
   const has = (k: keyof UpdatePinDto) =>
     Object.prototype.hasOwnProperty.call(dto, k);
 
@@ -64,9 +57,9 @@ export async function updatePin(
   // parkingGrade
   const pg = has("parkingGrade")
     ? normalizeParkingGradeStr(
-        (dto as any)?.parkingGrade,
-        (dto as any)?.propertyGrade
-      )
+      (dto as any)?.parkingGrade,
+      (dto as any)?.propertyGrade
+    )
     : undefined;
 
   // buildingTypes 배열 우선, buildingType 단일 폴백
@@ -123,64 +116,64 @@ export async function updatePin(
 
     ...(has("totalHouseholds")
       ? {
-          totalHouseholds:
-            dto.totalHouseholds == null ? null : Number(dto.totalHouseholds),
-        }
+        totalHouseholds:
+          dto.totalHouseholds == null ? null : Number(dto.totalHouseholds),
+      }
       : {}),
 
     ...(has("totalBuildings")
       ? {
-          totalBuildings:
-            dto.totalBuildings == null ? null : Number(dto.totalBuildings),
-        }
+        totalBuildings:
+          dto.totalBuildings == null ? null : Number(dto.totalBuildings),
+      }
       : {}),
     ...(has("totalFloors")
       ? {
-          totalFloors: dto.totalFloors == null ? null : Number(dto.totalFloors),
-        }
+        totalFloors: dto.totalFloors == null ? null : Number(dto.totalFloors),
+      }
       : {}),
     ...(has("remainingHouseholds")
       ? {
-          remainingHouseholds:
-            dto.remainingHouseholds == null
-              ? null
-              : Number(dto.remainingHouseholds),
-        }
+        remainingHouseholds:
+          dto.remainingHouseholds == null
+            ? null
+            : Number(dto.remainingHouseholds),
+      }
       : {}),
 
     ...(has("totalParkingSlots")
       ? {
-          totalParkingSlots:
-            dto.totalParkingSlots === null
-              ? null
-              : Number(dto.totalParkingSlots as any),
-        }
+        totalParkingSlots:
+          dto.totalParkingSlots === null
+            ? null
+            : Number(dto.totalParkingSlots as any),
+      }
       : {}),
 
     ...(has("registrationTypeId")
       ? {
-          registrationTypeId:
-            dto.registrationTypeId == null
-              ? null
-              : Number(dto.registrationTypeId),
-        }
+        registrationTypeId:
+          dto.registrationTypeId == null
+            ? null
+            : Number(dto.registrationTypeId),
+      }
       : {}),
 
     // createPin과 동일: parkingTypes 배열 우선, parkingType 단일 폴백 (값 직접 체크)
     ...(Array.isArray((dto as any).parkingTypes)
       ? {
-          parkingTypes: (dto as any).parkingTypes
-            .map((x: string) => String(x ?? "").trim())
-            .filter(Boolean),
-        }
+        parkingTypes: (dto as any).parkingTypes
+          .map((x: string) => String(x ?? "").trim())
+          .filter(Boolean),
+      }
       : (dto as any).parkingType != null
-      ? {
+        ? {
           parkingTypes:
             (dto as any).parkingType === ""
               ? []
               : [String((dto as any).parkingType).trim()],
         }
-      : {}),
+        : {}),
 
     ...(has("parkingGrade") && pg !== undefined
       ? pg === null
@@ -209,20 +202,20 @@ export async function updatePin(
 
     ...(has("minRealMoveInCost")
       ? {
-          minRealMoveInCost:
-            dto.minRealMoveInCost == null
-              ? null
-              : Number(dto.minRealMoveInCost),
-        }
+        minRealMoveInCost:
+          dto.minRealMoveInCost == null
+            ? null
+            : Number(dto.minRealMoveInCost),
+      }
       : {}),
 
     ...(has("rebateText")
       ? {
-          rebateText:
-            dto.rebateText == null
-              ? null
-              : String(dto.rebateText).trim().slice(0, 50),
-        }
+        rebateText:
+          dto.rebateText == null
+            ? null
+            : String(dto.rebateText).trim().slice(0, 50),
+      }
       : {}),
   };
 

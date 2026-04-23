@@ -60,6 +60,7 @@ export interface SalesContractData {
   status?: "ongoing" | "rejected" | "cancelled" | "completed"; // 계약 상태
   createdAt?: string; // 생성일
   updatedAt?: string; // 수정일
+  scheduleId?: string; // 연동된 일정 ID
 }
 
 export interface SalesContractViewModalProps {

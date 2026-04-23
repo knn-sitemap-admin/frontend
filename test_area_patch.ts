@@ -21,7 +21,7 @@ const initial = {
     extraOptionsText: null
   },
   units: [
-    {rooms: 2, baths: 1, hasLoft: true, hasTerrace: false, minPrice: 23, maxPrice: 23, note: "노트메모 테스트"}
+    { rooms: 2, baths: 1, hasLoft: true, hasTerrace: false, minPrice: 23, maxPrice: 23, note: "노트메모 테스트" }
   ],
   areaGroups: []
 };
@@ -35,7 +35,7 @@ const form = {
   etcChecked: false,
 
   unitLines: [
-    {rooms: 2, baths: 1, duplex: true, terrace: false, primary: 23, secondary: 23, note: "노트메모 테스트"}
+    { rooms: 2, baths: 1, duplex: true, terrace: false, primary: 23, secondary: 23, note: "노트메모 테스트" }
   ],
 
   baseAreaSet: {

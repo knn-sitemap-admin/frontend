@@ -288,24 +288,11 @@ export function StaffAllocationSection({
                       onValueChange={(value) =>
                         handleEmployeeSelect(staff.id, value)
                       }
-                      // 일반사원(staff)인 경우 첫 번째 담당자(본인)는 변경 불가능
-                      disabled={
-                        readOnly ||
-                        (userRole?.toLowerCase() === "staff" &&
-                          staffAllocations
-                            .filter((s) => s.type === "employee")
-                            .findIndex((s) => s.id === staff.id) === 0)
-                      }
+                      disabled={readOnly}
                     >
                       <SelectTrigger
                         className="h-9 text-sm border-gray-300 font-medium"
-                        disabled={
-                          readOnly ||
-                          (userRole?.toLowerCase() === "staff" &&
-                            staffAllocations
-                              .filter((s) => s.type === "employee")
-                              .findIndex((s) => s.id === staff.id) === 0)
-                        }
+                        disabled={readOnly}
                       >
                         <SelectValue placeholder="사원 선택">
                           {staff.name || "사원 선택"}
@@ -318,7 +305,7 @@ export function StaffAllocationSection({
                         {getFilteredEmployees(staff.id).map((employee) => (
                           <SelectItem
                             key={employee.accountId}
-                            value={employee.accountId}
+                            value={employee.accountId?.toString() || `empty-${Math.random()}`}
                           >
                             {employee.name || "이름 없음"}
                           </SelectItem>
@@ -327,7 +314,7 @@ export function StaffAllocationSection({
                     </Select>
                   )}
                 </div>
- 
+
                 <div className="space-y-1">
                   <Label
                     htmlFor={`staff-percentage-${staff.id}`}
@@ -361,7 +348,7 @@ export function StaffAllocationSection({
                         </div>
                       ) : (
                         <Select
-                          value={staff.percentage.toString()}
+                          value={staff.percentage?.toString() || "0"}
                           onValueChange={(value) =>
                             handleStaffPercentageChange(staff.id, Number(value))
                           }

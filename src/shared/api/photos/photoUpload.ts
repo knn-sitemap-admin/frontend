@@ -198,14 +198,12 @@ export async function uploadPhotos(
               typeof value === "string" &&
               (value.startsWith("http") || value.startsWith("s3://"))
             ) {
-              console.log(`발견된 URL 필드 [${key}]:`, value);
             } else if (
               Array.isArray(value) &&
               value.length > 0 &&
               typeof value[0] === "string" &&
               (value[0].startsWith("http") || value[0].startsWith("s3://"))
             ) {
-              console.log(`발견된 URL 배열 필드 [${key}]:`, value);
             }
           });
         }
@@ -218,7 +216,6 @@ export async function uploadPhotos(
         // s3:// 형태의 URL은 브라우저에서 접근 불가하므로 필터링
         urls.forEach((u, idx) => {
           const k = keysArr[idx]; // 없으면 undefined
-          console.log(`파일 ${idx}: url="${u}", key="${k}"`);
 
           // s3:// 형태의 URL인 경우, key를 사용해서 접근 가능한 URL 생성 시도
           // 또는 백엔드가 제공하는 다른 접근 가능한 URL 필드 확인 필요

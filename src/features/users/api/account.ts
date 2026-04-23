@@ -31,44 +31,6 @@ export async function getProfile(): Promise<ProfileResponse> {
       data: ProfileResponse;
     }>("/dashboard/accounts/me/profile");
 
-    // 백엔드 원본 응답 확인 (타입 캐스팅 없이)
-    console.log("=== 프로필 조회 API 원본 응답 ===");
-    console.log("전체 응답:", response);
-    console.log("response.data:", response.data);
-    console.log("response.data.data:", response.data.data);
-    if (response.data.data?.account) {
-      console.log(
-        "response.data.data.account (전체):",
-        response.data.data.account,
-      );
-      console.log(
-        "account 객체의 모든 키:",
-        Object.keys(response.data.data.account),
-      );
-      // 원본 응답 전체 확인 (JSON 문자열로)
-      const accountJson = JSON.stringify(response.data.data.account, null, 2);
-      console.log("account 객체 (JSON):", accountJson);
-
-      console.log("서류 필드 값:", {
-        docUrlResidentRegistration: (response.data.data.account as any)
-          .docUrlResidentRegistration,
-        docUrlResidentAbstract: (response.data.data.account as any)
-          .docUrlResidentAbstract,
-        docUrlIdCard: (response.data.data.account as any).docUrlIdCard,
-        docUrlFamilyRelation: (response.data.data.account as any)
-          .docUrlFamilyRelation,
-      });
-
-      // 모든 필드 값 확인
-      const allFields = Object.entries(response.data.data.account).map(
-        ([key, value]) => ({
-          key,
-          value,
-          type: typeof value,
-        }),
-      );
-      console.log("account 객체의 모든 필드:", allFields);
-    }
 
     return response.data.data;
   } catch (error: any) {
@@ -237,12 +199,10 @@ export async function createEmployee(
   data: CreateEmployeeRequest,
 ): Promise<CreateEmployeeResponse> {
   try {
-    console.log("사원 계정 생성 API 호출:", data);
     const response = await api.post<{
       message: string;
       data: CreateEmployeeResponse;
     }>("/dashboard/accounts/credentials", data);
-    console.log("사원 계정 생성 API 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("사원 계정 생성 API 호출 실패:", error);
@@ -258,12 +218,10 @@ export async function createEmployeeInfo(
   data: CreateEmployeeInfoRequest,
 ): Promise<CreateEmployeeInfoResponse> {
   try {
-    console.log("직원 정보 생성 API 호출:", { credentialId, data });
     const response = await api.post<{
       message: string;
       data: CreateEmployeeInfoResponse;
     }>(`/dashboard/accounts/employees/${credentialId}/info`, data);
-    console.log("직원 정보 생성 API 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("직원 정보 생성 API 호출 실패:", error);

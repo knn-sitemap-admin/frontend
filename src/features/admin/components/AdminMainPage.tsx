@@ -68,6 +68,13 @@ export function AdminMainPage() {
       color: "bg-orange-500",
     },
     {
+      title: "플랫폼 통계",
+      description: "플랫폼별 유입 및 계약 분석",
+      href: "/admin/platform-statistics",
+      icon: TrendingUp,
+      color: "bg-rose-500",
+    },
+    {
       title: "가계부",
       description: "지출 내역 관리",
       href: "/admin/expense-management",

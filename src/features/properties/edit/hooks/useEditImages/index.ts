@@ -51,9 +51,9 @@ type UseEditImagesArgs = {
     _imageCardRefs?: AnyImageRef[][];
     _fileItemRefs?: AnyImageRef[];
     imageFolders?:
-      | AnyImageRef[]
-      | AnyImageRef[][]
-      | Record<string, AnyImageRef[]>;
+    | AnyImageRef[]
+    | AnyImageRef[][]
+    | Record<string, AnyImageRef[]>;
     imageCards?: AnyImageRef[][] | Record<string, AnyImageRef[]>;
     images?: AnyImageRef[];
     imageCardCounts?: number[];
@@ -265,7 +265,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
           if (img?.url?.startsWith("blob:")) {
             try {
               URL.revokeObjectURL(img.url);
-            } catch {}
+            } catch { }
           }
         });
 
@@ -291,7 +291,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         if (removed?.url?.startsWith("blob:")) {
           try {
             URL.revokeObjectURL(removed.url);
-          } catch {}
+          } catch { }
         }
         markDirty();
         return next;
@@ -312,7 +312,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         if (removed?.url?.startsWith("blob:")) {
           try {
             URL.revokeObjectURL(removed.url);
-          } catch {}
+          } catch { }
         }
         markDirty();
         return next;
@@ -409,7 +409,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         const [target] = folder.splice(fromIdx, 1);
         folder.splice(toIdx, 0, target);
         next[folderIdx] = [...folder]; // 새 참조 할당으로 리렌더링 보장
-        
+
         imageFoldersRef.current = next;
         markDirty();
 
@@ -418,7 +418,6 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
           const pid = getServerPhotoId(img);
           if (pid != null) {
             // eslint-disable-next-line no-console
-            console.log(`[moveImageInFolder] Queueing Photo ${pid} at sortOrder ${i + 1}`);
             queuePhotoSort(pid, i + 1);
           }
         });
@@ -433,8 +432,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
   const reorderFolder = useCallback(
     (folderIdx: number, nextItems: ImageItem[]) => {
       // eslint-disable-next-line no-console
-      console.log("[reorderFolder] Starting", { folderIdx, count: nextItems.length });
-      
+
       setImageFolders((prev) => {
         if (folderIdx < 0 || folderIdx >= prev.length) return prev;
         const next = prev.map((arr, i) => (i === folderIdx ? [...nextItems] : [...arr]));
@@ -448,7 +446,6 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         const pid = getServerPhotoId(img);
         if (pid != null) {
           // eslint-disable-next-line no-console
-          console.log(`[reorderFolder] Queueing Photo ${pid} at sortOrder ${i + 1}`);
           queuePhotoSort(pid, i + 1);
         }
       });
@@ -460,7 +457,6 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
   const reorderVerticalFolder = useCallback(
     (nextItems: ImageItem[]) => {
       // eslint-disable-next-line no-console
-      console.log("[reorderVerticalFolder] Starting", { count: nextItems.length });
 
       const next = [...nextItems];
       setVerticalImages(next);
@@ -472,7 +468,6 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
         const pid = getServerPhotoId(img);
         if (pid != null) {
           // eslint-disable-next-line no-console
-          console.log(`[reorderVerticalFolder] Queueing Photo ${pid} at sortOrder ${i + 1}`);
           queuePhotoSort(pid, i + 1);
         }
       });

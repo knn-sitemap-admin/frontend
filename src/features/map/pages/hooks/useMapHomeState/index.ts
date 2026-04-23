@@ -92,7 +92,7 @@ export function useMapHomeState() {
           neLat: ne.lat,
           neLng: ne.lng,
         });
-      } catch {}
+      } catch { }
     },
     [postViewport, kakaoSDK, mapInstance, setBounds]
   );
@@ -169,24 +169,10 @@ export function useMapHomeState() {
       setCreateFromDraftId(null);
 
       const pos = { lat: p.position.lat, lng: p.position.lng };
-
-      console.log("[useMapHomeState/runSearch] matched pin by search:", {
-        id: p.id,
-        name: (p as any).name,
-        address: (p as any).address,
-        pos,
-      });
-
       await focusAndOpenAt(pos as LatLng, String(p.id));
     },
     onNoMatch: async (coords: LatLng) => {
       setCreateFromDraftId(null);
-
-      console.log(
-        "[useMapHomeState/runSearch] no matched pin, open draft at:",
-        coords
-      );
-
       await focusAndOpenAt(coords, "__draft__");
     },
   });
@@ -278,7 +264,7 @@ export function useMapHomeState() {
           neLng: ne.getLng(),
         });
         refetch();
-      } catch {}
+      } catch { }
     },
     [refetch, setBounds]
   );

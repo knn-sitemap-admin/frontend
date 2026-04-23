@@ -67,11 +67,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
 
   const query = text.trim();
   if (!query || !kakaoSDK || !mapInstance) return;
-
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[searchPlaceOnMap] start", { query });
-  }
-
   onSubmitSearch?.(query);
 
   // 0) 광역 키워드인 경우: 주소 검색만 수행하여 레벨 조정 후 바로 return (마커 및 상세메뉴 처리 안함)
@@ -86,7 +81,7 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
         const zoomLevel = getBroadKeywordZoomLevel(query);
         mapInstance.setCenter(coords);
         mapInstance.setLevel(zoomLevel);
-        
+
         // 광역일 때는 이전 임시 핀 제거 및 선택 해제 유지
         clearTempMarkers?.();
         onChangeHideLabelForId?.(undefined);
@@ -98,7 +93,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
   }
 
   const setCenterOnly = (lat: number, lng: number) => {
-    console.log("[searchPlaceOnMap] setCenterOnly", { lat, lng, query });
     const ll = new kakaoSDK.maps.LatLng(lat, lng);
     mapInstance.setCenter(ll);
     mapInstance.setLevel(3);
@@ -151,7 +145,7 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
       const ll = new kakaoSDK.maps.LatLng(lat, lng);
       mapInstance.setCenter(ll);
       mapInstance.setLevel(3);
-    } catch {}
+    } catch { }
 
     const findBestRealAround = (): RealAroundPin | null => {
       let bestReal: RealAroundPin | null = null;
@@ -217,10 +211,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
 
     let bestReal = findBestRealAround();
 
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[searchPlaceOnMap] bestReal (first)", bestReal);
-    }
-
     // 못 찾았으면 뷰포트 강제 새로고침 한 번 시도
     if (!bestReal && kakaoSDK && mapInstance?.getLevel) {
       try {
@@ -230,13 +220,9 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
         mapInstance.setLevel(level + 1, { animate: false });
         mapInstance.setLevel(level, { animate: false });
         mapInstance.setCenter(center);
-      } catch {}
+      } catch { }
 
       bestReal = findBestRealAround();
-
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[searchPlaceOnMap] bestReal (after refresh)", bestReal);
-      }
     }
 
     // ✅ 근처에서 실제 매물을 찾은 경우 → 바로 그 매물 기준으로 메뉴 열기 + 라벨 숨기기
@@ -252,16 +238,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
       const pinKind: PinKind = (kind ?? "question") as PinKind;
 
       runAfterIdle(() => {
-        if (process.env.NODE_ENV !== "production") {
-          console.log("[searchPlaceOnMap] open REAL pin from search", {
-            id,
-            realLat,
-            realLng,
-            title,
-            pinKind,
-          });
-        }
-
         clearTempMarkers();
 
         lastSearchCenterRef.current = {
@@ -273,12 +249,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
         try {
           if (mapInstance) {
             hideLabelsAround(mapInstance, realLat, realLng, 56);
-            if (process.env.NODE_ENV !== "production") {
-              console.log("[searchPlaceOnMap] hideLabelsAround(real pin)", {
-                realLat,
-                realLng,
-              });
-            }
           }
         } catch (e) {
           console.warn("[searchPlaceOnMap] hideLabelsAround error", e);
@@ -313,12 +283,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
       });
 
     if (hasRealNow) {
-      if (process.env.NODE_ENV !== "production") {
-        console.log(
-          "[searchPlaceOnMap] skip __search__ marker (real pin exists nearby)",
-          { lat, lng, label, query }
-        );
-      }
       // 센터만 맞춰놓고 종료 – 유저는 실제 핀을 직접 클릭해서 사용
       return;
     }
@@ -329,15 +293,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
     lastSearchCenterRef.current = { lat, lng };
 
     const id = "__search__";
-
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[searchPlaceOnMap] open menu only (no pin)", {
-        id,
-        lat,
-        lng,
-        label,
-      });
-    }
 
     const openMenu = () => {
       onOpenMenu?.({
@@ -391,11 +346,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
   places.keywordSearch(
     query,
     (data: any[], status: string) => {
-      console.log("[keywordSearch] result", {
-        query,
-        status,
-        count: data?.length ?? 0,
-      });
 
       if (status !== Status.OK || !data?.length) {
         doAddressFallback();
@@ -417,11 +367,6 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
         places.keywordSearch(
           `${station.place_name} 출구`,
           (exitData: any[], exitStatus: string) => {
-            console.log("[keywordSearch exit]", {
-              query,
-              exitStatus,
-              exitCount: exitData?.length ?? 0,
-            });
 
             if (exitStatus !== Status.OK || !exitData?.length) {
               const lat = stationLL.getLat();
@@ -484,9 +429,9 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
     },
     centerLL
       ? {
-          location: centerLL,
-          radius: 3000,
-        }
+        location: centerLL,
+        radius: 3000,
+      }
       : undefined
   );
 }

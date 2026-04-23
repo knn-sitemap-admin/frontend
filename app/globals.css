@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* (선택) 스토리북/브라우저 기본 배경 조정 */
 html,
 body {
   margin: 0;
@@ -10,41 +9,40 @@ body {
   min-height: 100%;
 }
 
-/* 유틸 확장 */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 
-  /* 이미지 저장 방지 유틸리티 */
   .no-save {
-    -webkit-touch-callout: none; /* iOS Safari: 롱프레스 메뉴 방지 */
-    -webkit-user-select: none;  /* Safari */
-    -khtml-user-select: none;   /* Konqueror HTML */
-    -moz-user-select: none;    /* Firefox */
-    -ms-user-select: none;     /* Internet Explorer/Edge */
-    user-select: none;         /* 기본 user-select */
-    -webkit-user-drag: none;    /* Chrome/Safari 드래그 방지 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
   }
 
-  /* 프리미엄 씬 스크롤바 */
   .premium-scrollbar::-webkit-scrollbar {
     width: 3px;
     height: 3px;
   }
+
   .premium-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .premium-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.15);
     border-radius: 10px;
   }
+
   .premium-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.25);
   }
 }
 
-/* === shadcn 팔레트: root/dark '한 번만' 선언 === */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -67,70 +65,34 @@ body {
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-
-  /* 지도 위 커버 레이어는 기본적으로 클릭 통과 */
-  .map-overlay {
-    pointer-events: none;
-  }
-
-  /* 오버레이 안에서 실제 클릭 필요한 요소만 */
-  .map-overlay .interactive {
-    pointer-events: auto;
   }
 
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
-/* 카카오 CustomOverlay 기본 컨테이너 */
-.notemap-map-root [data-overlay-container="true"] {
-  z-index: auto; /* 핀 위로 올라오지 않게 */
+/* 일정-계약 동시 하이라이트 애니메이션 (1.4배 팝업) */
+@keyframes label-pop {
+
+  0%,
+  100% {
+    transform: scale(1);
+    z-index: 10;
+  }
+
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+    z-index: 50;
+  }
 }
 
-/* label은 클릭 방지 */
-.kakao-label,
-.kakao-label * {
-  pointer-events: none !important;
-}
-
-/* hitbox만 클릭 허용 + 핀과 동일 레벨로 */
-.kakao-hitbox {
-  pointer-events: auto !important;
+.animate-label-pop {
+  animation: label-pop 1.2s ease-in-out infinite;
+  will-change: transform;
 }

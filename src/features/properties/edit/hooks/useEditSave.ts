@@ -289,13 +289,13 @@ export function useEditSave({
     // 1) 사진 커밋
     try {
       // eslint-disable-next-line no-console
-      console.log("[useEditSave] Calling commitImageChanges...", { 
-        hasCommit: !!commitImageChanges, 
-        hasPending: !!commitPending 
+      console.log("[useEditSave] Calling commitImageChanges...", {
+        hasCommit: !!commitImageChanges,
+        hasPending: !!commitPending
       });
-      
+
       const imgResult = await (commitImageChanges?.() ?? commitPending?.());
-      
+
       // eslint-disable-next-line no-console
       console.log("[useEditSave] commitImageChanges result:", imgResult);
     } catch (e: any) {
@@ -482,7 +482,7 @@ export function useEditSave({
       console.error("[save] view sync/buildUpdatePayload 실패:", e);
       showAlert(
         e?.message ||
-          "화면 갱신 중 오류가 발생했지만,\n서버에는 변경 사항이 저장되었습니다."
+        "화면 갱신 중 오류가 발생했지만,\n서버에는 변경 사항이 저장되었습니다."
       );
     } finally {
       onClose();

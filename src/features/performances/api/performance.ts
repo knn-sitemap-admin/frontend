@@ -3,6 +3,7 @@ import type {
   PerformanceFilterQuery,
   PerformanceSummaryResponse,
   TeamEmployeesResponse,
+  PlatformStatisticsResponse,
 } from "./types";
 
 /**
@@ -165,6 +166,47 @@ export async function getEmployeePerformance(
     return response.data.data;
   } catch (error: any) {
     console.error("영업자별 실적 추이 조회 실패:", error);
+    throw error;
+  }
+}
+
+/**
+ * 플랫폼별 통계 조회
+ * GET /performance/platform-statistics
+ */
+export async function getPlatformStatistics(
+  query: PerformanceFilterQuery
+): Promise<PlatformStatisticsResponse> {
+  try {
+    const params = new URLSearchParams();
+    
+    if (query.filterType) {
+      params.append("filterType", query.filterType);
+    }
+    if (query.year !== undefined) {
+      params.append("year", query.year.toString());
+    }
+    if (query.month !== undefined) {
+      params.append("month", query.month.toString());
+    }
+    if (query.quarter !== undefined) {
+      params.append("quarter", query.quarter.toString());
+    }
+    if (query.accountId) {
+      params.append("accountId", query.accountId);
+    }
+
+    const queryString = params.toString();
+    const url = `/performance/platform-statistics${queryString ? `?${queryString}` : ""}`;
+
+    const response = await api.get<{
+      success: boolean;
+      data: PlatformStatisticsResponse;
+    }>(url);
+
+    return response.data.data;
+  } catch (error: any) {
+    console.error("플랫폼 통계 조회 실패:", error);
     throw error;
   }
 }

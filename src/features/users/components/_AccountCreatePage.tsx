@@ -247,15 +247,12 @@ export default function AccountCreatePage({
 
   /** 제출 */
   const handleSubmit = async (v: CreateUserValues) => {
-    console.log("handleSubmit 호출됨", { v, uploading, isSubmitting });
 
     if (uploading || isSubmitting) {
-      console.log("제출 차단: uploading 또는 isSubmitting이 true");
       return;
     }
 
     setIsSubmitting(true);
-    console.log("계정 생성 시작");
 
     try {
       const isTeamLeader = v.positionRank === "TEAM_LEADER";
@@ -308,9 +305,7 @@ export default function AccountCreatePage({
         },
       };
 
-      console.log("사원 계정 생성 API 호출", createData);
       const result = await createEmployee(createData);
-      console.log("사원 계정 생성 완료", result);
 
       await onCreate({
         email: v.email,
@@ -473,7 +468,6 @@ export default function AccountCreatePage({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit, (errors) => {
-              console.log("Validation 에러:", errors);
               // 첫 번째 에러 필드로 스크롤
               const firstErrorField = Object.keys(errors)[0];
               if (firstErrorField) {

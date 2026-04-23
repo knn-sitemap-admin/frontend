@@ -114,11 +114,10 @@ export function SalesContractRecordsModal({
   data: initialData,
   onDataChange,
 }: SalesContractViewModalProps) {
-  const [data, setData] = useState<SalesContractData>(
-    initialData || defaultData,
-  );
+  const [data, setData] = useState<SalesContractData>(defaultData);
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(!initialData); // 초기 데이터가 없으면 편집 모드 (신규 생성)
+  const [isEditMode, setIsEditMode] = useState(true);
+
   const { toast } = useToast();
 
   // 날짜 선택 Popover 상태
@@ -137,7 +136,6 @@ export function SalesContractRecordsModal({
     queryKey: ["my-team-members", profile?.role, profile?.account?.id],
     queryFn: async () => {
       const log = (msg: string, extra?: object) => {
-        console.log("[담당자목록]", msg, extra ?? "");
       };
 
       if (!profile) return [];
@@ -146,11 +144,11 @@ export function SalesContractRecordsModal({
       if (profile.role === "admin" || profile.role === "manager") {
         try {
           const list = await getEmployeesList({ onlyActive: true });
-          log("getEmployeesList 호출 (어드민/매니저)", { 수: list.length });
           return list.map((item) => ({
             accountId: item.accountId,
             name: item.name,
             positionRank: item.positionRank,
+            phone: item.phone,
             teamRole: (item.teamRole as "manager" | "staff" | null) || "staff",
           }));
         } catch (e) {
@@ -203,6 +201,7 @@ export function SalesContractRecordsModal({
                   name: string | null;
                   positionRank?: string | null;
                   teamRole?: "manager" | "staff" | null;
+                  phone?: string | null;
                 }>;
               };
             }>(`/dashboard/accounts/teams/${team.id}`);
@@ -239,63 +238,83 @@ export function SalesContractRecordsModal({
     staleTime: 10 * 60 * 1000,
   });
 
-  // 초기 데이터 또는 팀 멤버 목록이 바뀌면 staffAllocations에 이력 반영 및 본인 정보 자동 채우기
+  // 데이터 초기화 및 팀 멤버 정보 보완 (통합된 로직)
   useEffect(() => {
+    if (!isOpen) return;
+
     const enrichAllocations = (base: SalesContractData) => {
       let currentData = { ...base };
+      const allocations = currentData.staffAllocations || defaultData.staffAllocations;
 
       // 1) 본인 정보 자동 채우기 (신규 생성 시)
-      if (profile && !initialData) {
+      if (profile && !initialData?.id) {
         const myId = profile.account?.id;
         const myName = profile.account?.name || "";
-        const myIsLeader =
-          profile.role === "manager" || profile.role === "admin";
+        const myIsLeader = profile.role === "manager" || profile.role === "admin";
 
         currentData = {
           ...currentData,
           salesPerson: {
-            name: myName,
-            contact: profile.account?.phone || "",
+            name: currentData.salesPerson?.name || myName,
+            contact: currentData.salesPerson?.contact || profile.account?.phone || "",
           },
-          staffAllocations: currentData.staffAllocations.map((staff) => {
-            if (staff.id === "employee1") {
-              return {
-                ...staff,
-                accountId: myId,
-                name: myName,
-                isTeamLeader: myIsLeader,
-              };
+          staffAllocations: allocations.map((staff) => {
+            if (staff.id === "employee1" && !staff.accountId) {
+              return { ...staff, accountId: myId, name: myName, isTeamLeader: myIsLeader };
             }
             return staff;
           }),
         };
+      } else {
+        currentData.staffAllocations = allocations;
       }
 
-      // 2) 팀 멤버 정보가 있으면 staffAllocations 보완 (직급, 팀장여부 등)
+      // 2) 팀 멤버 정보 보완
       if (!myTeamMembers || myTeamMembers.length === 0) return currentData;
 
       return {
         ...currentData,
         staffAllocations: currentData.staffAllocations.map((staff) => {
           if (staff.type !== "employee" || !staff.accountId) return staff;
-          const member = myTeamMembers.find(
-            (m) => String(m.accountId) === String(staff.accountId),
-          );
+          const member = myTeamMembers.find((m) => String(m.accountId) === String(staff.accountId));
           if (!member) return staff;
           return {
             ...staff,
             positionRank: (member as any).positionRank ?? staff.positionRank,
-            isTeamLeader:
-              (member as any).teamRole === "manager" ||
-              (member as any).teamRole === "admin",
+            isTeamLeader: (member as any).teamRole === "manager" || (member as any).teamRole === "admin",
           };
         }),
       };
     };
 
     if (initialData) {
-      setData(enrichAllocations(initialData));
-      setIsEditMode(false);
+      if (initialData.id) {
+        // 이미 저장된 계약 데이터인 경우
+        setData(enrichAllocations(initialData));
+        setIsEditMode(false);
+      } else {
+        // 달력 등에서 넘어온 부분 데이터 병합
+        const merged: SalesContractData = {
+          ...defaultData,
+          ...initialData,
+          customerInfo: {
+            ...defaultData.customerInfo,
+            ...(initialData.customerInfo || {}),
+            name: initialData.customerInfo?.name || defaultData.customerInfo.name || "",
+            contact: initialData.customerInfo?.contact || (initialData as any).customerPhone || ""
+          },
+          contractSite: {
+            ...defaultData.contractSite,
+            ...(initialData.contractSite || {}),
+            siteName: (initialData as any).siteName || initialData.contractSite?.siteName || "",
+            address: initialData.contractSite?.address || defaultData.contractSite?.address || "",
+            teamContact: initialData.contractSite?.teamContact || defaultData.contractSite?.teamContact || "",
+          },
+          contractDate: initialData.contractDate || format(new Date(), "yyyy-MM-dd")
+        };
+        setData(enrichAllocations(merged));
+        setIsEditMode(true);
+      }
     } else {
       setData(enrichAllocations(defaultData));
       setIsEditMode(true);
@@ -376,9 +395,20 @@ export function SalesContractRecordsModal({
     });
   };
 
-  // 담당자 분배 변경 핸들러
-  const handleStaffAllocationsChange = (staffAllocations: any) => {
-    handleDataChange({ ...data, staffAllocations });
+  const handleStaffAllocationsChange = (newAllocations: any[]) => {
+    // 첫 번째 영업 담당자 찾기
+    const firstEmployee = newAllocations.find(s => s.type === "employee");
+    const member = myTeamMembers?.find(m => String(m.accountId) === String(firstEmployee?.accountId));
+
+    // 담당자 분배가 바뀌면 상단 인적정보의 담당자 섹션(성함, 연락처)도 항상 동기화
+    handleDataChange({
+      ...data,
+      staffAllocations: newAllocations,
+      salesPerson: {
+        name: firstEmployee?.name || data.salesPerson.name,
+        contact: member?.phone || data.salesPerson.contact
+      }
+    });
   };
 
   // 계약 이미지 변경 핸들러
@@ -515,6 +545,19 @@ export function SalesContractRecordsModal({
       return;
     }
 
+    // 날짜 유효성 검사
+    const cDate = data.contractDate ? new Date(data.contractDate) : new Date();
+    const bDate = data.balanceDate ? new Date(data.balanceDate) : null;
+
+    if (bDate && bDate < cDate) {
+      toast({
+        title: "날짜 오류",
+        description: "잔금일은 계약일보다 빠를 수 없습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       let contractData: SalesContractData;
@@ -527,9 +570,7 @@ export function SalesContractRecordsModal({
           data,
           profile,
         );
-        console.log("변환된 수정 요청 데이터:", updateRequest);
         const result = await updateContract(contractId, updateRequest);
-        console.log("계약 수정 API 응답:", result);
 
         contractData = {
           ...data,
@@ -550,7 +591,6 @@ export function SalesContractRecordsModal({
           data,
           profile,
         );
-        console.log("변환된 요청 데이터:", requestData);
 
         // 필수 필드 검증 (타입 체크)
         if (
@@ -565,7 +605,6 @@ export function SalesContractRecordsModal({
         }
 
         const result = await createContract(requestData);
-        console.log("계약 생성 API 응답:", result);
 
         contractData = {
           ...data,
@@ -664,9 +703,8 @@ export function SalesContractRecordsModal({
                           <Button
                             variant="outline"
                             disabled={!isEditMode}
-                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${
-                              !data.contractDate ? "text-muted-foreground" : ""
-                            }`}
+                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${!data.contractDate ? "text-muted-foreground" : ""
+                              }`}
                           >
                             {data.contractDate ? (
                               format(new Date(data.contractDate), "PPP", {
@@ -740,9 +778,8 @@ export function SalesContractRecordsModal({
                           <Button
                             variant="outline"
                             disabled={!isEditMode}
-                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${
-                              !data.balanceDate ? "text-muted-foreground" : ""
-                            }`}
+                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${!data.balanceDate ? "text-muted-foreground" : ""
+                              }`}
                           >
                             {data.balanceDate ? (
                               format(new Date(data.balanceDate), "PPP", {
@@ -829,12 +866,11 @@ export function SalesContractRecordsModal({
                       disabled={!isEditMode}
                     >
                       <SelectTrigger
-                        className={`h-7 text-xs ${
-                          statusConfigMap[
-                            (data.status ||
-                              "ongoing") as keyof typeof statusConfigMap
-                          ]?.className || ""
-                        }`}
+                        className={`h-7 text-xs ${statusConfigMap[
+                          (data.status ||
+                            "ongoing") as keyof typeof statusConfigMap
+                        ]?.className || ""
+                          }`}
                         disabled={!isEditMode}
                       >
                         <SelectValue />

@@ -48,7 +48,6 @@ export async function createPin(
   signal?: AbortSignal
 ): Promise<{ id: string; matchedDraftId: number | null }> {
   // 항상 출력 (저장 시 parkingTypes/buildingTypes 확인용)
-  console.log("[createPin] parkingTypes:", (dto as any).parkingTypes, "buildingTypes:", (dto as any).buildingTypes);
   if (DEV) {
     console.groupCollapsed("[createPin] start dto");
     console.log(dto);
@@ -121,14 +120,14 @@ export async function createPin(
     parkingTypes: JSON.stringify((dto as any).parkingTypes ?? []),
     options: dto.options
       ? {
-          a: !!dto.options.hasAircon,
-          f: !!dto.options.hasFridge,
-          w: !!dto.options.hasWasher,
-          d: !!dto.options.hasDryer,
-          b: !!dto.options.hasBidet,
-          p: !!dto.options.hasAirPurifier,
-          x: (dto.options.extraOptionsText ?? "").trim().slice(0, 32),
-        }
+        a: !!dto.options.hasAircon,
+        f: !!dto.options.hasFridge,
+        w: !!dto.options.hasWasher,
+        d: !!dto.options.hasDryer,
+        b: !!dto.options.hasBidet,
+        p: !!dto.options.hasAirPurifier,
+        x: (dto.options.extraOptionsText ?? "").trim().slice(0, 32),
+      }
       : undefined,
     directionsLen: Array.isArray(dirs) ? dirs.length : 0,
     areaGroupsLen: Array.isArray(groups) ? groups.length : 0,
@@ -184,7 +183,7 @@ export async function createPin(
       : {}),
 
     ...(typeof dto.completionDate === "string" &&
-    dto.completionDate.trim() !== ""
+      dto.completionDate.trim() !== ""
       ? { completionDate: dto.completionDate }
       : {}),
 
@@ -213,22 +212,22 @@ export async function createPin(
       : {}),
 
     ...(Array.isArray((dto as any).parkingTypes) &&
-    (dto as any).parkingTypes.length > 0
+      (dto as any).parkingTypes.length > 0
       ? {
-          parkingTypes: (dto as any).parkingTypes
-            .map((x: string) => String(x ?? "").trim())
-            .filter(Boolean),
-        }
+        parkingTypes: (dto as any).parkingTypes
+          .map((x: string) => String(x ?? "").trim())
+          .filter(Boolean),
+      }
       : (dto as any).parkingType != null &&
         String((dto as any).parkingType).trim() !== ""
-      ? { parkingTypes: [String((dto as any).parkingType).trim()] }
-      : {}),
+        ? { parkingTypes: [String((dto as any).parkingType).trim()] }
+        : {}),
 
     ...(pg === null
       ? { parkingGrade: null }
       : pg !== undefined
-      ? { parkingGrade: pg }
-      : {}),
+        ? { parkingGrade: pg }
+        : {}),
 
     ...(dto.slopeGrade ? { slopeGrade: dto.slopeGrade } : {}),
     ...(dto.structureGrade ? { structureGrade: dto.structureGrade } : {}),
@@ -258,20 +257,20 @@ export async function createPin(
 
     ...(Object.prototype.hasOwnProperty.call(dto, "minRealMoveInCost")
       ? {
-          minRealMoveInCost:
-            dto.minRealMoveInCost === null
-              ? null
-              : Number(dto.minRealMoveInCost),
-        }
+        minRealMoveInCost:
+          dto.minRealMoveInCost === null
+            ? null
+            : Number(dto.minRealMoveInCost),
+      }
       : {}),
 
     ...(Object.prototype.hasOwnProperty.call(dto, "rebateText")
       ? {
-          rebateText:
-            dto.rebateText == null
-              ? null
-              : String(dto.rebateText).trim().slice(0, 50),
-        }
+        rebateText:
+          dto.rebateText == null
+            ? null
+            : String(dto.rebateText).trim().slice(0, 50),
+      }
       : {}),
   } as const;
 
@@ -302,13 +301,6 @@ export async function createPin(
 
   try {
     const { data, status } = await request;
-
-    if (DEV) {
-      console.groupCollapsed("[createPin] response");
-      console.log("status:", status);
-      console.log("data:", data);
-      console.groupEnd();
-    }
 
     if (status === 409) {
       throw new Error("중복 요청이 감지되었습니다. 잠시 후 다시 시도해주세요.");

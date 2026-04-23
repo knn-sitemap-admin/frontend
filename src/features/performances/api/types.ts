@@ -7,6 +7,7 @@ export interface PerformanceFilterQuery {
   year?: number;
   month?: number; // 1-12
   quarter?: number; // 1-4
+  accountId?: string;
 }
 
 export interface ResolvedRange {
@@ -87,5 +88,20 @@ export interface BaseEmployee {
   id: string;
   name: string | null;
   positionRank: string | null;
+}
+
+export interface PlatformStatItem {
+  platform: string;
+  newCount: number;
+  reCount: number;
+  canceledCount: number;
+  contractedCount: number;
+  rejectedCount: number;
+  totalCount: number;
+}
+
+export interface PlatformStatisticsResponse {
+  resolvedRange: ResolvedRange;
+  statistics: PlatformStatItem[];
 }
 

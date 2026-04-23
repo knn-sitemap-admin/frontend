@@ -48,7 +48,6 @@ export async function getTeams(): Promise<CreateTeamResponse[]> {
       data: CreateTeamResponse[];
     }>("/dashboard/accounts/teams");
 
-    console.log("DB 팀 목록 API 응답:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error("팀 목록 조회 API 호출 실패:", error);

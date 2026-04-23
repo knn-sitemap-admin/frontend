@@ -178,64 +178,64 @@ export default function ProfilePage() {
   /** 공용 업로드 핸들러 */
   const handleFileChange =
     (field: UploadField): React.ChangeEventHandler<HTMLInputElement> =>
-    async (e) => {
-      const files = e.target.files;
-      if (!files || files.length === 0) return;
+      async (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
 
-      setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
+        setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
 
-      const maxUploadBytes = 5 * 1024 * 1024; // 5MB
-      
-      for (let i = 0; i < files.length; i++) {
-        if (files[i].size > maxUploadBytes) {
-          setUploadErrors((prev) => ({
-            ...prev,
-            [field]: `파일이 너무 큽니다. 최대 ${(
-              maxUploadBytes /
-              (1024 * 1024)
-            ).toFixed(1)}MB 까지 가능합니다.`,
-          }));
-          if (e.currentTarget) e.currentTarget.value = "";
-          return;
-        }
-      }
+        const maxUploadBytes = 5 * 1024 * 1024; // 5MB
 
-      setUploading(field);
-      try {
-        const domain = uploadDomainMap[field] ?? "etc";
-        
-        if (field === "profileUrl") {
-          const meta = await uploadOnePhoto(files[0], { domain });
-          const urlToUse = meta?.url || meta?.key || null;
-          if (!urlToUse) throw new Error("업로드 응답에 URL이 없습니다.");
-          form.setValue(field, urlToUse, { shouldValidate: true });
-        } else {
-          // 최대 5장 제한
-          const currentUrls = (form.getValues(field) as string[]) || [];
-          if (currentUrls.length + files.length > 5) {
-            setUploadErrors((prev) => ({ ...prev, [field]: "최대 5장까지만 등록 가능합니다." }));
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].size > maxUploadBytes) {
+            setUploadErrors((prev) => ({
+              ...prev,
+              [field]: `파일이 너무 큽니다. 최대 ${(
+                maxUploadBytes /
+                (1024 * 1024)
+              ).toFixed(1)}MB 까지 가능합니다.`,
+            }));
+            if (e.currentTarget) e.currentTarget.value = "";
             return;
           }
-
-          const metas = await uploadPhotos(Array.from(files), { domain });
-          const newUrls = metas.map(m => m.url).filter(Boolean) as string[];
-          form.setValue(field, [...currentUrls, ...newUrls], { shouldValidate: true });
         }
-        
-        setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
-      } catch (err: any) {
-        const serverMessage =
-          err?.response?.data?.message ??
-          err?.message ??
-          "업로드 중 오류가 발생했습니다.";
-        setUploadErrors((prev) => ({
-          ...prev, [field]: serverMessage
-        }));
-      } finally {
-        setUploading(null);
-        if (e.currentTarget) e.currentTarget.value = "";
-      }
-    };
+
+        setUploading(field);
+        try {
+          const domain = uploadDomainMap[field] ?? "etc";
+
+          if (field === "profileUrl") {
+            const meta = await uploadOnePhoto(files[0], { domain });
+            const urlToUse = meta?.url || meta?.key || null;
+            if (!urlToUse) throw new Error("업로드 응답에 URL이 없습니다.");
+            form.setValue(field, urlToUse, { shouldValidate: true });
+          } else {
+            // 최대 5장 제한
+            const currentUrls = (form.getValues(field) as string[]) || [];
+            if (currentUrls.length + files.length > 5) {
+              setUploadErrors((prev) => ({ ...prev, [field]: "최대 5장까지만 등록 가능합니다." }));
+              return;
+            }
+
+            const metas = await uploadPhotos(Array.from(files), { domain });
+            const newUrls = metas.map(m => m.url).filter(Boolean) as string[];
+            form.setValue(field, [...currentUrls, ...newUrls], { shouldValidate: true });
+          }
+
+          setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
+        } catch (err: any) {
+          const serverMessage =
+            err?.response?.data?.message ??
+            err?.message ??
+            "업로드 중 오류가 발생했습니다.";
+          setUploadErrors((prev) => ({
+            ...prev, [field]: serverMessage
+          }));
+        } finally {
+          setUploading(null);
+          if (e.currentTarget) e.currentTarget.value = "";
+        }
+      };
 
   const removeFileAt = (field: UploadField, index: number) => {
     const current = (form.getValues(field) as string[]) || [];
@@ -279,7 +279,7 @@ export default function ProfilePage() {
           title: "비밀번호 변경 완료",
           description: "보안을 위해 다시 로그인해주세요. 2초 후 로그인 페이지로 이동합니다.",
         });
-        
+
         // 세션이 무효화되었으므로 로그인 페이지로 리다이렉트
         setTimeout(() => {
           router.push("/login");
@@ -292,14 +292,6 @@ export default function ProfilePage() {
 
   const photoUrl = form.watch("profileUrl");
   const accessiblePhotoUrl = getAccessibleUrl(photoUrl);
-
-  // 디버깅: 프로필 이미지 URL 확인
-  useEffect(() => {
-    console.log("=== 프로필 이미지 URL 상태 ===");
-    console.log("photoUrl (원본):", photoUrl);
-    console.log("accessiblePhotoUrl:", accessiblePhotoUrl);
-    console.log("isAccessibleUrl(photoUrl):", isAccessibleUrl(photoUrl));
-  }, [photoUrl, accessiblePhotoUrl]);
 
   if (isProfileLoading) {
     return (
@@ -379,8 +371,8 @@ export default function ProfilePage() {
                         <div className="flex-1 space-y-2">
                           <div className="flex gap-2">
                             <label
-                                htmlFor="profile-upload"
-                                className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                              htmlFor="profile-upload"
+                              className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                             >
                               {uploading === "profileUrl" ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -646,7 +638,7 @@ function MultipleUploadRow({
         <div className="text-sm font-medium">{label}</div>
         <div className="text-xs text-muted-foreground">{values.length} / {maxCount}</div>
       </div>
-      
+
       <div className="flex flex-col gap-2">
         <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground justify-center">
           {loading ? (

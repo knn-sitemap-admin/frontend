@@ -16,7 +16,6 @@ export function useSearchDraftMarkers() {
       source?: "geocode" | "search" | "draft";
       kind?: PinKind;
     }) => {
-      console.log("[upsertDraftMarker] input", m);
       setLocalDraftMarkers((prev) => {
         const list = prev.slice();
         const id = String(m.id);
@@ -30,7 +29,6 @@ export function useSearchDraftMarkers() {
         };
         if (idx >= 0) list[idx] = { ...list[idx], ...next };
         else list.push(next);
-        console.log("[upsertDraftMarker] next list", list);
         return list;
       });
     },
