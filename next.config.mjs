@@ -16,17 +16,34 @@ const remotePatterns = [
 try {
   const u = new URL(API_ORIGIN);
   if (u.hostname) {
-    const proto = u.protocol.replace(":", ""); // 'http' | 'https'
+    const proto = u.protocol.replace(":", "");
     const hostPattern = {
       protocol: proto,
       hostname: u.hostname,
       pathname: "/**",
     };
-    if (u.port) hostPattern.port = u.port; // 포트 있으면 추가
+    if (u.port) hostPattern.port = u.port;
     remotePatterns.push(hostPattern);
   }
 } catch {
   /* 무시 */
+}
+
+// ✅ CDN_BASE_URL 추가 (CloudFront 등)
+const CDN_BASE = process.env.NEXT_PUBLIC_CDN_BASE_URL;
+if (CDN_BASE) {
+  try {
+    const u = new URL(CDN_BASE);
+    if (u.hostname) {
+      remotePatterns.push({
+        protocol: u.protocol.replace(":", ""),
+        hostname: u.hostname,
+        pathname: "/**",
+      });
+    }
+  } catch {
+    /* 무시 */
+  }
 }
 
 const nextConfig = {
