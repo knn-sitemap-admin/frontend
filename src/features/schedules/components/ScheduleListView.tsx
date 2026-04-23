@@ -95,8 +95,8 @@ export const ScheduleListView = ({
                               ({s.category || "기타"}) {s.location || ""}
                             </span>
                           </div>
-                          {s.customerPhoneLast4 && (
-                            <span className="text-[10px] font-bold text-gray-400">고객번호: {s.customerPhoneLast4}</span>
+                          {s.customerPhone && (
+                            <span className="text-[10px] font-bold text-gray-400">고객번호: {s.customerPhone.slice(-4)}</span>
                           )}
                         </div>
                       </div>
