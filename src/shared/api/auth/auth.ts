@@ -88,10 +88,7 @@ async function fetchMe() {
   }
 
   const { data } = await api.get<MeResponse>("/auth/me", {
-    headers: {
-      ...headers,
-      "_t": Date.now().toString()
-    }
+    headers
   });
   return data.data; // MeData (null 가능)
 }
