@@ -178,8 +178,8 @@ export default function ScheduleCalendar() {
       try {
         const { getContracts, getMyContracts } = await import("@/features/contract-records/api/contracts");
         const contractParams = {
-          dateFrom: params.from,
-          dateTo: params.to,
+          paymentDateFrom: params.from,
+          paymentDateTo: params.to,
           size: 500, // 충분히 큰 수
         };
 

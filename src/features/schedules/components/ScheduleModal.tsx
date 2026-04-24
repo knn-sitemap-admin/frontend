@@ -267,6 +267,17 @@ export function ScheduleModal({
 
   const handleDelete = async () => {
     if (!schedule) return;
+
+    // 계약 기록과 연결된 일정은 삭제 불가
+    if (schedule.contractId) {
+      toast({
+        title: "삭제 불가",
+        description: "작성된 계약 기록이 있는 건이므로 삭제할 수 없습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsDeleteConfirmOpen(true);
   };
 
@@ -287,8 +298,8 @@ export function ScheduleModal({
     const [h, m] = current.split(":");
     return (
       <div className="flex bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-2xl divide-x divide-gray-50">
-        <div className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[75px] bg-white">
-          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50">시</div>
+        <div className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y">
+          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50 uppercase tracking-widest">Hour</div>
           <div className="flex flex-col px-1.5 pb-2">
             {HOURS.map(hour => (
               <button
@@ -304,8 +315,8 @@ export function ScheduleModal({
             ))}
           </div>
         </div>
-        <div className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[75px] bg-white">
-          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50">분</div>
+        <div className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y">
+          <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50 uppercase tracking-widest">Min</div>
           <div className="flex flex-col px-1.5 pb-2">
             {MINUTES.map(minute => (
               <button
@@ -328,8 +339,8 @@ export function ScheduleModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-[24px] sm:rounded-[32px] border-none shadow-2xl">
-          <div className="bg-white p-5 sm:p-8 space-y-6 sm:space-y-8 max-h-[75dvh] sm:max-h-[85vh] overflow-y-auto premium-scrollbar">
+        <DialogContent className="w-[95vw] sm:max-w-[480px] p-0 overflow-hidden rounded-[32px] border-none shadow-2xl focus:outline-none">
+          <div className="bg-white p-5 sm:p-8 space-y-6 sm:space-y-8 max-h-[90dvh] overflow-y-auto premium-scrollbar overscroll-contain">
             <DialogHeader className="space-y-2 text-left">
               <DialogTitle className="text-3xl font-black tracking-tighter text-gray-900">
                 {schedule ? "일정 수정" : "새 일정 등록"}
@@ -423,15 +434,15 @@ export function ScheduleModal({
                     <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                     유입 플랫폼 (통계용)
                   </Label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {["직방", "다방", "네이버", "기타"].map((p) => (
                       <Button
                         key={p}
                         type="button"
                         variant={platform === p ? "default" : "outline"}
                         className={cn(
-                          "rounded-xl h-10 font-bold transition-all",
-                          platform === p ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-100" : "text-gray-500 border-gray-100"
+                          "rounded-xl h-12 sm:h-10 font-bold transition-all text-xs sm:text-sm",
+                          platform === p ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-100" : "text-gray-400 border-gray-100 bg-gray-50/30"
                         )}
                         onClick={() => setPlatform(p)}
                         disabled={!canEdit}
