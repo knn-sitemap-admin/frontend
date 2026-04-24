@@ -216,13 +216,26 @@ export function ScheduleModal({
       }
     }
 
+    const parseSafeDate = (dateStr: string, timeStr: string) => {
+      try {
+        const [y, m, d] = dateStr.split("-").map(Number);
+        const [hh, mm] = timeStr.split(":").map(Number);
+        // 사파리 호환성을 위해 숫자로 직접 주입
+        const date = new Date(y, m - 1, d, hh, mm, 0);
+        return date.toISOString();
+      } catch (e) {
+        console.error("Date parsing error:", e);
+        return new Date().toISOString();
+      }
+    };
+
     const fullStartDate = isAllDay
-      ? new Date(`${startDate}T00:00:00`).toISOString()
-      : new Date(`${startDate}T${startTime}:00`).toISOString();
+      ? parseSafeDate(startDate, "00:00")
+      : parseSafeDate(startDate, startTime);
 
     const fullEndDate = isAllDay
-      ? new Date(`${endDate}T23:59:59`).toISOString()
-      : new Date(`${endDate}T${endTime}:00`).toISOString();
+      ? parseSafeDate(endDate, "23:59")
+      : parseSafeDate(endDate, endTime);
 
     setIsLoading(true);
     try {
