@@ -911,7 +911,7 @@ export default function ScheduleCalendar() {
         </button>
       </div>
 
-      <div className="flex items-center justify-around py-4 bg-white/90 backdrop-blur-md border-t sm:hidden fixed bottom-0 left-0 right-0 z-40 px-6 pb-8">
+      <div className="flex items-center justify-around py-3 bg-white border-t sm:hidden z-40 px-6">
         <Button variant="ghost" onClick={() => router.push("/")} className="flex flex-col gap-1 text-gray-400 hover:text-emerald-600">
           <HomeIcon className="w-6 h-6" />
           <span className="text-[10px] font-bold tracking-tight">홈</span>
