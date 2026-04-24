@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DataTablePageLayout,
@@ -49,9 +49,50 @@ export function Expense() {
   );
   const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
 
-  const yearOptions = generateYearOptions(currentYear);
+  const { data: expenseList = [], isLoading: isLoadingList } = useQuery({
+    queryKey: ["expense-list"],
+    queryFn: () => getExpenseList({ period: "all" }),
+  });
+
+  // 데이터가 존재하는 연도 옵션 추출
+  const yearOptions = useMemo(() => {
+    if (!expenseList.length) return [currentYear.toString()];
+    const years = new Set<string>();
+    years.add(currentYear.toString()); // 현재 연도는 기본으로 포함
+    expenseList.forEach((item) => {
+      const year = item.date.split("-")[0];
+      if (year) years.add(year);
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [expenseList, currentYear]);
+
+  // 선택된 연도에 데이터가 존재하는 월 옵션 추출
+  const monthOptions = useMemo(() => {
+    if (!expenseList.length) return Array.from({ length: 12 }, (_, i) => String(i + 1));
+    const months = new Set<string>();
+    expenseList.forEach((item) => {
+      const [year, month] = item.date.split("-");
+      if (year === selectedYear) {
+        months.add(String(parseInt(month, 10)));
+      }
+    });
+
+    // 만약 선택된 연도에 데이터가 없으면 전체 월 표시 (새 데이터 입력 대비)
+    if (months.size === 0) return Array.from({ length: 12 }, (_, i) => String(i + 1));
+
+    return Array.from(months).sort((a, b) => Number(a) - Number(b));
+  }, [expenseList, selectedYear]);
+
+  // 연도 변경 시 선택된 월이 유효한지 체크
+  useEffect(() => {
+    if (selectedMonth !== "all") {
+      if (!monthOptions.includes(selectedMonth)) {
+        setSelectedMonth("all");
+      }
+    }
+  }, [selectedYear, monthOptions]);
+
   const quarterOptions = ["1", "2", "3", "4"];
-  const monthOptions = Array.from({ length: 12 }, (_, i) => String(i + 1));
 
   const filterQuery = useMemo(
     () =>
@@ -82,11 +123,6 @@ export function Expense() {
   } = useQuery({
     queryKey: ["expense-summary", filterQuery],
     queryFn: () => getExpenseSummary(filterQuery),
-  });
-
-  const { data: expenseList = [], isLoading: isLoadingList } = useQuery({
-    queryKey: ["expense-list"],
-    queryFn: () => getExpenseList(filterQuery),
   });
 
   const filteredList = useMemo(
@@ -227,8 +263,8 @@ export function Expense() {
                 selectedPeriod === "yearly"
                   ? "전년 지출액"
                   : selectedPeriod === "quarter"
-                  ? "전 분기 지출액"
-                  : "전월 지출액"
+                    ? "전 분기 지출액"
+                    : "전월 지출액"
               }
               value={formatCurrency(previousMonthAmount)}
               icon={<Calendar className="h-6 w-6" />}
@@ -240,10 +276,10 @@ export function Expense() {
               selectedPeriod === "all"
                 ? "총 지출액"
                 : selectedPeriod === "yearly"
-                ? "해당 연도 지출액"
-                : selectedPeriod === "quarter"
-                ? "해당 분기 지출액"
-                : "당월 지출액"
+                  ? "해당 연도 지출액"
+                  : selectedPeriod === "quarter"
+                    ? "해당 분기 지출액"
+                    : "당월 지출액"
             }
             value={formatCurrency(currentMonthAmount)}
             icon={<Wallet className="h-6 w-6" />}

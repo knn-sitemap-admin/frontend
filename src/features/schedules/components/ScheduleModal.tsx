@@ -329,7 +329,7 @@ export function ScheduleModal({
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-[24px] sm:rounded-[32px] border-none shadow-2xl">
-          <div className="bg-white p-5 sm:p-8 space-y-6 sm:space-y-8 max-h-[85vh] overflow-y-auto premium-scrollbar">
+          <div className="bg-white p-5 sm:p-8 space-y-6 sm:space-y-8 max-h-[75dvh] sm:max-h-[85vh] overflow-y-auto premium-scrollbar">
             <DialogHeader className="space-y-2 text-left">
               <DialogTitle className="text-3xl font-black tracking-tighter text-gray-900">
                 {schedule ? "일정 수정" : "새 일정 등록"}
@@ -644,7 +644,7 @@ export function ScheduleModal({
             </div>
           </div>
 
-          <DialogFooter className="bg-gray-50 px-6 py-4 flex flex-row items-center justify-between border-t border-gray-100">
+          <DialogFooter className="bg-gray-50 px-6 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4 flex flex-row items-center justify-between border-t border-gray-100">
             <div>
               {schedule && canEdit && (
                 <Button

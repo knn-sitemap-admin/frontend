@@ -128,6 +128,21 @@ export type ContractListResponse = {
   total: number;
 };
 
+/**
+ * 계약 필터 옵션 조회 (가용 연도 및 월 맵)
+ */
+export async function getContractFilterOptions(): Promise<Record<string, string[]>> {
+  try {
+    const response = await api.get<{
+      data: Record<string, string[]>;
+    }>("/contracts/filter-options");
+    return response.data.data;
+  } catch (error: any) {
+    console.error("계약 필터 옵션 API 호출 실패:", error);
+    return {};
+  }
+}
+
 // 내 계약 목록 응답 아이템 타입 (ContractListItemResponse + mySharePercent, myAmount)
 export type MyContractListItemResponse = ContractListItemResponse & {
   mySharePercent: number; // 내 퍼센트

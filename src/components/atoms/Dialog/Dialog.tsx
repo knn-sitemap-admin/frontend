@@ -39,7 +39,7 @@ const DialogContent = React.forwardRef<
       className={cn(
         // 📌 최상위 z-index + 최소 너비 + 내용에 따라 확장
         "fixed left-1/2 top-1/2 z-[2100] inline-flex flex-col gap-4",
-        "min-w-[320px] w-auto max-w-[90vw]", // ⭐ 최소 길이 + 자동 확장
+        "min-w-[320px] w-auto max-w-[90vw] max-h-[92dvh] sm:max-h-[85vh] overflow-hidden", // ⭐ 모바일은 dvh, 데스크톱은 vh 기준
         "translate-x-[-50%] translate-y-[-50%] rounded-2xl border bg-background px-6 py-5 shadow-lg duration-200",
 
         // 애니메이션

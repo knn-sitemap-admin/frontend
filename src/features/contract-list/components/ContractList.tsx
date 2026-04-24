@@ -8,7 +8,7 @@ import {
   searchKeys,
   paginationConfig,
 } from "@/components/contract-management/utils/tableConfig";
-import { getContract } from "@/features/contract-records/api/contracts";
+import { getContract, getContractFilterOptions } from "@/features/contract-records/api/contracts";
 import { transformContractResponseToSalesContract } from "@/features/contract-records/utils/contractTransformers";
 import { SalesContractRecordsModal } from "@/features/contract-records/components/SalesContractRecordsModal";
 import type { SalesContractData } from "@/features/contract-records/types/contract-records";
@@ -65,7 +65,17 @@ export function ContractList({
     useState<SalesContractData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [yearMonthMap, setYearMonthMap] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
+
+  // 가용 필터 옵션 로드
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      const data = await getContractFilterOptions();
+      setYearMonthMap(data);
+    };
+    fetchFilterOptions();
+  }, []);
 
   // 필터나 검색어가 변경되면 1페이지로 이동
   useEffect(() => {
@@ -80,6 +90,34 @@ export function ContractList({
     setSearchTerm("");
     // currentPage는 useEffect에 의해 자동으로 1로 재설정됩니다.
   };
+
+  // 가용 연도 리스트
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear().toString();
+    const dbYears = Object.keys(yearMonthMap);
+    const years = Array.from(new Set([currentYear, ...dbYears])).sort((a, b) => b.localeCompare(a));
+    return ["all", ...years];
+  }, [yearMonthMap]);
+
+  // 가용 월 리스트 (선택된 연도 기준)
+  const monthOptions = useMemo(() => {
+    if (selectedYear === "all") {
+      return ["all", ...Array.from({ length: 12 }, (_, i) => (i + 1).toString())];
+    }
+    const availableMonths = yearMonthMap[selectedYear] || [];
+    // 데이터가 있는 월들만 정렬하여 반환
+    return ["all", ...availableMonths.sort((a, b) => Number(a) - Number(b))];
+  }, [yearMonthMap, selectedYear]);
+
+  // 연도 변경 시 선택된 월이 유효한지 체크
+  useEffect(() => {
+    if (selectedYear !== "all" && selectedMonth !== "all") {
+      const availableMonths = yearMonthMap[selectedYear] || [];
+      if (!availableMonths.includes(selectedMonth)) {
+        setSelectedMonth("all");
+      }
+    }
+  }, [selectedYear, monthOptions]);
 
   // 계약 목록 로드
   const loadContracts = React.useCallback(async () => {
@@ -127,24 +165,14 @@ export function ContractList({
     loadContracts();
   }, [loadContracts]);
 
-  // 필터 옵션들 (고정 값으로 변경하거나 필요 시 서버에서 가져와야 함)
-  // 현재는 년도만 유동적으로 관리 (현재 기준 3년 전까지)
+  // 필터 옵션들
   const filterOptions = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const years = ["all"];
-    for (let i = 0; i < 5; i++) {
-      years.push((currentYear - i).toString());
-    }
-
     return {
-      years,
-      months: [
-        "all",
-        ...Array.from({ length: 12 }, (_, i) => (i + 1).toString()),
-      ],
+      years: yearOptions,
+      months: monthOptions,
       statuses: ["all", "ongoing", "completed", "cancelled", "rejected"],
     };
-  }, []);
+  }, [yearOptions, monthOptions]);
 
   const { processedData, pagination } = useMemo(() => {
     // API에서 이미 필터링된 결과가 오므로 그대로 사용

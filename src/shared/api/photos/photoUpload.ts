@@ -1,4 +1,5 @@
 import { api } from "@/shared/api/api";
+import { convertToWebP } from "@/shared/utils/image";
 
 /** 업로드 도메인 */
 export type UploadDomain = "map" | "contracts" | "board" | "profile" | "etc";
@@ -175,7 +176,16 @@ export async function uploadPhotos(
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
         const fd = new FormData();
-        batch.forEach((f: File) => fd.append("files", f));
+        // ✅ WebP 변환 병렬 처리
+        const processedBatch = await Promise.all(
+          batch.map(f => convertToWebP(f))
+        );
+
+        processedBatch.forEach((f: File) => {
+          // Safari 대응: 파일 이름이 없거나 확장자가 누락되는 경우를 대비해 이름을 명시
+          const fileName = f.name || `image_${Date.now()}.webp`;
+          fd.append("files", f, fileName);
+        });
 
         const { data } = await api.post<UploadResponseOk>(
           `/photo/upload?domain=${encodeURIComponent(domain)}`,

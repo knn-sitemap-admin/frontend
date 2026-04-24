@@ -68,20 +68,6 @@ export const contractTableColumns: TableColumn<ContractData>[] = [
     ),
   },
   {
-    key: "salesPersonSalary",
-    label: "급여",
-    width: "125px",
-    align: "right",
-    render: (value, row) => {
-      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
-      return (
-        <div className="font-medium text-gray-700 whitespace-nowrap">
-          {formatCurrency(isZeroStatus ? 0 : (value ?? 0))}
-        </div>
-      );
-    },
-  },
-  {
     key: "companyAmount",
     label: "회사입금액",
     width: "125px",

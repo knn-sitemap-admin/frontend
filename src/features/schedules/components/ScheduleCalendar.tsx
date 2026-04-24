@@ -15,6 +15,8 @@ import {
   isToday,
   startOfDay,
   endOfDay,
+  addDays,
+  subDays,
 } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check } from "lucide-react";
@@ -61,34 +63,74 @@ export default function ScheduleCalendar() {
   const [filterMode, setFilterMode] = useState<"all" | "mine">("all");
   const [staffId, setStaffId] = useState<string>("all");
   const [onlyHolidays, setOnlyHolidays] = useState(false);
+  const [onlyFinalPayments, setOnlyFinalPayments] = useState(false);
   const [dragY, setDragY] = useState(0);
+  const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragYRef = React.useRef(0);
+  const dragXRef = React.useRef(0);
   const startYRef = React.useRef<number | null>(null);
+  const startXRef = React.useRef<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startYRef.current = e.targetTouches[0].clientY;
+    startXRef.current = e.targetTouches[0].clientX;
     setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (startYRef.current === null) return;
+    if (startYRef.current === null || startXRef.current === null) return;
     const currentY = e.targetTouches[0].clientY;
-    const delta = currentY - startYRef.current;
-    if (delta > 0) {
-      setDragY(delta);
-      dragYRef.current = delta;
+    const currentX = e.targetTouches[0].clientX;
+    const deltaY = currentY - startYRef.current;
+    const deltaX = currentX - startXRef.current;
+
+    // 세로 드래그 (시트 닫기용 - 아래로만)
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      if (deltaY > 0) {
+        setDragY(deltaY);
+        dragYRef.current = deltaY;
+      }
+      setDragX(0);
+      dragXRef.current = 0;
+    } else {
+      // 가로 드래그 (날짜 변경용)
+      setDragX(deltaX);
+      dragXRef.current = deltaX;
+      setDragY(0);
+      dragYRef.current = 0;
     }
   };
 
-  const handleTouchEnd = () => {
-    startYRef.current = null;
-    setIsDragging(false);
-    if (dragYRef.current > 100) {
-      setIsAgendaOpen(false);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (startYRef.current !== null && startXRef.current !== null) {
+      const endY = e.changedTouches[0].clientY;
+      const endX = e.changedTouches[0].clientX;
+      const diffY = endY - startYRef.current;
+      const diffX = endX - startXRef.current;
+
+      // 좌우 스와이프 감지 (가로 이동이 세로 이동보다 크고 일정 거리 이상일 때)
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+        if (diffX > 0) {
+          // 오른쪽 스와이프 -> 이전 날짜
+          setSelectedDate(prev => subDays(prev, 1));
+        } else {
+          // 왼쪽 스와이프 -> 다음 날짜
+          setSelectedDate(prev => addDays(prev, 1));
+        }
+      } else if (diffY > 100) {
+        // 아래로 드래그 -> 시트 닫기
+        setIsAgendaOpen(false);
+      }
     }
+
+    startYRef.current = null;
+    startXRef.current = null;
+    setIsDragging(false);
     setDragY(0);
+    setDragX(0);
     dragYRef.current = 0;
+    dragXRef.current = 0;
   };
 
   const { data: profile } = useQuery({
@@ -208,7 +250,16 @@ export default function ScheduleCalendar() {
         originalData: c
       }));
 
-    return [...daySchedules, ...dayContracts]
+    // 3) 최종 필터링
+    let finalSchedules = [...daySchedules, ...dayContracts];
+    if (onlyFinalPayments) {
+      finalSchedules = finalSchedules.filter(s => s.eventType === "contract");
+    } else if (onlyHolidays) {
+      // 휴무일만 볼 때는 계약 잔금일 일정을 제외
+      finalSchedules = finalSchedules.filter(s => s.eventType === "schedule");
+    }
+
+    return finalSchedules
       .sort((a, b) => {
         // 잔금일 이벤트를 상단에 노출하고 싶다면 우선순위 조정 가능
         if (a.eventType !== b.eventType) {
@@ -336,29 +387,29 @@ export default function ScheduleCalendar() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white relative overflow-hidden">
+    <div className="flex flex-col h-full bg-white relative overflow-hidden w-full">
       {/* 프리미엄 헤더 */}
-      <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b bg-white/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-2 sm:px-6 py-2 sm:py-3 border-b bg-white/80 backdrop-blur-md sticky top-0 z-30">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => router.push("/")}
-            className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm hover:shadow-md hover:border-emerald-200 transition-all active:scale-95 group"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm hover:shadow-md hover:border-emerald-200 transition-all active:scale-95 group"
             title="홈으로 이동"
           >
-            <HomeIcon className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 transition-colors" />
+            <HomeIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-emerald-600 transition-colors" />
           </button>
 
-          <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-0.5 sm:gap-2 bg-white p-1 sm:p-1.5 rounded-2xl border border-gray-100 shadow-sm">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-              className="w-10 h-10 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-emerald-600 transition-all"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-emerald-600 transition-all"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center">
               <Select
                 value={format(currentMonth, "yyyy")}
                 onValueChange={(val) => {
@@ -367,7 +418,7 @@ export default function ScheduleCalendar() {
                   setCurrentMonth(newDate);
                 }}
               >
-                <SelectTrigger className="h-10 border-none bg-transparent hover:bg-gray-50 rounded-xl px-2 font-black text-lg focus:ring-0">
+                <SelectTrigger className="h-8 sm:h-10 border-none bg-transparent hover:bg-gray-50 rounded-xl px-0.5 sm:px-1 font-black text-xs sm:text-lg focus:ring-0 w-auto">
                   <SelectValue placeholder="연도" />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl border-gray-100 shadow-2xl">
@@ -375,7 +426,7 @@ export default function ScheduleCalendar() {
                     const year = new Date().getFullYear() - 10 + i;
                     return (
                       <SelectItem key={year} value={String(year)} className="rounded-xl font-bold">
-                        {year}년
+                        {String(year).slice(-2)}년
                       </SelectItem>
                     );
                   })}
@@ -390,7 +441,7 @@ export default function ScheduleCalendar() {
                   setCurrentMonth(newDate);
                 }}
               >
-                <SelectTrigger className="h-10 border-none bg-transparent hover:bg-gray-50 rounded-xl px-2 font-black text-lg focus:ring-0">
+                <SelectTrigger className="h-8 sm:h-10 border-none bg-transparent hover:bg-gray-50 rounded-xl px-0.5 sm:px-1 font-black text-xs sm:text-lg focus:ring-0 w-auto">
                   <SelectValue placeholder="월" />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl border-gray-100 shadow-2xl">
@@ -407,9 +458,9 @@ export default function ScheduleCalendar() {
               variant="ghost"
               size="icon"
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-              className="w-10 h-10 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-emerald-600 transition-all"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-emerald-600 transition-all"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </div>
         </div>
@@ -419,14 +470,14 @@ export default function ScheduleCalendar() {
             variant="ghost"
             size="sm"
             onClick={() => setIsTrashOpen(true)}
-            className="h-9 px-3 rounded-xl text-gray-500 hover:bg-gray-100 font-bold"
+            className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-gray-500 hover:bg-gray-100 font-bold"
           >
-            <Trash2 className="w-5 h-5 shrink-0" />
+            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
             <span className="hidden sm:inline text-xs sm:text-sm ml-2">삭제 내역</span>
           </Button>
 
           {isPowerful && !onlyHolidays && (
-            <div className="hidden sm:block">
+            <div className="hidden md:block">
               <Select value={staffId} onValueChange={setStaffId}>
                 <SelectTrigger className="w-[120px] h-9 rounded-xl border-gray-200 bg-white/50 text-xs font-bold">
                   <SelectValue placeholder="직원 선택" />
@@ -443,18 +494,38 @@ export default function ScheduleCalendar() {
             </div>
           )}
 
+          {profile?.role === "admin" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const nextValue = !onlyFinalPayments;
+                setOnlyFinalPayments(nextValue);
+                if (nextValue) setOnlyHolidays(false);
+              }}
+              className={cn(
+                "h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold transition-all",
+                onlyFinalPayments ? "bg-indigo-600 text-white border-none shadow-indigo-100" : "border-gray-200 bg-white/50 text-gray-600"
+              )}
+            >
+              잔금일만
+            </Button>
+          )}
+
           <Button
             variant={onlyHolidays ? "default" : "outline"}
             size="sm"
             onClick={() => {
-              setOnlyHolidays(!onlyHolidays);
-              if (!onlyHolidays) {
+              const nextValue = !onlyHolidays;
+              setOnlyHolidays(nextValue);
+              if (nextValue) {
+                setOnlyFinalPayments(false);
                 setStaffId("all");
                 setFilterMode("all");
               }
             }}
             className={cn(
-              "h-9 px-3 rounded-xl text-xs font-bold transition-all",
+              "h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold transition-all",
               onlyHolidays ? "bg-amber-500 hover:bg-amber-600 border-none shadow-amber-100" : "border-gray-200 bg-white/50 text-gray-600"
             )}
           >
@@ -463,8 +534,8 @@ export default function ScheduleCalendar() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto premium-scrollbar relative group/calendar bg-gray-50/30">
-        <div className="grid grid-cols-7 border-b bg-gray-50/80 backdrop-blur-sm sticky top-0 z-20">
+      <div className="flex-1 overflow-y-auto premium-scrollbar relative group/calendar bg-gray-50/30 w-full">
+        <div className="grid grid-cols-7 border-b bg-gray-50/80 backdrop-blur-sm sticky top-0 z-20 w-full">
           {["일", "월", "화", "수", "목", "금", "토"].map((day, i) => (
             <div key={day} className={cn(
               "py-3 text-center text-[10px] sm:text-xs font-black tracking-widest uppercase",
@@ -475,7 +546,7 @@ export default function ScheduleCalendar() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 auto-rows-fr min-h-full bg-white divide-x divide-y divide-gray-100/80">
+        <div className="grid grid-cols-7 auto-rows-fr min-h-full bg-white divide-x divide-y divide-gray-100/80 w-full">
           {days.map((day, i) => {
             const daySchedules = getDaySchedules(day);
             const holiday = getKoreanHoliday(day);
@@ -486,14 +557,14 @@ export default function ScheduleCalendar() {
                 key={day.toString()}
                 onClick={() => handleDayClick(day)}
                 className={cn(
-                  "min-h-[140px] sm:min-h-[180px] pt-1 sm:pt-2 px-0 transition-all hover:bg-emerald-50/20 group/day cursor-pointer flex flex-col relative",
+                  "min-h-[100px] sm:min-h-[180px] pt-1 sm:pt-2 px-0 transition-all hover:bg-emerald-50/20 group/day cursor-pointer flex flex-col relative w-full overflow-hidden",
                   !isCurrMonth && "bg-gray-50/50 opacity-40 grayscale-[0.5]"
                 )}
               >
-                <div className="flex justify-between items-start mb-1.5 sm:mb-3 px-1 sm:px-2">
+                <div className="flex justify-between items-start mb-0.5 sm:mb-3 px-0.5 sm:px-2 w-full">
                   <div className="flex flex-col">
                     <span className={cn(
-                      "text-[13px] sm:text-[15px] font-black w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl transition-all group-hover/day:bg-white group-hover/day:shadow-sm",
+                      "text-[10px] sm:text-[15px] font-black w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-all group-hover/day:bg-white group-hover/day:shadow-sm",
                       isToday(day) ? "bg-emerald-600 text-white shadow-lg shadow-emerald-100" :
                         holiday ? "text-rose-500" :
                           i % 7 === 0 ? "text-rose-500" :
@@ -502,7 +573,7 @@ export default function ScheduleCalendar() {
                       {format(day, "d")}
                     </span>
                     {holiday && (
-                      <span className="text-[9px] sm:text-[10px] font-black text-rose-500 mt-0.5 ml-1 leading-none tracking-tighter">
+                      <span className="text-[8px] sm:text-[10px] font-black text-rose-500 mt-0.5 ml-1 leading-none tracking-tighter">
                         {holiday}
                       </span>
                     )}
@@ -514,9 +585,9 @@ export default function ScheduleCalendar() {
                       setSelectedSchedule(null);
                       setIsModalOpen(true);
                     }}
-                    className="opacity-0 group-hover/day:opacity-100 transition-all w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-100 hover:scale-110 active:scale-95 cursor-pointer"
+                    className="opacity-0 group-hover/day:opacity-100 transition-all w-6 h-6 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-100 hover:scale-110 active:scale-95 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3 h-3" />
                   </div>
                 </div>
 
@@ -526,7 +597,7 @@ export default function ScheduleCalendar() {
                       const isMultiDay = new Date(s.startDate).toDateString() !== new Date(s.endDate).toDateString();
                       const isStart = isSameDay(day, new Date(s.startDate));
                       const isEnd = isSameDay(day, new Date(s.endDate));
-                      
+
                       return (
                         <div
                           key={s.id}
@@ -596,16 +667,46 @@ export default function ScheduleCalendar() {
                     })}
                   </div>
 
-                  <div className="flex sm:hidden flex-wrap gap-1 px-1 justify-center mt-auto pb-1.5">
-                    {daySchedules.slice(0, 4).map((s) => (
-                      <div
-                        key={s.id}
-                        className={cn(
-                          "w-2 h-2 rounded-full shadow-sm",
-                          getScheduleColor(s.category, s.color).dot
-                        )}
-                      />
-                    ))}
+                  <div className="flex sm:hidden flex-col gap-0.5 w-full pb-1 mt-1">
+                    {daySchedules.slice(0, 3).map((s) => {
+                      const isMultiDay = new Date(s.startDate).toDateString() !== new Date(s.endDate).toDateString();
+                      const isStart = isSameDay(day, new Date(s.startDate));
+                      const isEnd = isSameDay(day, new Date(s.endDate));
+
+                      return (
+                        <div
+                          key={s.id}
+                          className={cn(
+                            "relative flex items-center justify-center overflow-hidden transition-all text-[10px] font-black h-[18px] leading-none select-none",
+                            isMultiDay ? (
+                              cn(
+                                "text-white z-10",
+                                getScheduleColor(s.category, s.color).dark,
+                                isStart ? "rounded-l-sm ml-0.5" : "-ml-[1px]",
+                                isEnd ? "rounded-r-sm mr-0.5" : "-mr-[1px]",
+                                !isStart && !isEnd && "rounded-none",
+                              )
+                            ) : (
+                              cn(
+                                "rounded-sm mx-0",
+                                getScheduleColor(s.category, s.color).bg,
+                                getScheduleColor(s.category, s.color).text,
+                                "border border-black/[0.03]"
+                              )
+                            )
+                          )}
+                        >
+                          {/* 중앙 정렬 크롭을 위한 절대 위치 래퍼 */}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="whitespace-nowrap px-0.5 shrink-0 min-w-0 text-center">
+                              {(isStart || (i % 7 === 0 && !isStart) || !isMultiDay) && (
+                                `${s.creator?.name || "유저"}: ${s.eventType === "contract" ? s.title : (s.location || s.title)}`
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -618,11 +719,37 @@ export default function ScheduleCalendar() {
         <SheetContent
           side={sheetSide}
           className={cn(
-            "p-0 flex flex-col bg-white border-none shadow-2xl",
+            "p-0 flex flex-col bg-white border-none shadow-2xl overflow-hidden",
             sheetSide === "bottom" ? "rounded-t-[40px] h-[85vh]" : "w-[400px]"
           )}
-          style={sheetSide === "bottom" ? { transform: `translateY(${dragY}px)`, transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)" } : {}}
+          style={{
+            transform: `translate(${dragX}px, ${dragY}px)`,
+            transition: isDragging ? "none" : "transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)"
+          }}
         >
+          {/* 가로 스와이프 힌트 UI */}
+          {Math.abs(dragX) > 20 && (
+            <div className={cn(
+              "absolute inset-y-0 flex items-center px-6 pointer-events-none z-50 transition-opacity duration-300",
+              dragX > 0 ? "left-0 bg-gradient-to-r from-emerald-500/20 to-transparent" : "right-0 bg-gradient-to-l from-emerald-500/20 to-transparent",
+              Math.abs(dragX) > 50 ? "opacity-100 scale-110" : "opacity-0 scale-90"
+            )}>
+              <div className="flex flex-col items-center gap-2">
+                {dragX > 0 ? (
+                  <>
+                    <ChevronLeft className="w-8 h-8 text-emerald-600 animate-bounce-x-reverse" />
+                    <span className="text-xs font-black text-emerald-700 whitespace-nowrap bg-white/80 px-2 py-1 rounded-full shadow-sm">이전 날짜</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight className="w-8 h-8 text-emerald-600 animate-bounce-x" />
+                    <span className="text-xs font-black text-emerald-700 whitespace-nowrap bg-white/80 px-2 py-1 rounded-full shadow-sm">다음 날짜</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {sheetSide === "bottom" && (
             <div
               className="w-full flex justify-center py-4 shrink-0 bg-white cursor-row-resize touch-none"
@@ -677,7 +804,12 @@ export default function ScheduleCalendar() {
               </div>
             </SheetHeader>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 premium-scrollbar pb-10">
+            <div
+              className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 premium-scrollbar pb-10"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               {getDaySchedules(selectedDate).length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full py-20 opacity-30 grayscale">
                   <div className="w-16 h-16 rounded-[24px] bg-gray-100 flex items-center justify-center mb-4">
@@ -752,7 +884,7 @@ export default function ScheduleCalendar() {
         </SheetContent>
       </Sheet>
 
-      <div className="fixed bottom-24 right-6 sm:bottom-10 sm:right-10 flex flex-col gap-3 z-40">
+      <div className="hidden sm:flex fixed bottom-10 right-10 flex-col gap-3 z-40">
         <button
           onClick={() => {
             setContractDefaultData({
@@ -780,17 +912,13 @@ export default function ScheduleCalendar() {
       </div>
 
       <div className="flex items-center justify-around py-4 bg-white/90 backdrop-blur-md border-t sm:hidden fixed bottom-0 left-0 right-0 z-40 px-6 pb-8">
-        <Button variant="ghost" onClick={() => router.push("/dashboard")} className="flex flex-col gap-1 text-gray-400 hover:text-emerald-600">
+        <Button variant="ghost" onClick={() => router.push("/")} className="flex flex-col gap-1 text-gray-400 hover:text-emerald-600">
           <HomeIcon className="w-6 h-6" />
           <span className="text-[10px] font-bold tracking-tight">홈</span>
         </Button>
         <Button variant="ghost" className="flex flex-col gap-1 text-emerald-600">
           <CalIcon className="w-6 h-6" />
           <span className="text-[10px] font-bold tracking-tight text-emerald-600">달력</span>
-        </Button>
-        <Button variant="ghost" className="flex flex-col gap-1 text-gray-400">
-          <Bell className="w-6 h-6" />
-          <span className="text-[10px] font-bold tracking-tight">알림</span>
         </Button>
       </div>
 

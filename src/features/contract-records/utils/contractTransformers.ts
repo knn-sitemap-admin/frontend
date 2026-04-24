@@ -449,10 +449,9 @@ export function transformContractListItemToContractData(
     brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
 
   const totalCalculation = isInvalidStatus ? 0 : rawTotalCalculation;
-  const companyPercent = item.companyPercent ?? 0;
-  const salesPersonSalary = isInvalidStatus
-    ? 0
-    : Math.round((totalCalculation * companyPercent) / 100); // 담당자 분배와 동일: totalCalculation × 회사비율/100
+  const companyAmount = item.companyAmount ?? 0;
+  const salesPersonAmount = item.salesPersonAmount ?? 0;
+  const teamLeaderAmount = item.teamLeaderAmount ?? 0;
 
   return {
     id: String(item.id),
@@ -460,10 +459,10 @@ export function transformContractListItemToContractData(
     customerName: item.customerName || "",
     customerContact: item.customerPhone || "",
     salesPerson: item.createdByName || "",
-    salesPersonSalary, // 기존: 호환성을 위해 유지 (또는 회사 입금액)
-    companyAmount: item.companyAmount ?? 0,
-    teamLeaderAmount: item.teamLeaderAmount ?? 0,
-    salesPersonAmount: item.salesPersonAmount ?? 0,
+    salesPersonSalary: companyAmount, // 기존 호환성 유지
+    companyAmount,
+    teamLeaderAmount,
+    salesPersonAmount,
     totalCalculation,
     contractDate: item.contractDate,
     balanceDate: item.finalPaymentDate || undefined,
