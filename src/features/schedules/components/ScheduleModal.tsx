@@ -298,7 +298,13 @@ export function ScheduleModal({
     const [h, m] = current.split(":");
     return (
       <div className="flex bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-2xl divide-x divide-gray-50">
-        <div className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y">
+        <div 
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y pointer-events-auto"
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+        >
           <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50 uppercase tracking-widest">Hour</div>
           <div className="flex flex-col px-1.5 pb-2">
             {HOURS.map(hour => (
@@ -306,7 +312,7 @@ export function ScheduleModal({
                 key={hour} type="button"
                 onClick={() => onChange(`${hour}:${m}`)}
                 className={cn(
-                  "py-3 text-sm font-bold transition-all rounded-lg",
+                  "py-3 text-sm font-bold transition-all rounded-lg shrink-0",
                   h === hour ? "bg-emerald-500 text-white shadow-md scale-[1.05]" : "text-gray-400 hover:bg-gray-50"
                 )}
               >
@@ -315,7 +321,13 @@ export function ScheduleModal({
             ))}
           </div>
         </div>
-        <div className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y">
+        <div 
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y pointer-events-auto"
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+        >
           <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50 uppercase tracking-widest">Min</div>
           <div className="flex flex-col px-1.5 pb-2">
             {MINUTES.map(minute => (
@@ -522,15 +534,15 @@ export function ScheduleModal({
                       <div className="flex justify-between text-[11px] font-black text-emerald-600 tracking-widest bg-emerald-50 px-2 py-0.5 rounded">
                         <span>시작</span>
                       </div>
-                      <div className="flex gap-3">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
                               disabled={!canEdit}
-                              className="flex-1 h-14 sm:h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white"
+                              className="w-full sm:flex-1 h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white text-xs sm:text-sm"
                             >
-                              <CalendarIcon className="w-4 h-4 mr-2 text-emerald-500" />
+                              <CalendarIcon className="w-3.5 h-3.5 mr-2 text-emerald-500" />
                               {startDate ? format(parse(startDate, "yyyy-MM-dd", new Date()), "PPP", { locale: ko }) : <span>날짜 선택</span>}
                             </Button>
                           </PopoverTrigger>
@@ -550,9 +562,9 @@ export function ScheduleModal({
                               <Button
                                 variant="outline"
                                 disabled={!canEdit}
-                                className="w-[110px] h-14 sm:h-12 border-white shadow-sm rounded-2xl font-black text-emerald-700 bg-white"
+                                className="w-full sm:w-[110px] h-12 border-white shadow-sm rounded-2xl font-black text-emerald-700 bg-white text-xs sm:text-sm"
                               >
-                                <Clock className="w-4 h-4 mr-2 text-emerald-500" />
+                                <Clock className="w-3.5 h-3.5 mr-2 text-emerald-500" />
                                 {startTime}
                               </Button>
                             </PopoverTrigger>
@@ -571,15 +583,15 @@ export function ScheduleModal({
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-black text-rose-500 tracking-widest bg-rose-50 px-2 py-0.5 rounded">종료</span>
                       </div>
-                      <div className="flex gap-3">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
                               disabled={!canEdit}
-                              className="flex-1 h-14 sm:h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white"
+                              className="w-full sm:flex-1 h-12 justify-start text-left font-bold rounded-2xl border-white shadow-sm bg-white text-xs sm:text-sm"
                             >
-                              <CalendarIcon className="w-4 h-4 mr-2 text-rose-400" />
+                              <CalendarIcon className="w-3.5 h-3.5 mr-2 text-rose-400" />
                               {endDate ? format(parse(endDate, "yyyy-MM-dd", new Date()), "PPP", { locale: ko }) : <span>날짜 선택</span>}
                             </Button>
                           </PopoverTrigger>
@@ -599,9 +611,9 @@ export function ScheduleModal({
                               <Button
                                 variant="outline"
                                 disabled={!canEdit}
-                                className="w-[110px] h-14 sm:h-12 border-white shadow-sm rounded-2xl font-black text-rose-700 bg-white"
+                                className="w-full sm:w-[110px] h-12 border-white shadow-sm rounded-2xl font-black text-rose-700 bg-white text-xs sm:text-sm"
                               >
-                                <Clock className="w-4 h-4 mr-2 text-rose-400" />
+                                <Clock className="w-3.5 h-3.5 mr-2 text-rose-400" />
                                 {endTime}
                               </Button>
                             </PopoverTrigger>

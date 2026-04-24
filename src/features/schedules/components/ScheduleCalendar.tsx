@@ -261,13 +261,22 @@ export default function ScheduleCalendar() {
 
     return finalSchedules
       .sort((a, b) => {
-        // 잔금일 이벤트를 상단에 노출하고 싶다면 우선순위 조정 가능
-        if (a.eventType !== b.eventType) {
-          return a.eventType === "contract" ? -1 : 1;
+        // 우선순위 점수 계산 (낮을수록 상단)
+        const getPriority = (item: any) => {
+          if (item.category === "휴무") return 1;
+          if (item.eventType === "schedule") return 2;
+          if (item.eventType === "contract") return 3;
+          return 4;
+        };
+
+        const priorityA = getPriority(a);
+        const priorityB = getPriority(b);
+
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
         }
-        const durA = new Date(a.endDate).getTime() - new Date(a.startDate).getTime();
-        const durB = new Date(b.endDate).getTime() - new Date(b.startDate).getTime();
-        return durB - durA;
+
+        return 0;
       });
   };
 
@@ -494,7 +503,7 @@ export default function ScheduleCalendar() {
             </div>
           )}
 
-          {profile?.role === "admin" && (
+          {isPowerful && (
             <Button
               variant="outline"
               size="sm"
@@ -609,7 +618,7 @@ export default function ScheduleCalendar() {
                           onMouseLeave={() => setHoveredContractId(null)}
                           className={cn(
                             "relative flex items-center transition-all text-[12px] font-bold select-none h-[22px] mb-[1px] shrink-0 cursor-pointer group/label",
-                            isMultiDay ? (
+                            (isMultiDay || s.category === "휴무") ? (
                               cn(
                                 "text-white shadow-sm border-t border-b border-white/10 z-10",
                                 getScheduleColor(s.category, s.color).dark,
@@ -678,7 +687,7 @@ export default function ScheduleCalendar() {
                           key={s.id}
                           className={cn(
                             "relative flex items-center justify-center overflow-hidden transition-all text-[10px] font-black h-[18px] leading-none select-none",
-                            isMultiDay ? (
+                            (isMultiDay || s.category === "휴무") ? (
                               cn(
                                 "text-white z-10",
                                 getScheduleColor(s.category, s.color).dark,
