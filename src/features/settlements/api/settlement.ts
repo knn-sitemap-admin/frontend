@@ -27,3 +27,8 @@ export const updateSettlementStatus = async (id: number, status: "pending" | "pa
   const response = await apiFetch.patch<{ data: any }>(`/settlements/${id}/status`, { status });
   return response.data;
 };
+
+export const getSettlementDetail = async (accountId: string, year: number, month: number) => {
+  const response = await apiFetch.get<{ data: any[] }>("/settlements/detail", { accountId, year, month });
+  return response.data || [];
+};

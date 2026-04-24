@@ -27,7 +27,7 @@ export function Table<T extends TableData>({
       )}
     >
       {/* 테이블 */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <TableHeader columns={columns} sort={sort} onSort={onSort} />
           <TableBody

@@ -3,10 +3,7 @@
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/atoms/Card/Card";
-import { Button } from "@/components/atoms/Button/Button";
 import {
   Users,
   FileText,
@@ -14,120 +11,155 @@ import {
   TrendingUp,
   Wallet,
   UserPlus,
+  ArrowRight,
+  ShieldCheck,
+  LayoutGrid,
+  BarChart3,
+  Calendar,
+  Clock
 } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile } from "@/features/users/api/account";
+import { useMemo, useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 export function AdminMainPage() {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   // 프로필 정보 가져오기
   const { data: profile } = useQuery({
     queryKey: ["profile"],
     queryFn: getProfile,
-    staleTime: 10 * 60 * 1000, // 10분
+    staleTime: 10 * 60 * 1000,
   });
 
-  const quickActions = [
+  const quickActions = useMemo(() => [
     ...(profile?.role === "admin"
       ? [
-          {
-            title: "팀 관리(관리자)",
-            description: "전체 팀 목록 및 관리",
-            href: "/admin/team-management",
-            icon: Users,
-            color: "bg-blue-500",
-          },
-        ]
+        {
+          title: "팀 관리(관리자)",
+          description: "전체 팀 목록 및 권한 관리",
+          href: "/admin/team-management",
+          icon: ShieldCheck,
+          gradient: "from-blue-600 to-indigo-600",
+          shadow: "shadow-blue-500/20",
+        },
+      ]
       : []),
     {
       title: "계정 생성",
-      description: "새로운 계정 생성",
+      description: "새로운 운영자/영업자 계정 등록",
       href: "/admin/account-create",
       icon: UserPlus,
-      color: "bg-cyan-500",
+      gradient: "from-cyan-500 to-blue-500",
+      shadow: "shadow-cyan-500/20",
     },
     {
       title: "계정 목록",
-      description: "등록된 계정 조회 및 관리",
+      description: "사용자 조회 및 정보 수정",
       href: "/admin/accounts",
       icon: Users,
-      color: "bg-indigo-500",
+      gradient: "from-indigo-500 to-purple-500",
+      shadow: "shadow-indigo-500/20",
     },
     {
       title: "계약 관리",
-      description: "계약서 및 거래 관리",
+      description: "모든 계약 데이터 통합 관리",
       href: "/admin/contracts",
       icon: FileText,
-      color: "bg-green-500",
+      gradient: "from-emerald-500 to-teal-600",
+      shadow: "shadow-emerald-500/20",
     },
     {
       title: "실적 확인",
-      description: "팀원별 영업 실적 조회",
+      description: "실시간 성과 지표 및 랭킹",
       href: "/admin/performance",
       icon: TrendingUp,
-      color: "bg-orange-500",
+      gradient: "from-orange-500 to-rose-500",
+      shadow: "shadow-orange-500/20",
     },
     {
       title: "플랫폼 통계",
-      description: "플랫폼별 유입 및 계약 분석",
+      description: "매체별 효율 및 전환 분석",
       href: "/admin/platform-statistics",
-      icon: TrendingUp,
-      color: "bg-rose-500",
-    },
-    {
-      title: "가계부",
-      description: "지출 내역 관리",
-      href: "/admin/expense-management",
-      icon: Wallet,
-      color: "bg-amber-500",
+      icon: BarChart3,
+      gradient: "from-rose-500 to-pink-600",
+      shadow: "shadow-rose-500/20",
     },
     {
       title: "정산 관리",
-      description: "영업자별 정산 및 급여 관리",
+      description: "월별 수당 계산 및 지급",
       href: "/admin/settlements",
+      icon: CreditCard,
+      gradient: "from-blue-600 to-cyan-600",
+      shadow: "shadow-blue-600/20",
+    },
+    {
+      title: "가계부",
+      description: "지출 관리 및 재무 현황",
+      href: "/admin/expense-management",
       icon: Wallet,
-      color: "bg-blue-600",
+      gradient: "from-amber-500 to-orange-600",
+      shadow: "shadow-amber-500/20",
     },
     {
       title: "공지사항",
-      description: "사이트 공지사항 관리",
+      description: "전사 공지 및 시스템 안내",
       href: "/admin/notices",
       icon: Bell,
-      color: "bg-purple-500",
+      gradient: "from-purple-500 to-fuchsia-600",
+      shadow: "shadow-purple-500/20",
     },
-  ];
+  ], [profile]);
 
   return (
     <div className="mx-auto max-w-7xl p-6 space-y-8 bg-gray-50">
       <main className="mt-6 p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-16">
-            관리자 페이지
-          </h1>
-        </div>
-
-        <div className="mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickActions.map((action, index) => (
-              <Link key={index} href={action.href}>
-                <Card className="bg-white hover:shadow-lg transition-all duration-200 cursor-pointer aspect-square">
-                  <CardContent className="p-6 h-full flex flex-col items-center justify-center text-center">
-                    <div className={`p-4 rounded-xl ${action.color} mb-4`}>
-                      <action.icon className="h-8 w-8 text-white" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {quickActions.map((action, index) => {
+            const Icon = action.icon;
+            return (
+              <Link key={index} href={action.href} className="group">
+                <Card className="h-full bg-white border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 rounded-[32px] overflow-hidden group-active:scale-[0.98]">
+                  <CardContent className="p-8 flex flex-col h-full">
+                    <div className={cn(
+                      "w-16 h-16 rounded-3xl bg-gradient-to-br flex items-center justify-center text-white mb-3 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+                      action.gradient,
+                      action.shadow
+                    )}>
+                      <Icon size={28} />
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-2 text-lg">
-                      {action.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {action.description}
-                    </p>
+
+                    <div className="flex-1">
+                      <h3 className="text-lg font-black text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        {action.title}
+                      </h3>
+                      <p className="text-sm text-gray-400 font-medium leading-relaxed mb-2">
+                        {action.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
+                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest group-hover:text-blue-400 transition-colors">Go to settings</span>
+                      <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                        <ArrowRight size={16} />
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </Link>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </main>
     </div>
   );
 }
+
+import { CreditCard } from "lucide-react";
