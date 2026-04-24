@@ -1,4 +1,4 @@
-import { api } from "@/shared/api/api";
+import { apiFetch } from "@/shared/api/fetch";
 import type { ExpenseFilterQuery } from "../utils/expenseUtils";
 
 export interface ExpenseSummary {
@@ -20,8 +20,8 @@ export interface ExpenseItem {
 export async function getExpenseSummary(
   filterQuery: ExpenseFilterQuery
 ): Promise<ExpenseSummary> {
-  const { data } = await api.get<{ data: any[] }>("/ledgers");
-  const ledgers = data.data || [];
+  const response = await apiFetch.get<{ data: any[] }>("/ledgers");
+  const ledgers = response.data || [];
 
   const parseDate = (dateStr: string) => {
     if (!dateStr) return null;
@@ -109,8 +109,8 @@ export async function getExpenseSummary(
 export async function getExpenseList(
   _filterQuery: ExpenseFilterQuery
 ): Promise<ExpenseItem[]> {
-  const { data } = await api.get<{ data: any[] }>("/ledgers");
-  return data.data.map((l) => ({
+  const response = await apiFetch.get<{ data: any[] }>("/ledgers");
+  return (response.data || []).map((l) => ({
     id: String(l.id),
     date: l.entryDate,
     itemName: l.mainLabel,
@@ -125,13 +125,13 @@ export async function createExpense(dto: {
   amount: number;
   memo?: string;
 }): Promise<ExpenseItem> {
-  const { data } = await api.post("/ledgers", {
+  const response = await apiFetch.post<{ data: any }>("/ledgers", {
     entryDate: dto.date,
     mainLabel: dto.itemName,
     amount: dto.amount,
     memo: dto.memo,
   });
-  const l = data.data;
+  const l = response.data;
   return {
     id: String(l.id),
     date: l.entryDate,
@@ -150,13 +150,13 @@ export async function updateExpense(
     memo?: string;
   }
 ): Promise<ExpenseItem> {
-  const { data } = await api.patch(`/ledgers/${id}`, {
+  const response = await apiFetch.patch<{ data: any }>(`/ledgers/${id}`, {
     entryDate: dto.date,
     mainLabel: dto.itemName,
     amount: dto.amount,
     memo: dto.memo,
   });
-  const l = data.data;
+  const l = response.data;
   return {
     id: String(l.id),
     date: l.entryDate,
@@ -167,5 +167,5 @@ export async function updateExpense(
 }
 
 export async function deleteExpense(id: string): Promise<void> {
-  await api.delete(`/ledgers/${id}`);
+  await apiFetch.delete(`/ledgers/${id}`);
 }

@@ -27,6 +27,8 @@ export interface PeriodFiltersProps {
   onMonthChange?: (month: string) => void;
   /** 팀 상세 등에서 닫기 버튼이 필요할 때 사용 */
   onClose?: () => void;
+  /** 기간 종류(월별/분기별 등) 선택 셀렉트를 숨길지 여부 */
+  hidePeriodType?: boolean;
 }
 
 export function PeriodFilters({
@@ -42,23 +44,28 @@ export function PeriodFilters({
   onQuarterChange,
   onMonthChange,
   onClose,
+  hidePeriodType = false,
 }: PeriodFiltersProps) {
   return (
     <div className="flex items-center gap-4">
       <div className="flex items-center gap-2">
-        <Label className="text-sm">기간:</Label>
-        <Select value={selectedPeriod} onValueChange={onPeriodChange}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">전체보기</SelectItem>
-            <SelectItem value="month">이번 달</SelectItem>
-            <SelectItem value="monthly">월별 선택</SelectItem>
-            <SelectItem value="quarter">분기 선택</SelectItem>
-            <SelectItem value="yearly">연도 선택</SelectItem>
-          </SelectContent>
-        </Select>
+        {!hidePeriodType && (
+          <>
+            <Label className="text-sm">기간:</Label>
+            <Select value={selectedPeriod} onValueChange={onPeriodChange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체보기</SelectItem>
+                <SelectItem value="month">이번 달</SelectItem>
+                <SelectItem value="monthly">월별 선택</SelectItem>
+                <SelectItem value="quarter">분기 선택</SelectItem>
+                <SelectItem value="yearly">연도 선택</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        )}
         {selectedPeriod === "yearly" && (
           <Select value={selectedYear} onValueChange={onYearChange}>
             <SelectTrigger className="w-24">

@@ -1,4 +1,4 @@
-import { api } from "@/shared/api/api";
+import { apiFetch } from "@/shared/api/fetch";
 import type {
   PerformanceFilterQuery,
   PerformanceSummaryResponse,
@@ -58,97 +58,33 @@ export function buildPerformanceFilterQuery(
 
 /**
  * 실적 요약 조회
- * GET /performance/summary
  */
 export async function getPerformanceSummary(
   query: PerformanceFilterQuery
 ): Promise<PerformanceSummaryResponse> {
-  try {
-    const params = new URLSearchParams();
-    
-    if (query.filterType) {
-      params.append("filterType", query.filterType);
-    }
-    if (query.year !== undefined) {
-      params.append("year", query.year.toString());
-    }
-    if (query.month !== undefined) {
-      params.append("month", query.month.toString());
-    }
-    if (query.quarter !== undefined) {
-      params.append("quarter", query.quarter.toString());
-    }
-
-    const queryString = params.toString();
-    const url = `/performance/summary${queryString ? `?${queryString}` : ""}`;
-
-    const response = await api.get<{
-      success: boolean;
-      path: string;
-      data: PerformanceSummaryResponse;
-    }>(url);
-
-    return response.data.data;
-  } catch (error: any) {
-    console.error("실적 요약 조회 실패:", error);
-    throw error;
-  }
+  const params: Record<string, any> = { ...query };
+  const data = await apiFetch.get<{ data: PerformanceSummaryResponse }>("/performance/summary", params);
+  return data.data;
 }
 
 /**
  * 팀 직원별 실적 조회
- * GET /performance/teams/:teamId
  */
 export async function getTeamEmployees(
   teamId: string,
   query: PerformanceFilterQuery
 ): Promise<TeamEmployeesResponse> {
-  try {
-    const params = new URLSearchParams();
-    
-    if (query.filterType) {
-      params.append("filterType", query.filterType);
-    }
-    if (query.year !== undefined) {
-      params.append("year", query.year.toString());
-    }
-    if (query.month !== undefined) {
-      params.append("month", query.month.toString());
-    }
-    if (query.quarter !== undefined) {
-      params.append("quarter", query.quarter.toString());
-    }
-
-    const queryString = params.toString();
-    const url = `/performance/teams/${teamId}${queryString ? `?${queryString}` : ""}`;
-
-    const response = await api.get<{
-      success: boolean;
-      path: string;
-      data: TeamEmployeesResponse;
-    }>(url);
-
-    return response.data.data;
-  } catch (error: any) {
-    console.error("팀 직원별 실적 조회 실패:", error);
-    throw error;
-  }
+  const params: Record<string, any> = { ...query };
+  const data = await apiFetch.get<{ data: TeamEmployeesResponse }>(`/performance/teams/${teamId}`, params);
+  return data.data;
 }
 
 /**
  * 모든 활성 직원 목록 조회
  */
 export async function getEmployees(): Promise<any[]> {
-  try {
-    const response = await api.get<{
-      success: boolean;
-      data: any[];
-    }>("/performance/employees");
-    return response.data.data;
-  } catch (error: any) {
-    console.error("직원 목록 조회 실패:", error);
-    throw error;
-  }
+  const data = await apiFetch.get<{ data: any[] }>("/performance/employees");
+  return data.data;
 }
 
 /**
@@ -158,57 +94,19 @@ export async function getEmployeePerformance(
   accountId: string,
   year: number
 ): Promise<any> {
-  try {
-    const response = await api.get<{
-      success: boolean;
-      data: any;
-    }>(`/performance/employees/${accountId}?year=${year}`);
-    return response.data.data;
-  } catch (error: any) {
-    console.error("영업자별 실적 추이 조회 실패:", error);
-    throw error;
-  }
+  const data = await apiFetch.get<{ data: any }>(`/performance/employees/${accountId}`, { year });
+  return data.data;
 }
 
 /**
  * 플랫폼별 통계 조회
- * GET /performance/platform-statistics
  */
 export async function getPlatformStatistics(
   query: PerformanceFilterQuery
 ): Promise<PlatformStatisticsResponse> {
-  try {
-    const params = new URLSearchParams();
-    
-    if (query.filterType) {
-      params.append("filterType", query.filterType);
-    }
-    if (query.year !== undefined) {
-      params.append("year", query.year.toString());
-    }
-    if (query.month !== undefined) {
-      params.append("month", query.month.toString());
-    }
-    if (query.quarter !== undefined) {
-      params.append("quarter", query.quarter.toString());
-    }
-    if (query.accountId) {
-      params.append("accountId", query.accountId);
-    }
-
-    const queryString = params.toString();
-    const url = `/performance/platform-statistics${queryString ? `?${queryString}` : ""}`;
-
-    const response = await api.get<{
-      success: boolean;
-      data: PlatformStatisticsResponse;
-    }>(url);
-
-    return response.data.data;
-  } catch (error: any) {
-    console.error("플랫폼 통계 조회 실패:", error);
-    throw error;
-  }
+  const params: Record<string, any> = { ...query };
+  const data = await apiFetch.get<{ data: PlatformStatisticsResponse }>("/performance/platform-statistics", params);
+  return data.data;
 }
 
 /**
@@ -218,18 +116,11 @@ export async function getAvailablePeriods(): Promise<{
   years: number[];
   yearMonths: { year: number; month: number }[];
 }> {
-  try {
-    const response = await api.get<{
-      success: boolean;
-      data: {
-        years: number[];
-        yearMonths: { year: number; month: number }[];
-      };
-    }>("/performance/available-periods");
-    return response.data.data;
-  } catch (error: any) {
-    console.error("가용 기간 목록 조회 실패:", error);
-    throw error;
-  }
+  const data = await apiFetch.get<{
+    data: {
+      years: number[];
+      yearMonths: { year: number; month: number }[];
+    };
+  }>("/performance/available-periods");
+  return data.data;
 }
-

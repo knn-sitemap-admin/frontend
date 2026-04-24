@@ -82,6 +82,13 @@ export function AdminMainPage() {
       color: "bg-amber-500",
     },
     {
+      title: "정산 관리",
+      description: "영업자별 정산 및 급여 관리",
+      href: "/admin/settlements",
+      icon: Wallet,
+      color: "bg-blue-600",
+    },
+    {
       title: "공지사항",
       description: "사이트 공지사항 관리",
       href: "/admin/notices",
