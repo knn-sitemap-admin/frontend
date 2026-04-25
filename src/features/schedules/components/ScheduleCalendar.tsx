@@ -55,6 +55,7 @@ export default function ScheduleCalendar() {
   const [onlyHolidays, setOnlyHolidays] = useState(false);
   const [onlyFinalPayments, setOnlyFinalPayments] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [lastFetchKey, setLastFetchKey] = useState(""); // 연도+필터 조합 캐싱 키
 
   useEffect(() => {
     // sessionStorage에서 상태 복원
@@ -176,11 +177,19 @@ export default function ScheduleCalendar() {
     if (!isHydrated && !targetMonth) return;
     
     const month = targetMonth || currentMonth;
+    const year = month.getFullYear();
+    
+    // 캐싱 키 생성 (연도 + 필터 상태)
+    const fetchKey = `${year}-${staffId}-${filterMode}-${onlyHolidays}-${onlyFinalPayments}`;
+    
+    // 이미 같은 연도와 필터로 가져왔다면 재요청 방지 (캐싱)
+    if (!targetMonth && fetchKey === lastFetchKey) return;
+
     setIsLoading(true);
     try {
-      // 3개월치 데이터를 가져와서 전월/익월 잔상 일정도 모두 표시되도록 함
-      const startDate = startOfWeek(startOfMonth(subMonths(month, 1)), { locale: ko });
-      const endDate = endOfWeek(endOfMonth(addMonths(month, 1)), { locale: ko });
+      // 1년치 데이터를 통째로 가져와서 절대로 누락되지 않도록 함
+      const startDate = new Date(year, 0, 1); // 1월 1일
+      const endDate = new Date(year, 11, 31, 23, 59, 59); // 12월 31일
 
       const params: any = {
         from: format(startDate, "yyyy-MM-dd"),
@@ -194,7 +203,6 @@ export default function ScheduleCalendar() {
       if (staffId && staffId !== "all" && staffId !== "mine") {
         params.assignedStaffId = staffId;
       } else if (filterMode === "mine" || (!isPowerful && staffId === "all")) {
-        // "내 일정" 모드거나 일반 직원인 경우
         if (profile?.account?.id) {
           params.assignedStaffId = profile.account.id;
         }
@@ -203,13 +211,13 @@ export default function ScheduleCalendar() {
       const data = await getSchedules(params);
       setSchedules(data);
 
-      // 계약 목록 가져오기 (잔금일 표시용)
+      // 계약 목록 가져오기
       try {
         const { getContracts, getMyContracts } = await import("@/features/contract-records/api/contracts");
         const contractParams: any = {
           paymentDateFrom: params.from,
           paymentDateTo: params.to,
-          size: 500, // 충분히 큰 수
+          size: 2000, // 1년치이므로 넉넉하게
         };
 
         if (params.assignedStaffId && params.assignedStaffId !== "mine" && params.assignedStaffId !== "all") {
@@ -224,6 +232,7 @@ export default function ScheduleCalendar() {
         }
 
         setContracts(contractData?.items || []);
+        setLastFetchKey(fetchKey); // 성공 시 캐시 키 업데이트
       } catch (err) {
         console.error("Failed to load contracts for calendar:", err);
       }
