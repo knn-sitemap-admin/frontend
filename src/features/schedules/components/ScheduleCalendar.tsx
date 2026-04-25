@@ -48,7 +48,31 @@ import type { SalesContractData } from "@/features/contract-records/types/contra
 
 export default function ScheduleCalendar() {
   const router = useRouter();
+  // 초기 상태 로드 ( hydration mismatch 방지를 위해 useEffect에서 로드 )
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [filterMode, setFilterMode] = useState<"all" | "mine">("all");
+  const [staffId, setStaffId] = useState<string>("all");
+  const [onlyHolidays, setOnlyHolidays] = useState(false);
+  const [onlyFinalPayments, setOnlyFinalPayments] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    // sessionStorage에서 상태 복원
+    const savedMonth = sessionStorage.getItem("calendar_current_month");
+    const savedFilter = sessionStorage.getItem("calendar_filter_mode");
+    const savedStaff = sessionStorage.getItem("calendar_staff_id");
+    const savedHolidays = sessionStorage.getItem("calendar_only_holidays");
+    const savedPayments = sessionStorage.getItem("calendar_only_final_payments");
+
+    if (savedMonth) setCurrentMonth(new Date(savedMonth));
+    if (savedFilter) setFilterMode(savedFilter as "all" | "mine");
+    if (savedStaff) setStaffId(savedStaff);
+    if (savedHolidays) setOnlyHolidays(savedHolidays === "true");
+    if (savedPayments) setOnlyFinalPayments(savedPayments === "true");
+    
+    setIsHydrated(true);
+  }, []);
+
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [hoveredContractId, setHoveredContractId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,10 +84,6 @@ export default function ScheduleCalendar() {
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [contracts, setContracts] = useState<any[]>([]);
   const [contractDefaultData, setContractDefaultData] = useState<Partial<SalesContractData> | null>(null);
-  const [filterMode, setFilterMode] = useState<"all" | "mine">("all");
-  const [staffId, setStaffId] = useState<string>("all");
-  const [onlyHolidays, setOnlyHolidays] = useState(false);
-  const [onlyFinalPayments, setOnlyFinalPayments] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -204,8 +224,17 @@ export default function ScheduleCalendar() {
   };
 
   useEffect(() => {
+    if (!isHydrated) return; // 하이드레이션 전에는 호출 방지
+    
     fetchSchedules();
-  }, [currentMonth, filterMode, staffId, onlyHolidays, onlyFinalPayments]);
+    
+    // 상태 저장
+    sessionStorage.setItem("calendar_current_month", currentMonth.toISOString());
+    sessionStorage.setItem("calendar_filter_mode", filterMode);
+    sessionStorage.setItem("calendar_staff_id", staffId);
+    sessionStorage.setItem("calendar_only_holidays", String(onlyHolidays));
+    sessionStorage.setItem("calendar_only_final_payments", String(onlyFinalPayments));
+  }, [currentMonth, filterMode, staffId, onlyHolidays, onlyFinalPayments, isHydrated]);
 
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
