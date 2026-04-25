@@ -64,7 +64,13 @@ export default function ScheduleCalendar() {
     const savedHolidays = sessionStorage.getItem("calendar_only_holidays");
     const savedPayments = sessionStorage.getItem("calendar_only_final_payments");
 
-    if (savedMonth) setCurrentMonth(new Date(savedMonth));
+    if (savedMonth) {
+      const date = new Date(savedMonth);
+      setCurrentMonth(date);
+      // 하이드레이션 즉시 데이터를 가져오도록 유도 (targetMonth 전달)
+      fetchSchedules(date);
+    }
+
     if (savedFilter) setFilterMode(savedFilter as "all" | "mine");
     if (savedStaff) setStaffId(savedStaff);
     if (savedHolidays) setOnlyHolidays(savedHolidays === "true");
@@ -166,13 +172,15 @@ export default function ScheduleCalendar() {
     enabled: isPowerful,
   });
 
-  const fetchSchedules = async () => {
+  const fetchSchedules = async (targetMonth?: Date) => {
+    if (!isHydrated && !targetMonth) return;
+    
+    const month = targetMonth || currentMonth;
     setIsLoading(true);
     try {
-      const monthStart = startOfMonth(currentMonth);
-      const monthEnd = endOfMonth(monthStart);
-      const startDate = startOfWeek(monthStart, { locale: ko });
-      const endDate = endOfWeek(monthEnd, { locale: ko });
+      // 3개월치 데이터를 가져와서 전월/익월 잔상 일정도 모두 표시되도록 함
+      const startDate = startOfWeek(startOfMonth(subMonths(month, 1)), { locale: ko });
+      const endDate = endOfWeek(endOfMonth(addMonths(month, 1)), { locale: ko });
 
       const params: any = {
         from: format(startDate, "yyyy-MM-dd"),
@@ -224,7 +232,7 @@ export default function ScheduleCalendar() {
   };
 
   useEffect(() => {
-    if (!isHydrated) return; // 하이드레이션 전에는 호출 방지
+    if (!isHydrated) return;
     
     fetchSchedules();
     
@@ -267,9 +275,9 @@ export default function ScheduleCalendar() {
     const dayContracts = contracts
       .filter(c => {
         if (!c.finalPaymentDate) return false;
-        // c.finalPaymentDate가 YYYY-MM-DD 형식이 아닐 경우를 대비해 변환 후 비교
-        const cDateStr = c.finalPaymentDate.split('T')[0];
-        return cDateStr === dayStr;
+        // c.finalPaymentDate와 dayStr(yyyy-MM-dd) 비교
+        const cDate = new Date(c.finalPaymentDate);
+        return format(cDate, "yyyy-MM-dd") === dayStr;
       })
       .map(c => ({
         id: `contract-${c.id}`,
