@@ -171,8 +171,8 @@ export default function ScheduleCalendar() {
     try {
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(monthStart);
-      const startDate = startOfWeek(monthStart);
-      const endDate = endOfWeek(monthEnd);
+      const startDate = startOfWeek(monthStart, { locale: ko });
+      const endDate = endOfWeek(monthEnd, { locale: ko });
 
       const params: any = {
         from: format(startDate, "yyyy-MM-dd"),
@@ -239,7 +239,10 @@ export default function ScheduleCalendar() {
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
-    return eachDayOfInterval({ start: startOfWeek(monthStart), end: endOfWeek(monthEnd) });
+    return eachDayOfInterval({ 
+      start: startOfWeek(monthStart, { locale: ko }), 
+      end: endOfWeek(monthEnd, { locale: ko }) 
+    });
   }, [currentMonth]);
 
   const getDaySchedules = (day: Date) => {
@@ -262,7 +265,12 @@ export default function ScheduleCalendar() {
 
     // 2) 계약 잔금일 필터링 (가상 이벤트 생성)
     const dayContracts = contracts
-      .filter(c => c.finalPaymentDate === dayStr)
+      .filter(c => {
+        if (!c.finalPaymentDate) return false;
+        // c.finalPaymentDate가 YYYY-MM-DD 형식이 아닐 경우를 대비해 변환 후 비교
+        const cDateStr = c.finalPaymentDate.split('T')[0];
+        return cDateStr === dayStr;
+      })
       .map(c => ({
         id: `contract-${c.id}`,
         title: `잔금: ${c.siteName}`,
