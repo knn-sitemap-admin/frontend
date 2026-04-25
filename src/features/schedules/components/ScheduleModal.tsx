@@ -329,7 +329,9 @@ export function ScheduleModal({
     return (
       <div className="flex bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-2xl divide-x divide-gray-50">
         <div 
-          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y pointer-events-auto"
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
           style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
         >
           <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50 uppercase tracking-widest">Hour</div>
@@ -349,9 +351,8 @@ export function ScheduleModal({
           </div>
         </div>
         <div 
-          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y pointer-events-auto"
-          onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
+          className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y"
+          onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
           style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
         >
