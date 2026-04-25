@@ -191,10 +191,13 @@ export default function ScheduleCalendar() {
         params.onlyHolidays = true;
       }
       
-      if (staffId !== "all") {
+      if (staffId && staffId !== "all" && staffId !== "mine") {
         params.assignedStaffId = staffId;
-      } else if (!isPowerful || filterMode === "mine") {
-        if (profile?.account?.id) params.assignedStaffId = profile.account.id;
+      } else if (filterMode === "mine" || (!isPowerful && staffId === "all")) {
+        // "내 일정" 모드거나 일반 직원인 경우
+        if (profile?.account?.id) {
+          params.assignedStaffId = profile.account.id;
+        }
       }
 
       const data = await getSchedules(params);
@@ -209,7 +212,7 @@ export default function ScheduleCalendar() {
           size: 500, // 충분히 큰 수
         };
 
-        if (params.assignedStaffId) {
+        if (params.assignedStaffId && params.assignedStaffId !== "mine" && params.assignedStaffId !== "all") {
           contractParams.assignedStaffId = params.assignedStaffId;
         }
 
@@ -275,9 +278,9 @@ export default function ScheduleCalendar() {
     const dayContracts = contracts
       .filter(c => {
         if (!c.finalPaymentDate) return false;
-        // c.finalPaymentDate와 dayStr(yyyy-MM-dd) 비교
-        const cDate = new Date(c.finalPaymentDate);
-        return format(cDate, "yyyy-MM-dd") === dayStr;
+        // c.finalPaymentDate(YYYY-MM-DD...)와 dayStr(YYYY-MM-DD) 직접 비교
+        const cDateStr = c.finalPaymentDate.split('T')[0];
+        return cDateStr === dayStr;
       })
       .map(c => ({
         id: `contract-${c.id}`,
