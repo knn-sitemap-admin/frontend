@@ -117,23 +117,25 @@ export function DashboardLayout({
           </Sheet>
 
           {/* Desktop logo (collapsed with sidebar) */}
-          <div className="hidden lg:block">{logo}</div>
+          <div className="hidden lg:block shrink-0">{logo}</div>
 
-          {/* Center (search 등) */}
-          <div className="ml-auto lg:ml-6 flex-1 lg:flex-none">
-            {headerCenter ?? (
-              <Card className="hidden lg:flex h-9 items-center gap-2 px-2">
-                <SearchIcon className="h-4 w-4 opacity-60" />
-                <input
-                  className="h-full w-72 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                  placeholder="검색…"
-                />
-              </Card>
-            )}
+          {/* Center (search 등) - 모바일에서는 공간이 부족하므로 숨기거나 축소 */}
+          <div className="flex-1 flex justify-center lg:justify-start lg:ml-6 min-w-0">
+            <div className="w-full max-w-md lg:max-w-none">
+              {headerCenter ?? (
+                <Card className="hidden lg:flex h-9 items-center gap-2 px-2 bg-muted/50 border-none shadow-none">
+                  <SearchIcon className="h-4 w-4 opacity-60" />
+                  <input
+                    className="h-full w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    placeholder="검색…"
+                  />
+                </Card>
+              )}
+            </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">{headerActions}</div>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">{headerActions}</div>
         </div>
       </header>
 

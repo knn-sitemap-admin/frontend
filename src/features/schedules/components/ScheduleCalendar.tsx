@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   format,
   addMonths,
@@ -55,7 +55,8 @@ export default function ScheduleCalendar() {
   const [onlyHolidays, setOnlyHolidays] = useState(false);
   const [onlyFinalPayments, setOnlyFinalPayments] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [lastFetchKey, setLastFetchKey] = useState(""); // 연도+필터 조합 캐싱 키
+  const [lastFetchKey, setLastFetchKey] = useState("");
+  const fetchRequestRef = useRef<string>(""); // 현재 진행 중인 요청의 키 저장
 
   useEffect(() => {
     // sessionStorage에서 상태 복원
@@ -76,7 +77,7 @@ export default function ScheduleCalendar() {
     if (savedStaff) setStaffId(savedStaff);
     if (savedHolidays) setOnlyHolidays(savedHolidays === "true");
     if (savedPayments) setOnlyFinalPayments(savedPayments === "true");
-    
+
     setIsHydrated(true);
   }, []);
 
@@ -174,80 +175,84 @@ export default function ScheduleCalendar() {
   });
 
   const fetchSchedules = async (targetMonth?: Date) => {
+    // 하이드레이션 전이거나, 내 일정을 봐야 하는데 프로필이 없으면 대기
     if (!isHydrated && !targetMonth) return;
-    
+    if ((filterMode === "mine" || !isPowerful) && !profile?.account?.id) return;
+
     const month = targetMonth || currentMonth;
     const year = month.getFullYear();
-    
-    // 캐싱 키 생성 (연도 + 필터 상태)
-    const fetchKey = `${year}-${staffId}-${filterMode}-${onlyHolidays}-${onlyFinalPayments}`;
-    
-    // 이미 같은 연도와 필터로 가져왔다면 재요청 방지 (캐싱)
+
+    const fetchKey = `${year}-${staffId}-${filterMode}-${onlyHolidays}-${onlyFinalPayments}-${profile?.account?.id || ""}`;
+
+    // 캐싱: 이미 같은 키로 데이터를 가져왔다면 중복 요청 방지
     if (!targetMonth && fetchKey === lastFetchKey) return;
+
+    // 레이스 컨디션 방지: 최신 요청 키 업데이트
+    fetchRequestRef.current = fetchKey;
 
     setIsLoading(true);
     try {
-      // 1년치 데이터를 통째로 가져와서 절대로 누락되지 않도록 함
-      const startDate = new Date(year, 0, 1); // 1월 1일
-      const endDate = new Date(year, 11, 31, 23, 59, 59); // 12월 31일
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59);
 
       const params: any = {
         from: format(startDate, "yyyy-MM-dd"),
         to: format(endDate, "yyyy-MM-dd"),
       };
 
-      if (onlyHolidays) {
-        params.onlyHolidays = true;
-      }
-      
+      if (onlyHolidays) params.onlyHolidays = true;
+
       if (staffId && staffId !== "all" && staffId !== "mine") {
         params.assignedStaffId = staffId;
       } else if (filterMode === "mine" || (!isPowerful && staffId === "all")) {
-        if (profile?.account?.id) {
-          params.assignedStaffId = profile.account.id;
-        }
+        if (profile?.account?.id) params.assignedStaffId = profile.account.id;
       }
 
-      const data = await getSchedules(params);
-      setSchedules(data);
+      const scheduleData = await getSchedules(params);
+
+      // 레이스 컨디션 체크: 요청 도중 키가 바뀌었으면 폐기
+      if (fetchRequestRef.current !== fetchKey) return;
 
       // 계약 목록 가져오기
-      try {
-        const { getContracts, getMyContracts } = await import("@/features/contract-records/api/contracts");
-        const contractParams: any = {
-          paymentDateFrom: params.from,
-          paymentDateTo: params.to,
-          size: 2000, // 1년치이므로 넉넉하게
-        };
+      const { getContracts, getMyContracts } = await import("@/features/contract-records/api/contracts");
+      const contractParams: any = {
+        paymentDateFrom: params.from,
+        paymentDateTo: params.to,
+        size: 5000,
+      };
 
-        if (params.assignedStaffId && params.assignedStaffId !== "mine" && params.assignedStaffId !== "all") {
-          contractParams.assignedStaffId = params.assignedStaffId;
-        }
-
-        let contractData;
-        if (!isPowerful || filterMode === "mine") {
-          contractData = await getMyContracts(contractParams);
-        } else {
-          contractData = await getContracts(contractParams);
-        }
-
-        setContracts(contractData?.items || []);
-        setLastFetchKey(fetchKey); // 성공 시 캐시 키 업데이트
-      } catch (err) {
-        console.error("Failed to load contracts for calendar:", err);
+      if (params.assignedStaffId && params.assignedStaffId !== "mine" && params.assignedStaffId !== "all") {
+        contractParams.assignedStaffId = params.assignedStaffId;
       }
+
+      let contractData;
+      if (!isPowerful || filterMode === "mine") {
+        contractData = await getMyContracts(contractParams);
+      } else {
+        contractData = await getContracts(contractParams);
+      }
+
+      // 최종 레이스 컨디션 체크
+      if (fetchRequestRef.current !== fetchKey) return;
+
+      setSchedules(scheduleData);
+      setContracts(contractData?.items || []);
+      setLastFetchKey(fetchKey);
     } catch (error) {
-      console.error("Failed to load schedules:", error);
+      console.error("Failed to load calendar data:", error);
     } finally {
-      setIsLoading(false);
+      // 내 요청이 마지막 요청이었을 때만 로딩 종료
+      if (fetchRequestRef.current === fetchKey) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     if (!isHydrated) return;
-    
+
     fetchSchedules();
-    
+
     // 상태 저장
     sessionStorage.setItem("calendar_current_month", currentMonth.toISOString());
     sessionStorage.setItem("calendar_filter_mode", filterMode);
@@ -259,9 +264,9 @@ export default function ScheduleCalendar() {
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
-    return eachDayOfInterval({ 
-      start: startOfWeek(monthStart, { locale: ko }), 
-      end: endOfWeek(monthEnd, { locale: ko }) 
+    return eachDayOfInterval({
+      start: startOfWeek(monthStart, { locale: ko }),
+      end: endOfWeek(monthEnd, { locale: ko })
     });
   }, [currentMonth]);
 
