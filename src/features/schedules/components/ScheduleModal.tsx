@@ -194,6 +194,23 @@ export function ScheduleModal({
     }
   }, [schedule, selectedDate, isOpen, userProfile]);
 
+  // 시작 시간이 변경될 때 종료 시간을 자동으로 +1시간으로 설정
+  useEffect(() => {
+    if (!isOpen || isAllDay || !!schedule) return; // 수정 모드거나 종일 일정이면 자동 조정 안함
+
+    try {
+      const [h, m] = startTime.split(":").map(Number);
+      const endH = (h + 1) % 24;
+      const endTimeStr = `${endH.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+      setEndTime(endTimeStr);
+      
+      // 만약 종료 시간이 다음날로 넘어간다면 종료 날짜도 +1 (간단하게 같은 날로 유지하는 것이 일반적)
+      // 여기서는 시간만 자연스럽게 변경되도록 함
+    } catch (e) {
+      console.error("End time auto adjustment failed", e);
+    }
+  }, [startTime]);
+
   const handleSave = async () => {
     const finalCategory = category === "기타" ? customCategory : category;
     const isMeeting = category === "신규" || category === "재미팅";
@@ -313,9 +330,6 @@ export function ScheduleModal({
       <div className="flex bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-2xl divide-x divide-gray-50">
         <div 
           className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y pointer-events-auto"
-          onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
           style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
         >
           <div className="text-[10px] font-black text-gray-300 text-center sticky top-0 bg-white py-2 z-10 border-b border-gray-50 uppercase tracking-widest">Hour</div>
@@ -403,28 +417,40 @@ export function ScheduleModal({
                   일정 구분
                 </Label>
                 <div className="grid grid-cols-4 gap-2">
-                  {["휴무", "신규", "재미팅", "기타"].map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => {
-                        setCategory(cat);
-                        if (cat === "휴무") {
-                          setColor("gray");
-                          setStatus("normal");
-                        } else if (cat === "신규") setColor("emerald");
-                        else if (cat === "재미팅") setColor("blue");
-                      }}
-                      disabled={!canEdit}
-                      className={cn(
-                        "h-11 sm:h-10 text-[11px] sm:text-xs font-bold rounded-xl border transition-all",
-                        category === cat
-                          ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100 scale-[1.05]"
-                          : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-white hover:border-emerald-200"
-                      )}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                  {["휴무", "신규", "재미팅", "기타"].map((cat) => {
+                    const isRestricted = !!schedule?.contractId && (cat === "휴무" || cat === "기타");
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          if (isRestricted) {
+                            toast({
+                              title: "변경 불가",
+                              description: "계약 기록이 있는 일정은 휴무나 기타로 변경할 수 없습니다.",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+                          setCategory(cat);
+                          if (cat === "휴무") {
+                            setColor("gray");
+                            setStatus("normal");
+                          } else if (cat === "신규") setColor("emerald");
+                          else if (cat === "재미팅") setColor("blue");
+                        }}
+                        disabled={!canEdit}
+                        className={cn(
+                          "h-11 sm:h-10 text-[11px] sm:text-xs font-bold rounded-xl border transition-all",
+                          category === cat
+                            ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-100 scale-[1.05]"
+                            : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-white hover:border-emerald-200",
+                          isRestricted && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
                 </div>
                 {(category === "신규" || category === "재미팅") && (
                   <button

@@ -161,14 +161,12 @@ export default function ScheduleCalendar() {
 
       if (onlyHolidays) {
         params.onlyHolidays = true;
-      } else if (staffId !== "all") {
+      }
+      
+      if (staffId !== "all") {
         params.assignedStaffId = staffId;
-      } else if (profile?.account?.id) {
-        // 관리자/매니저가 아니고 'all' 상태면 자신의 일정만 나오도록 (staff 기본값 강제)
-        // 또는 명시적으로 'mine'을 선택한 경우
-        if (!isPowerful || filterMode === "mine") {
-          params.assignedStaffId = profile.account.id;
-        }
+      } else if (!isPowerful || filterMode === "mine") {
+        if (profile?.account?.id) params.assignedStaffId = profile.account.id;
       }
 
       const data = await getSchedules(params);
@@ -177,11 +175,15 @@ export default function ScheduleCalendar() {
       // 계약 목록 가져오기 (잔금일 표시용)
       try {
         const { getContracts, getMyContracts } = await import("@/features/contract-records/api/contracts");
-        const contractParams = {
+        const contractParams: any = {
           paymentDateFrom: params.from,
           paymentDateTo: params.to,
           size: 500, // 충분히 큰 수
         };
+
+        if (params.assignedStaffId) {
+          contractParams.assignedStaffId = params.assignedStaffId;
+        }
 
         let contractData;
         if (!isPowerful || filterMode === "mine") {
@@ -189,7 +191,8 @@ export default function ScheduleCalendar() {
         } else {
           contractData = await getContracts(contractParams);
         }
-        setContracts(contractData.items || []);
+
+        setContracts(contractData?.items || []);
       } catch (err) {
         console.error("Failed to load contracts for calendar:", err);
       }
@@ -202,7 +205,7 @@ export default function ScheduleCalendar() {
 
   useEffect(() => {
     fetchSchedules();
-  }, [currentMonth, filterMode, staffId, onlyHolidays]);
+  }, [currentMonth, filterMode, staffId, onlyHolidays, onlyFinalPayments]);
 
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -327,18 +330,40 @@ export default function ScheduleCalendar() {
 
   const handleCreateContract = (schedule: Schedule) => {
     setContractDefaultData({
-      customerName: schedule.title || "",
-      customerPhone: schedule.customerPhone || "",
-      siteName: schedule.location || "",
+      customerInfo: {
+        name: schedule.title || "",
+        contact: schedule.customerPhone || "",
+      },
+      contractSite: {
+        siteName: schedule.location || "",
+        address: "",
+        teamContact: "",
+      },
       contractDate: format(new Date(schedule.startDate), "yyyy-MM-dd"),
       scheduleId: String(schedule.id),
-      staffAllocations: schedule.creator ? [
+      staffAllocations: [
         {
-          accountId: schedule.creator.id,
-          name: schedule.creator.name,
-          sharePercent: 100,
-        }
-      ] : []
+          id: "company",
+          name: "회사",
+          type: "company",
+          percentage: 100,
+          isDirectInput: false,
+          rebateAllowance: 0,
+          finalAllowance: 0,
+        },
+        ...(schedule.creator ? [
+          {
+            id: "employee1",
+            accountId: schedule.creator.id,
+            name: schedule.creator.name,
+            type: "employee",
+            percentage: 0,
+            isDirectInput: false,
+            rebateAllowance: 0,
+            finalAllowance: 0,
+          }
+        ] : [])
+      ]
     } as any);
     setIsContractModalOpen(true);
   };
@@ -790,6 +815,7 @@ export default function ScheduleCalendar() {
                   size="sm"
                   onClick={() => {
                     setIsAgendaOpen(false);
+                    setSelectedSchedule(null);
                     setIsModalOpen(true);
                   }}
                   className="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-100 flex items-center justify-center transition-transform active:scale-95"

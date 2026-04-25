@@ -33,7 +33,7 @@ export function transformSalesContractToCreateRequest(
 
   // 직원 담당자 분배 변환 (type === "employee"인 항목만)
   const employeeAllocations = data.staffAllocations.filter(
-    (a) => a.type === "employee" && a.accountId,
+    (a) => a.type === "employee" && a.accountId && (a.percentage || 0) > 0,
   );
 
   // 백엔드 규칙: companyPercent + sum(assignees.sharePercent) = 100

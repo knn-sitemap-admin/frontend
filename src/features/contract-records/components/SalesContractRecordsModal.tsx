@@ -296,7 +296,7 @@ export function SalesContractRecordsModal({
         // 달력 등에서 넘어온 부분 데이터 병합
         const merged: SalesContractData = {
           ...defaultData,
-          ...initialData,
+          ...(initialData || {}),
           customerInfo: {
             ...defaultData.customerInfo,
             ...(initialData.customerInfo || {}),
