@@ -36,6 +36,7 @@ import { getProfile, getEmployeesList } from "@/features/users/api/account";
 import { useQuery } from "@tanstack/react-query";
 import { ScheduleTrashModal } from "./ScheduleTrashModal";
 import { getKoreanHoliday } from "../utils/holiday";
+import { getContracts, getMyContracts } from "@/features/contract-records/api/contracts";
 import {
   Sheet,
   SheetContent,
@@ -69,8 +70,6 @@ export default function ScheduleCalendar() {
     if (savedMonth) {
       const date = new Date(savedMonth);
       setCurrentMonth(date);
-      // 하이드레이션 즉시 데이터를 가져오도록 유도 (targetMonth 전달)
-      fetchSchedules(date);
     }
 
     if (savedFilter) setFilterMode(savedFilter as "all" | "mine");
@@ -174,30 +173,29 @@ export default function ScheduleCalendar() {
     enabled: isPowerful,
   });
 
-  const fetchSchedules = async (targetMonth?: Date) => {
-    // 하이드레이션 전이거나, 내 일정을 봐야 하는데 프로필이 없으면 대기
-    if (!isHydrated && !targetMonth) return;
-    if ((filterMode === "mine" || !isPowerful) && !profile?.account?.id) return;
+  const fetchSchedules = async () => {
+    if (!isHydrated) return;
+    
+    // "내 일정" 모드일 때만 프로필 대기
+    if (filterMode === "mine" && !profile?.account?.id) return;
 
-    const month = targetMonth || currentMonth;
-    const year = month.getFullYear();
+    const year = currentMonth.getFullYear();
 
     const fetchKey = `${year}-${staffId}-${filterMode}-${onlyHolidays}-${onlyFinalPayments}-${profile?.account?.id || ""}`;
 
     // 캐싱: 이미 같은 키로 데이터를 가져왔다면 중복 요청 방지
-    if (!targetMonth && fetchKey === lastFetchKey) return;
+    if (fetchKey === lastFetchKey) return;
 
     // 레이스 컨디션 방지: 최신 요청 키 업데이트
     fetchRequestRef.current = fetchKey;
-
     setIsLoading(true);
     try {
-      const startDate = new Date(year, 0, 1);
-      const endDate = new Date(year, 11, 31, 23, 59, 59);
+      const startDateStr = format(new Date(year, 0, 1), "yyyy-MM-dd");
+      const endDateStr = format(new Date(year, 11, 31), "yyyy-MM-dd");
 
       const params: any = {
-        from: format(startDate, "yyyy-MM-dd"),
-        to: format(endDate, "yyyy-MM-dd"),
+        from: startDateStr,
+        to: endDateStr,
       };
 
       if (onlyHolidays) params.onlyHolidays = true;
@@ -208,31 +206,22 @@ export default function ScheduleCalendar() {
         if (profile?.account?.id) params.assignedStaffId = profile.account.id;
       }
 
-      const scheduleData = await getSchedules(params);
-
-      // 레이스 컨디션 체크: 요청 도중 키가 바뀌었으면 폐기
-      if (fetchRequestRef.current !== fetchKey) return;
-
-      // 계약 목록 가져오기
-      const { getContracts, getMyContracts } = await import("@/features/contract-records/api/contracts");
-      const contractParams: any = {
-        paymentDateFrom: params.from,
-        paymentDateTo: params.to,
+      // 일정과 계약 데이터를 병렬로 요청
+      const contractParams = {
+        paymentDateFrom: startDateStr,
+        paymentDateTo: endDateStr,
         size: 5000,
+        assignedStaffId: params.assignedStaffId
       };
 
-      if (params.assignedStaffId && params.assignedStaffId !== "mine" && params.assignedStaffId !== "all") {
-        contractParams.assignedStaffId = params.assignedStaffId;
-      }
+      const [scheduleData, contractData] = await Promise.all([
+        getSchedules(params),
+        (!isPowerful || filterMode === "mine") 
+          ? getMyContracts(contractParams) 
+          : getContracts(contractParams)
+      ]);
 
-      let contractData;
-      if (!isPowerful || filterMode === "mine") {
-        contractData = await getMyContracts(contractParams);
-      } else {
-        contractData = await getContracts(contractParams);
-      }
-
-      // 최종 레이스 컨디션 체크
+      // 최신 요청인지 확인
       if (fetchRequestRef.current !== fetchKey) return;
 
       setSchedules(scheduleData);
@@ -259,7 +248,7 @@ export default function ScheduleCalendar() {
     sessionStorage.setItem("calendar_staff_id", staffId);
     sessionStorage.setItem("calendar_only_holidays", String(onlyHolidays));
     sessionStorage.setItem("calendar_only_final_payments", String(onlyFinalPayments));
-  }, [currentMonth, filterMode, staffId, onlyHolidays, onlyFinalPayments, isHydrated]);
+  }, [currentMonth, filterMode, staffId, onlyHolidays, onlyFinalPayments, isHydrated, profile?.account?.id]);
 
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
