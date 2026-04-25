@@ -130,7 +130,9 @@ export function ScheduleModal({
   };
 
   useEffect(() => {
-    if (schedule && isOpen) {
+    if (!isOpen) return;
+
+    if (schedule) {
       // category 매핑 (휴무, 신규, 재미팅 외에는 기타로 취급)
       const validCats = ["휴무", "신규", "재미팅"];
       if (validCats.includes(schedule.category)) {
@@ -173,7 +175,7 @@ export function ScheduleModal({
       setIsAllDay(!!schedule.isAllDay);
       setColor(schedule.color || "blue");
       setStatus(schedule.status || "normal");
-    } else if (isOpen) {
+    } else {
       setCategory("신규");
       setCustomCategory("");
       setPlatform("직방");
@@ -192,24 +194,19 @@ export function ScheduleModal({
       setColor("blue");
       setStatus("normal");
     }
-  }, [schedule, selectedDate, isOpen, userProfile]);
+  }, [schedule, isOpen]); // Only re-init when schedule changes or modal opens
 
-  // 시작 시간이 변경될 때 종료 시간을 자동으로 +1시간으로 설정
-  useEffect(() => {
-    if (!isOpen || isAllDay || !!schedule) return; // 수정 모드거나 종일 일정이면 자동 조정 안함
-
+  const handleStartTimeChange = (newTime: string) => {
+    setStartTime(newTime);
     try {
-      const [h, m] = startTime.split(":").map(Number);
+      const [h, m] = newTime.split(":").map(Number);
       const endH = (h + 1) % 24;
       const endTimeStr = `${endH.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
       setEndTime(endTimeStr);
-      
-      // 만약 종료 시간이 다음날로 넘어간다면 종료 날짜도 +1 (간단하게 같은 날로 유지하는 것이 일반적)
-      // 여기서는 시간만 자연스럽게 변경되도록 함
     } catch (e) {
-      console.error("End time auto adjustment failed", e);
+      console.error("End time adjustment failed", e);
     }
-  }, [startTime]);
+  };
 
   const handleSave = async () => {
     const finalCategory = category === "기타" ? customCategory : category;
@@ -609,7 +606,7 @@ export function ScheduleModal({
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="p-0 border-none bg-transparent shadow-none">
-                              <TimePickerContent current={startTime} onChange={setStartTime} />
+                              <TimePickerContent current={startTime} onChange={handleStartTimeChange} />
                             </PopoverContent>
                           </Popover>
                         )}
