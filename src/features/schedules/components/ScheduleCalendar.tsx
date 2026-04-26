@@ -19,7 +19,7 @@ import {
   subDays,
 } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/atoms/Button/Button";
@@ -56,6 +56,8 @@ export default function ScheduleCalendar() {
   const [onlyHolidays, setOnlyHolidays] = useState(false);
   const [onlyFinalPayments, setOnlyFinalPayments] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
 
   useEffect(() => {
@@ -237,6 +239,34 @@ export default function ScheduleCalendar() {
   const schedules = calendarData.schedules;
   const contracts = calendarData.contracts;
   const isLoading = isCalendarLoading;
+
+  // 검색 결과 필터링
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    
+    const matchedSchedules = schedules.filter(s => 
+      s.title.toLowerCase().includes(q) || 
+      (s.location && s.location.toLowerCase().includes(q)) ||
+      (s.category && s.category.toLowerCase().includes(q))
+    ).map(s => ({ ...s, eventType: "schedule" as const }));
+
+    const matchedContracts = contracts.filter(c => 
+      c.siteName.toLowerCase().includes(q) || 
+      (c.customerName && c.customerName.toLowerCase().includes(q))
+    ).map(c => ({
+      id: `contract-${c.id}`,
+      title: `잔금: ${c.siteName}`,
+      startDate: c.finalPaymentDate,
+      endDate: c.finalPaymentDate,
+      eventType: "contract" as const,
+      originalData: c
+    }));
+
+    return [...matchedSchedules, ...matchedContracts].sort((a, b) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    ).slice(0, 10); // 최대 10개만 표시
+  }, [searchQuery, schedules, contracts]);
 
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -438,7 +468,7 @@ export default function ScheduleCalendar() {
       "d-purple": { bg: "bg-purple-100", text: "text-purple-800", border: "border-purple-300", dot: "bg-purple-600", dark: "bg-purple-700" },
       "d-orange": { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-300", dot: "bg-orange-600", dark: "bg-orange-700" },
       gold: { bg: "bg-yellow-100", text: "text-yellow-800", border: "border-yellow-300", dot: "bg-yellow-600", dark: "bg-yellow-700" },
-      royal: { bg: "bg-indigo-100", text: "text-indigo-800", border: "border-indigo-300", dot: "bg-indigo-600", dark: "bg-indigo-700" },
+      royal: { bg: "bg-black", text: "text-white", border: "border-black", dot: "bg-white", dark: "bg-zinc-900" },
     };
     if (colorId && colorMap[colorId]) return colorMap[colorId];
     switch (category) {
@@ -539,6 +569,68 @@ export default function ScheduleCalendar() {
         </div>
 
         <div className="flex items-center gap-1 sm:gap-3">
+          {/* 검색창 추가 */}
+          <div className="relative hidden md:block">
+            <div className={cn(
+              "flex items-center gap-2 px-3 h-9 rounded-xl border transition-all bg-white/50",
+              isSearchFocused ? "border-emerald-500 w-64 shadow-lg shadow-emerald-50" : "border-gray-200 w-48"
+            )}>
+              <ChevronRight className={cn("w-4 h-4 text-gray-400 transition-transform", isSearchFocused && "rotate-90 text-emerald-500")} />
+              <input
+                type="text"
+                placeholder="일정 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                className="bg-transparent border-none outline-none text-xs font-bold w-full placeholder:text-gray-300"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="text-gray-300 hover:text-gray-500">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* 검색 결과 드롭다운 */}
+            {isSearchFocused && searchResults.length > 0 && (
+              <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-2xl border border-gray-100 shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="max-h-[300px] overflow-y-auto premium-scrollbar">
+                  {searchResults.map((result: any) => (
+                    <div
+                      key={result.id}
+                      onClick={() => {
+                        const date = new Date(result.startDate);
+                        setCurrentMonth(date);
+                        setSelectedDate(date);
+                        setIsAgendaOpen(true);
+                        setSearchQuery("");
+                      }}
+                      className="p-3 hover:bg-emerald-50 cursor-pointer border-b border-gray-50 last:border-none group/res"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                          {format(new Date(result.startDate), "MM/dd")}
+                        </span>
+                        <span className="text-[9px] font-bold text-gray-300 uppercase">
+                          {result.eventType === "contract" ? "잔금일" : result.category}
+                        </span>
+                      </div>
+                      <div className="text-xs font-black text-gray-700 truncate group-hover/res:text-emerald-700">
+                        {result.title}
+                      </div>
+                      {result.location && (
+                        <div className="text-[10px] font-bold text-gray-400 truncate mt-0.5">
+                          {result.location}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <Button
             variant="ghost"
             size="sm"
@@ -549,23 +641,23 @@ export default function ScheduleCalendar() {
             <span className="hidden sm:inline text-xs sm:text-sm ml-2">삭제 내역</span>
           </Button>
 
-          {isPowerful && !onlyHolidays && (
-            <div className="hidden md:block">
-              <Select value={staffId} onValueChange={setStaffId}>
-                <SelectTrigger className="w-[120px] h-9 rounded-xl border-gray-200 bg-white/50 text-xs font-bold">
-                  <SelectValue placeholder="직원 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체 직원</SelectItem>
-                  {employees.map((emp) => (
-                    <SelectItem key={emp.accountId} value={emp.accountId}>
-                      {emp.name || "이름없음"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {isPowerful && (
+              <div className="hidden md:block">
+                <Select value={staffId} onValueChange={setStaffId}>
+                  <SelectTrigger className="w-[120px] h-9 rounded-xl border-gray-200 bg-white/50 text-xs font-bold">
+                    <SelectValue placeholder="직원 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체 직원</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.accountId} value={emp.accountId}>
+                        {emp.name || "이름없음"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
           {isPowerful && (
             <Button
@@ -578,7 +670,7 @@ export default function ScheduleCalendar() {
               }}
               className={cn(
                 "h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold transition-all",
-                onlyFinalPayments ? "bg-indigo-600 text-white border-none shadow-indigo-100" : "border-gray-200 bg-white/50 text-gray-600"
+                onlyFinalPayments ? "bg-black text-white border-none shadow-gray-200 hover:bg-zinc-800" : "border-gray-200 bg-white/50 text-gray-600"
               )}
             >
               잔금일만
@@ -593,8 +685,6 @@ export default function ScheduleCalendar() {
               setOnlyHolidays(nextValue);
               if (nextValue) {
                 setOnlyFinalPayments(false);
-                setStaffId("all");
-                setFilterMode("all");
               }
             }}
             className={cn(
@@ -696,7 +786,8 @@ export default function ScheduleCalendar() {
                                 "rounded-md mx-1 font-bold flex items-center shadow-sm border border-black/[0.03]",
                                 getScheduleColor(s.category, s.color).bg,
                                 getScheduleColor(s.category, s.color).text,
-                                "hover:bg-white hover:border-emerald-300 hover:shadow-md hover:z-20 hover:scale-[1.01]"
+                                s.color === "royal" ? "hover:bg-zinc-800" : "hover:bg-white",
+                                "hover:border-emerald-300 hover:shadow-md hover:z-20 hover:scale-[1.01]"
                               )
                             ),
                             hoveredContractId !== null && hoveredContractId === (s.eventType === "contract" ? s.originalData.id : s.contractId) && "animate-label-pop border-blue-400 ring-2 ring-blue-100 z-30"
