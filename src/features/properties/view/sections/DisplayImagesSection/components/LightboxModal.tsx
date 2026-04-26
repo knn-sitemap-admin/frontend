@@ -39,7 +39,10 @@ export default function LightboxModal({
   
   const thumbContainerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const isSwipingRef = useRef(false);
+  const [isSwiping, setIsSwiping] = useState(false);
   const startPosRef = useRef({ x: 0, y: 0 });
+  const [swipeOffset, setSwipeOffset] = useState(0);
 
   // 인덱스 초기화
   useEffect(() => {
@@ -54,6 +57,8 @@ export default function LightboxModal({
     setScale(1);
     setOffset({ x: 0, y: 0 });
     setRotation(0);
+    setSwipeOffset(0);
+    setIsSwiping(false);
   }, []);
 
   // 썸네일 자동 스크롤 및 이미지 전환 시 리셋
@@ -103,22 +108,44 @@ export default function LightboxModal({
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (scale <= 1) return;
-    isDraggingRef.current = true;
-    startPosRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    if (scale > 1) {
+      isDraggingRef.current = true;
+      startPosRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    } else {
+      isSwipingRef.current = true;
+      setIsSwiping(true);
+      startPosRef.current = { x: e.clientX, y: e.clientY };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDraggingRef.current) return;
-    setOffset({
-      x: e.clientX - startPosRef.current.x,
-      y: e.clientY - startPosRef.current.y
-    });
+    if (isDraggingRef.current && scale > 1) {
+      setOffset({
+        x: e.clientX - startPosRef.current.x,
+        y: e.clientY - startPosRef.current.y
+      });
+    } else if (isSwipingRef.current && scale === 1) {
+      const deltaX = e.clientX - startPosRef.current.x;
+      setSwipeOffset(deltaX);
+    }
   };
 
-  const handlePointerUp = () => {
-    isDraggingRef.current = false;
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+    } else if (isSwipingRef.current) {
+      isSwipingRef.current = false;
+      setIsSwiping(false);
+      const threshold = 50;
+      if (swipeOffset > threshold) {
+        prev();
+      } else if (swipeOffset < -threshold) {
+        next();
+      }
+      setSwipeOffset(0);
+    }
   };
 
   useEffect(() => {
@@ -252,8 +279,8 @@ export default function LightboxModal({
         {/* 이미지/문서 컨테이너 */}
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden touch-none">
           <div 
-            className={`flex h-full w-full ${scale === 1 ? 'transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''}`}
-            style={{ transform: scale === 1 ? `translateX(-${index * 100}%)` : 'none' }}
+            className={`flex h-full w-full ${scale === 1 && !isSwiping ? 'transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''}`}
+            style={{ transform: scale === 1 ? `translateX(calc(-${index * 100}% + ${swipeOffset}px))` : 'none' }}
           >
             {images.map((img, i) => {
               const src = img.dataUrl ?? img.url;
@@ -349,7 +376,7 @@ export default function LightboxModal({
         <div className="h-24 bg-black/40 backdrop-blur-xl border-t border-white/5 p-3 z-20 animate-in slide-in-from-bottom-full duration-300">
           <div 
             ref={thumbContainerRef}
-            className="flex gap-2 h-full overflow-x-auto scrollbar-hide items-center justify-center px-10"
+            className="flex gap-2 h-full overflow-x-auto scrollbar-hide items-center justify-start px-4 sm:px-10"
           >
             {images.map((im, i) => {
               const s = im.dataUrl ?? im.url;

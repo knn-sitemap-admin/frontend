@@ -33,6 +33,7 @@ export default function MiniCarousel({
     Record<number, boolean>
   >({});
   const wrapRef = React.useRef<HTMLDivElement | null>(null);
+  const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
 
   const len = Array.isArray(images) ? images.length : 0;
   const hasImages = len > 0;
@@ -126,6 +127,24 @@ export default function MiniCarousel({
       aria-roledescription="carousel"
       aria-label="이미지 캐러셀"
       onContextMenu={(e) => e.preventDefault()}
+      onTouchStart={(e) => {
+        touchStartRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+        };
+      }}
+      onTouchEnd={(e) => {
+        if (!touchStartRef.current) return;
+        const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
+        const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
+        
+        // 가로 스와이프가 세로보다 크고 일정 거리 이상일 때만 작동
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+          if (deltaX > 0) prev();
+          else next();
+        }
+        touchStartRef.current = null;
+      }}
     >
       {/* Slides */}
       <div 
