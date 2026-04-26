@@ -36,6 +36,7 @@ import {
   Loader2 as Spinner
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { getPositionRankLabel } from "../../users/utils/rankUtils";
 
 export function EmployeePerformanceView() {
   const currentYear = new Date().getFullYear();
@@ -126,7 +127,7 @@ export function EmployeePerformanceView() {
               >
                 <UserIcon className={cn("mr-2 h-4 w-4", selectedEmployeeId === emp.id ? "text-white" : "text-gray-400")} />
                 {emp.name}
-                <span className="ml-2 text-[10px] opacity-60 font-normal uppercase">{emp.positionRank || "Staff"}</span>
+                <span className="ml-2 text-[10px] opacity-60 font-normal uppercase">{getPositionRankLabel(emp.positionRank)}</span>
               </Button>
             ))
           )}

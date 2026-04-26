@@ -1,6 +1,6 @@
 "use client";
 
-import { X, ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, RotateCw, ZoomIn, ZoomOut, RotateCcw, RefreshCcw } from "lucide-react";
 import type { ImageItem } from "@/features/properties/types/media";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -19,7 +19,7 @@ export default function LightboxModal({
   images,
   initialIndex = 0,
   onClose,
-  objectFit = "contain",
+  objectFit: initialObjectFit = "contain",
   withThumbnails = false,
   title,
 }: Props) {
@@ -27,36 +27,100 @@ export default function LightboxModal({
   const len = Array.isArray(images) ? images.length : 0;
   const hasImages = len > 0;
 
-  // 현재 인덱스
   const [index, setIndex] = useState(() => {
     const i = Number.isFinite(initialIndex) ? initialIndex : 0;
     return Math.max(0, Math.min(i, Math.max(0, len - 1)));
   });
 
-  // open 또는 images/initialIndex 변경 시 인덱스 초기화(클램프)
+  const [objectFit, setObjectFit] = useState<"contain" | "cover">(initialObjectFit);
+  const [rotation, setRotation] = useState(0);
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  
+  const thumbContainerRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const startPosRef = useRef({ x: 0, y: 0 });
+
+  // 인덱스 초기화
   useEffect(() => {
     if (!open) return;
-    const clamped = Math.max(
-      0,
-      Math.min(
-        Number.isFinite(initialIndex) ? initialIndex : 0,
-        Math.max(0, len - 1)
-      )
-    );
+    const clamped = Math.max(0, Math.min(initialIndex, len - 1));
     setIndex(clamped);
+    resetAll();
   }, [open, initialIndex, len]);
+
+  // 모든 상태 초기화 (줌, 위치, 회전)
+  const resetAll = useCallback(() => {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+    setRotation(0);
+  }, []);
+
+  // 썸네일 자동 스크롤 및 이미지 전환 시 리셋
+  useEffect(() => {
+    if (thumbContainerRef.current) {
+      const activeThumb = thumbContainerRef.current.children[index] as HTMLElement;
+      if (activeThumb) {
+        activeThumb.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      }
+    }
+    resetAll(); 
+  }, [index, resetAll]);
 
   const prev = useCallback(() => {
     if (!hasImages) return;
-    setIndex((i) => (((i - 1 + len) % len) + len) % len);
+    setIndex((i) => (i === 0 ? len - 1 : i - 1));
   }, [hasImages, len]);
 
   const next = useCallback(() => {
     if (!hasImages) return;
-    setIndex((i) => (((i + 1) % len) + len) % len);
+    setIndex((i) => (i === len - 1 ? 0 : i + 1));
   }, [hasImages, len]);
 
-  // Esc / 좌우 화살표
+  /* ---------- 핸들러 ---------- */
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setScale(prev => Math.min(prev + 0.5, 4));
+  };
+
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setScale(prev => {
+      const next = Math.max(prev - 0.5, 1);
+      if (next === 1) setOffset({ x: 0, y: 0 });
+      return next;
+    });
+  };
+
+  const rotateLeft = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRotation(r => r - 90); // 누적 방식으로 변경
+  };
+
+  const rotateRight = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRotation(r => r + 90); // 누적 방식으로 변경
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (scale <= 1) return;
+    isDraggingRef.current = true;
+    startPosRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    setOffset({
+      x: e.clientX - startPosRef.current.x,
+      y: e.clientY - startPosRef.current.y
+    });
+  };
+
+  const handlePointerUp = () => {
+    isDraggingRef.current = false;
+  };
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -68,378 +132,259 @@ export default function LightboxModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose, prev, next]);
 
-  /* ---------- 핀치 줌 (모바일) ---------- */
-  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
-  const pinchStartRef = useRef<{ distance: number; scale: number; cx: number; cy: number } | null>(null);
-  const panStartRef = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
-
-  const resetZoom = useCallback(() => {
-    setZoom({ scale: 1, x: 0, y: 0 });
-  }, []);
-
-  // 회전 상태 (0, 90, 180, 270)
-  const [rotation, setRotation] = useState(0);
-
-  const rotate = useCallback(() => {
-    setRotation((r) => (r + 90) % 360);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    resetZoom();
-    setRotation(0); // 인덱스 바뀔 때 회전도 초기화
-  }, [open, index, resetZoom]);
-
-  const getTouchDistance = useCallback((touches: React.TouchList | TouchList) => {
-    if (touches.length < 2) return 0;
-    const a = touches[0];
-    const b = touches[1];
-    return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
-  }, []);
-
-  const getTouchCenter = useCallback((touches: React.TouchList | TouchList) => {
-    if (touches.length < 2) return { x: 0, y: 0 };
-    return {
-      x: (touches[0].clientX + touches[1].clientX) / 2,
-      y: (touches[0].clientY + touches[1].clientY) / 2,
-    };
-  }, []);
-
-  /* ---------- 드래그/스와이프 ---------- */
-  const startXRef = useRef<number | null>(null);
-  const startYRef = useRef<number | null>(null);
-  const lastXRef = useRef<number | null>(null);
-  const draggingRef = useRef(false);
-  const lockedDirRef = useRef<"x" | "y" | null>(null);
-  const threshold = 50; // px
-
-  const dragStart = useCallback((x: number, y: number) => {
-    startXRef.current = x;
-    startYRef.current = y;
-    lastXRef.current = x;
-    draggingRef.current = true;
-    lockedDirRef.current = null;
-  }, []);
-
-  const dragMove = useCallback((x: number, y: number) => {
-    if (
-      !draggingRef.current ||
-      startXRef.current == null ||
-      startYRef.current == null
-    )
-      return;
-
-    const dx = x - startXRef.current;
-    const dy = y - startYRef.current;
-
-    // 처음 크게 움직인 축을 잠금
-    if (!lockedDirRef.current) {
-      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-        lockedDirRef.current = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
-      }
-    }
-    lastXRef.current = x;
-  }, []);
-
-  const dragEnd = useCallback(() => {
-    if (
-      !draggingRef.current ||
-      startXRef.current == null ||
-      lastXRef.current == null
-    ) {
-      draggingRef.current = false;
-      lockedDirRef.current = null;
-      return;
-    }
-    const dx = lastXRef.current - startXRef.current;
-
-    if (lockedDirRef.current === "x") {
-      if (dx > threshold) prev();
-      else if (dx < -threshold) next();
-    }
-
-    draggingRef.current = false;
-    lockedDirRef.current = null;
-    startXRef.current = null;
-    startYRef.current = null;
-    lastXRef.current = null;
-  }, [prev, next]);
+  const isImage = (url?: string | null) => {
+    if (!url) return true;
+    const ext = url.split("?")[0].split(".").pop()?.toLowerCase();
+    return ["jpg", "jpeg", "png", "webp", "gif", "svg", "bmp"].includes(ext || "");
+  };
 
   if (!open || !hasImages) return null;
 
-  const safeIndex = useMemo(
-    () => Math.max(0, Math.min(index, len - 1)),
-    [index, len]
-  );
-  const cur = images[safeIndex];
+  const currentImage = images[index];
+  const currentSrc = currentImage?.dataUrl ?? currentImage?.url;
+  const isImg = isImage(currentSrc);
 
-  const albumTitle = useMemo(() => {
-    const t =
-      (title && title.trim()) ||
-      images[0]?.caption?.trim?.() ||
-      images[0]?.name?.trim?.() ||
-      "";
-    return t;
-  }, [title, images]);
-
+  const albumTitle = (title && title.trim()) || currentImage?.caption?.trim?.() || currentImage?.name?.trim?.() || "";
   const fitClass = objectFit === "cover" ? "object-cover" : "object-contain";
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
     <div
-      className="fixed inset-0 z-[1000] bg-black/80 flex flex-col"
+      className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-md flex flex-col select-none overflow-hidden animate-in fade-in duration-300"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
-      {/* 상단 바 */}
-      <div className="flex items-center justify-end gap-2 p-3">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            rotate();
-          }}
-          aria-label="회전"
-          className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-white/10 hover:bg-white/20 text-white"
-          title="이미지 회전"
-        >
-          <RotateCw className="h-5 w-5" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          aria-label="닫기"
-          className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-white/10 hover:bg-white/20 text-white"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
+      {/* 고정 상단 바 */}
+      <div className="flex items-center justify-between p-4 z-20 bg-gradient-to-b from-black/80 to-transparent">
+        <div className="flex flex-col">
+          <h2 className="text-white text-sm font-bold truncate max-w-[120px] sm:max-w-md">
+            {albumTitle}
+          </h2>
+          <span className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase mt-0.5">
+            {isImg ? (scale > 1 ? `${scale.toFixed(1)}x Zoom` : 'Standard View') : 'Document File'}
+          </span>
+        </div>
 
-      {/* 본문 */}
-      <div 
-        className="relative px-4 pb-4 flex-1 flex flex-col min-h-0" 
-        onClick={stop}
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        {/* 메인 이미지 영역 (가장 크게) */}
-        <div
-          className="relative flex-1 min-h-0 flex items-center justify-center select-none overflow-hidden rounded-md bg-black/20"
-          onMouseDown={(e) => {
-            if (zoom.scale <= 1) {
-              dragStart(e.clientX, e.clientY);
-            }
-          }}
-          onMouseMove={(e) => {
-            if (draggingRef.current && zoom.scale <= 1) {
-              dragMove(e.clientX, e.clientY);
-            }
-          }}
-          onMouseUp={dragEnd}
-          onMouseLeave={dragEnd}
-          onTouchStart={(e) => {
-            if (zoom.scale <= 1) {
-              if (e.touches.length === 1) {
-                dragStart(e.touches[0].clientX, e.touches[0].clientY);
-              }
-            }
-          }}
-          onTouchMove={(e) => {
-            if (zoom.scale <= 1 && draggingRef.current && e.touches.length === 1) {
-              dragMove(e.touches[0].clientX, e.touches[0].clientY);
-            }
-          }}
-          onTouchEnd={dragEnd}
-        >
-          {len > 1 && (
+        <div className="flex items-center gap-1 sm:gap-2">
+          {isImg && (
             <>
+              {/* 확대/축소 그룹 */}
+              <div className="flex items-center bg-white/10 rounded-full p-0.5 border border-white/5 mr-1 sm:mr-2">
+                <button
+                  onClick={handleZoomOut}
+                  disabled={scale <= 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-20 transition-all active:scale-90"
+                  title="축소"
+                >
+                  <ZoomOut size={16} />
+                </button>
+                <div className="w-9 text-center text-[10px] font-bold text-white tabular-nums">
+                  {Math.round(scale * 100)}%
+                </div>
+                <button
+                  onClick={handleZoomIn}
+                  disabled={scale >= 4}
+                  className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 text-white disabled:opacity-20 transition-all active:scale-90"
+                  title="확대"
+                >
+                  <ZoomIn size={16} />
+                </button>
+              </div>
+
+              {/* 회전 그룹 */}
+              <div className="flex items-center bg-white/10 rounded-full p-0.5 border border-white/5">
+                <button
+                  onClick={rotateLeft}
+                  className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 text-white transition-all active:scale-90"
+                  title="왼쪽 회전"
+                >
+                  <RotateCcw size={16} />
+                </button>
+                <button
+                  onClick={rotateRight}
+                  className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-white/10 text-white transition-all active:scale-90"
+                  title="오른쪽 회전"
+                >
+                  <RotateCw size={16} />
+                </button>
+              </div>
+
+              {/* 초기화 버튼 */}
               <button
-                onClick={prev}
-                aria-label="이전"
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 text-white"
+                onClick={(e) => { e.stopPropagation(); resetAll(); }}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90 ml-1"
+                title="초기화"
               >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                onClick={next}
-                aria-label="다음"
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 text-white"
-              >
-                <ChevronRight className="h-6 w-6" />
+                <RefreshCcw size={18} />
               </button>
             </>
           )}
-
-          {/* 메인 이미지 (핀치 줌 시 transform 적용) */}
-          <div
-            className="flex items-center justify-center w-full h-full touch-none"
-            style={{
-              transform: `scale(${zoom.scale}) translate(${zoom.x}px, ${zoom.y}px) rotate(${rotation}deg)`,
-              transformOrigin: "center center",
-              transition: "transform 0.2s ease-out", // 회전 시 부드럽게
-              touchAction: "none",
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              if (zoom.scale > 1) {
-                panStartRef.current = {
-                  x: e.clientX,
-                  y: e.clientY,
-                  tx: zoom.x,
-                  ty: zoom.y,
-                };
-              }
-            }}
-            onMouseMove={(e) => {
-              const start = panStartRef.current;
-              if (start) {
-                setZoom((z) => ({
-                  ...z,
-                  x: start.tx + (e.clientX - start.x),
-                  y: start.ty + (e.clientY - start.y),
-                }));
-              }
-            }}
-            onMouseUp={() => {
-              panStartRef.current = null;
-            }}
-            onMouseLeave={() => {
-              panStartRef.current = null;
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-              if (e.touches.length === 2) {
-                const d = getTouchDistance(e.touches);
-                const center = getTouchCenter(e.touches);
-                pinchStartRef.current = {
-                  distance: d,
-                  scale: zoom.scale,
-                  cx: center.x,
-                  cy: center.y,
-                };
-              } else if (e.touches.length === 1) {
-                if (zoom.scale > 1) {
-                  panStartRef.current = {
-                    x: e.touches[0].clientX,
-                    y: e.touches[0].clientY,
-                    tx: zoom.x,
-                    ty: zoom.y,
-                  };
-                }
-              }
-            }}
-            onTouchMove={(e) => {
-              e.stopPropagation();
-              
-              // 핀치 줌 처리 (두 손가락)
-              const pinch = pinchStartRef.current;
-              if (e.touches.length === 2 && pinch) {
-                if (e.cancelable) e.preventDefault();
-                const d = getTouchDistance(e.touches);
-                if (d <= 0) return;
-                const k = pinch.distance > 0 ? d / pinch.distance : 1;
-                const nextScale = Math.max(1, Math.min(4, pinch.scale * k));
-                setZoom((z) => ({ ...z, scale: nextScale }));
-              } 
-              // 이동 처리 (한 손가락)
-              else if (e.touches.length === 1) {
-                const start = panStartRef.current;
-                if (start && zoom.scale > 1) {
-                  const touch = e.touches[0];
-                  setZoom((z) => ({
-                    ...z,
-                    x: start.tx + (touch.clientX - start.x),
-                    y: start.ty + (touch.clientY - start.y),
-                  }));
-                }
-              }
-            }}
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-              if (e.touches.length < 2) pinchStartRef.current = null;
-              if (e.touches.length === 0) {
-                panStartRef.current = null;
-              }
-            }}
+          
+          <button
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/80 hover:bg-rose-500 text-white transition-all active:scale-90 ml-1 sm:ml-2"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={cur?.dataUrl ?? cur?.url}
-              alt={albumTitle || `이미지 ${safeIndex + 1}`}
-              className={`block max-h-full max-w-full ${fitClass} no-save`}
-              draggable={false}
-              style={{ pointerEvents: "none" }}
-            />
-          </div>
+            <X size={20} />
+          </button>
+        </div>
+      </div>
 
-          {/* 카운터 */}
-          {len > 1 && (
-            <div className="absolute top-3 right-3 rounded bg-black/60 text-white text-xs px-2 py-0.5 z-10">
-              {safeIndex + 1} / {len}
-            </div>
-          )}
-          {/* 줌 초기화 버튼 (확대 시에만) */}
-          {zoom.scale > 1 && (
+      {/* 중앙 메인 슬라이더 영역 */}
+      <div className="relative flex-1 flex flex-col min-h-0 items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        {/* 좌우 이동 버튼 */}
+        {len > 1 && scale === 1 && (
+          <>
             <button
-              type="button"
-              onClick={(ev) => {
-                ev.stopPropagation();
-                resetZoom();
-              }}
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 rounded bg-black/60 text-white text-sm px-3 py-1.5"
+              onClick={prev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-30 h-12 w-12 flex items-center justify-center rounded-full bg-black/20 hover:bg-white/20 text-white border border-white/10 backdrop-blur-md transition-all active:scale-90 group"
             >
-              원래 크기
+              <ChevronLeft size={32} className="group-hover:-translate-x-1 transition-transform" />
             </button>
-          )}
+            <button
+              onClick={next}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-30 h-12 w-12 flex items-center justify-center rounded-full bg-black/20 hover:bg-white/20 text-white border border-white/10 backdrop-blur-md transition-all active:scale-90 group"
+            >
+              <ChevronRight size={32} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </>
+        )}
+
+        {/* 이미지/문서 컨테이너 */}
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden touch-none">
+          <div 
+            className={`flex h-full w-full ${scale === 1 ? 'transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''}`}
+            style={{ transform: scale === 1 ? `translateX(-${index * 100}%)` : 'none' }}
+          >
+            {images.map((img, i) => {
+              const src = img.dataUrl ?? img.url;
+              const isI = isImage(src);
+
+              return (
+                <div 
+                  key={i} 
+                  className={`flex-shrink-0 w-full h-full flex items-center justify-center p-4 sm:p-8 ${i !== index && scale > 1 ? 'hidden' : ''}`}
+                  onPointerDown={i === index && isI ? handlePointerDown : undefined}
+                  onPointerMove={i === index && isI ? handlePointerMove : undefined}
+                  onPointerUp={i === index && isI ? handlePointerUp : undefined}
+                  onPointerCancel={i === index && isI ? handlePointerUp : undefined}
+                  style={{ cursor: isI && scale > 1 ? 'grab' : 'default' }}
+                >
+                  <div 
+                    className="relative transition-transform duration-300 ease-out"
+                    style={{ 
+                      transform: i === index && isI ? `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)` : 'none',
+                      zIndex: i === index ? 10 : 0
+                    }}
+                  >
+                    {!isI ? (
+                      /* 📄 문서 파일 전용 UI */
+                      <div className="flex flex-col items-center justify-center gap-6 bg-white/5 backdrop-blur-xl border border-white/10 p-12 rounded-3xl w-[320px] sm:w-[450px] shadow-2xl">
+                        <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white shadow-xl">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" className="text-slate-600">
+                            <path d="M13 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V9L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M13 2V9H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        <div className="flex flex-col gap-2 text-center max-w-full px-4">
+                          <h3 className="text-xl font-bold text-white truncate block w-full">{img.name || "문서 파일"}</h3>
+                          <p className="text-sm text-emerald-400 font-bold uppercase tracking-widest">{src?.split(".").pop()} DOCUMENT</p>
+                          {img.caption && <p className="text-slate-400 text-sm mt-2 line-clamp-3 leading-relaxed">{img.caption}</p>}
+                        </div>
+                        <a
+                          href={src}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-4 flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-bold text-black hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                        >
+                          다운로드 하기
+                        </a>
+                      </div>
+                    ) : (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={src}
+                          alt={`Image ${i + 1}`}
+                          className={`block max-h-[75vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 ${i === index ? 'opacity-100' : 'opacity-40 blur-sm scale-95'}`}
+                          draggable={false}
+                        />
+                        {i === index && scale === 1 && (img.caption || img.name) && (
+                          <div className="absolute -bottom-12 left-0 right-0 text-center animate-in slide-in-from-bottom-2 duration-500">
+                            <p className="text-white text-xs sm:text-sm font-medium bg-black/40 backdrop-blur-md inline-block px-4 py-1.5 rounded-full border border-white/10">
+                              {img.caption || img.name}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* 제목 (이미지 바로 아래) */}
-        {albumTitle && (
-          <div className={`mt-2 text-center text-white text-lg whitespace-pre-wrap break-words px-2 shrink-0`} title={albumTitle}>
-            {albumTitle}
+        {/* 중앙 하단 인덱스 배지 */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-1 rounded-full text-white text-[11px] font-bold tracking-widest shadow-xl">
+            <span className="text-emerald-400">{index + 1}</span>
+            <span className="mx-2 opacity-30">/</span>
+            <span>{len}</span>
           </div>
-        )}
-
-        {/* 썸네일 (하단 가로 스크롤) */}
-        {withThumbnails && len > 1 && (
-          <div className="w-full shrink-0 mt-3 overflow-x-auto overflow-y-hidden scrollbar-hide pb-1">
-            <div className="flex gap-2 justify-center min-w-min px-2">
-              {images.map((im, i) => {
-                const active = i === safeIndex;
-                const t = (
-                  im?.caption ||
-                  im?.name ||
-                  `썸네일 ${i + 1}`
-                ).trim();
-                return (
-                  <button
-                    key={i}
-                    className={`relative h-16 w-16 flex-shrink-0 rounded border ${active ? "border-white" : "border-white/30"
-                      }`}
-                    onClick={() => setIndex(i)}
-                    aria-label={t}
-                    title={t}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={im?.dataUrl ?? im?.url}
-                      alt={t}
-                      className="h-full w-full object-cover rounded no-save"
-                      draggable={false}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    {active && (
-                      <span className="absolute inset-0 ring-2 ring-white rounded pointer-events-none" />
-                    )}
-                  </button>
-                );
-              })}
+          
+          {len > 1 && scale === 1 && (
+            <div className="w-40 sm:w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-400 transition-all duration-500 ease-out"
+                style={{ width: `${((index + 1) / len) * 100}%` }}
+              />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* 썸네일 바 */}
+      {withThumbnails && len > 1 && scale === 1 && (
+        <div className="h-24 bg-black/40 backdrop-blur-xl border-t border-white/5 p-3 z-20 animate-in slide-in-from-bottom-full duration-300">
+          <div 
+            ref={thumbContainerRef}
+            className="flex gap-2 h-full overflow-x-auto scrollbar-hide items-center justify-center px-10"
+          >
+            {images.map((im, i) => {
+              const s = im.dataUrl ?? im.url;
+              const isI = isImage(s);
+
+              return (
+                <button
+                  key={i}
+                  onClick={(e) => { e.stopPropagation(); setIndex(i); }}
+                  className={`relative flex-shrink-0 h-16 w-16 rounded-md overflow-hidden border-2 transition-all duration-300 ${
+                    i === index 
+                      ? "border-emerald-400 scale-110 shadow-[0_0_15px_rgba(52,211,153,0.5)] z-10" 
+                      : "border-transparent opacity-40 hover:opacity-70"
+                  }`}
+                >
+                  {!isI ? (
+                    <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-white/40">
+                        <path d="M13 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V9L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={s}
+                      alt={`Thumb ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

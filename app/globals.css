@@ -86,7 +86,7 @@ body {
   }
 
   50% {
-    transform: scale(1.15);
+    transform: scale(1.05);
     box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
     z-index: 50;
   }
@@ -98,13 +98,27 @@ body {
 }
 
 @keyframes bounce-x {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(25%); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(25%);
+  }
 }
 
 @keyframes bounce-x-reverse {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(-25%); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-25%);
+  }
 }
 
 .animate-bounce-x {

@@ -19,8 +19,8 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      // 📌 z-index를 2000대로 올려서 다른 모달 위에 올라오게
-      "fixed inset-0 z-[2000] bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      // 📌 z-index를 100000대로 올려서 다른 최상위 모달(99999) 위로 올라오게
+      "fixed inset-0 z-[100000] bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -37,8 +37,8 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        // 📌 최상위 z-index + 최소 너비 + 내용에 따라 확장
-        "fixed left-1/2 top-1/2 z-[2100] inline-flex flex-col gap-4",
+        // 📌 최상위 z-index(100001) + 최소 너비 + 내용에 따라 확장
+        "fixed left-1/2 top-1/2 z-[100001] inline-flex flex-col gap-4",
         "min-w-[320px] w-auto max-w-[90vw] max-h-[92dvh] sm:max-h-[85vh] overflow-hidden", // ⭐ 모바일은 dvh, 데스크톱은 vh 기준
         "translate-x-[-50%] translate-y-[-50%] rounded-2xl border bg-background px-6 py-5 shadow-lg duration-200",
 

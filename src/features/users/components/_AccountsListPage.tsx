@@ -9,6 +9,7 @@ import {
   AvatarFallback,
 } from "@/components/atoms/Avatar/Avatar";
 import type { UserRow, RoleKey } from "@/features/users/types";
+import { getPositionRankLabel } from "../utils/rankUtils";
 
 type SortColumn = "name" | "rank" | null;
 type SortDirection = "asc" | "desc";
@@ -168,19 +169,7 @@ export default function AccountsListPage({
             {rows.map((u) => {
               const phone = u.phone ?? "-";
 
-              // 직급 매핑
-              const positionRankLabel = (rank?: string) => {
-                const rankMap: Record<string, string> = {
-                  ASSISTANT_MANAGER: "대리",
-                  MANAGER: "과장",
-                  DEPUTY_GENERAL: "차장",
-                  GENERAL_MANAGER: "부장",
-                  TEAM_LEADER: "팀장",
-                  DIRECTOR: "실장",
-                  STAFF: "사원",
-                };
-                return rank ? rankMap[rank] || rank : "-";
-              };
+
 
               // 이름 첫 글자로 아바타 초기값 생성
               const initials = u.name ? u.name.charAt(0).toUpperCase() : "?";
@@ -207,7 +196,7 @@ export default function AccountsListPage({
                   <td className="px-4 py-3">{phone}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      {positionRankLabel(u.positionRank)}
+                      {getPositionRankLabel(u.positionRank)}
                       {u.disabled && (
                         <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
                           정지

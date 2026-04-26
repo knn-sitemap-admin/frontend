@@ -56,8 +56,7 @@ export default function ScheduleCalendar() {
   const [onlyHolidays, setOnlyHolidays] = useState(false);
   const [onlyFinalPayments, setOnlyFinalPayments] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [lastFetchKey, setLastFetchKey] = useState("");
-  const fetchRequestRef = useRef<string>(""); // 현재 진행 중인 요청의 키 저장
+
 
   useEffect(() => {
     // sessionStorage에서 상태 복원
@@ -80,16 +79,14 @@ export default function ScheduleCalendar() {
     setIsHydrated(true);
   }, []);
 
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [hoveredContractId, setHoveredContractId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAgendaOpen, setIsAgendaOpen] = useState(false);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
-  const [contracts, setContracts] = useState<any[]>([]);
+
   const [contractDefaultData, setContractDefaultData] = useState<Partial<SalesContractData> | null>(null);
   const [dragY, setDragY] = useState(0);
   const [dragX, setDragX] = useState(0);
@@ -173,23 +170,21 @@ export default function ScheduleCalendar() {
     enabled: isPowerful,
   });
 
-  const fetchSchedules = async () => {
-    if (!isHydrated) return;
-    
-    // "내 일정" 모드일 때만 프로필 대기
-    if (filterMode === "mine" && !profile?.account?.id) return;
-
-    const year = currentMonth.getFullYear();
-
-    const fetchKey = `${year}-${staffId}-${filterMode}-${onlyHolidays}-${onlyFinalPayments}-${profile?.account?.id || ""}`;
-
-    // 캐싱: 이미 같은 키로 데이터를 가져왔다면 중복 요청 방지
-    if (fetchKey === lastFetchKey) return;
-
-    // 레이스 컨디션 방지: 최신 요청 키 업데이트
-    fetchRequestRef.current = fetchKey;
-    setIsLoading(true);
-    try {
+  const { 
+    data: calendarData = { schedules: [], contracts: [] }, 
+    isLoading: isCalendarLoading,
+    refetch: refetchCalendar 
+  } = useQuery({
+    queryKey: ["calendar", { 
+      year: currentMonth.getFullYear(), 
+      staffId, 
+      filterMode, 
+      onlyHolidays, 
+      onlyFinalPayments, 
+      profileId: profile?.account?.id 
+    }],
+    queryFn: async () => {
+      const year = currentMonth.getFullYear();
       const startDateStr = format(new Date(year, 0, 1), "yyyy-MM-dd");
       const endDateStr = format(new Date(year, 11, 31), "yyyy-MM-dd");
 
@@ -206,7 +201,6 @@ export default function ScheduleCalendar() {
         if (profile?.account?.id) params.assignedStaffId = profile.account.id;
       }
 
-      // 일정과 계약 데이터를 병렬로 요청
       const contractParams = {
         paymentDateFrom: startDateStr,
         paymentDateTo: endDateStr,
@@ -221,34 +215,28 @@ export default function ScheduleCalendar() {
           : getContracts(contractParams)
       ]);
 
-      // 최신 요청인지 확인
-      if (fetchRequestRef.current !== fetchKey) return;
+      return {
+        schedules: scheduleData,
+        contracts: contractData?.items || []
+      };
+    },
+    enabled: isHydrated && (filterMode !== "mine" || !!profile?.account?.id),
+  });
 
-      setSchedules(scheduleData);
-      setContracts(contractData?.items || []);
-      setLastFetchKey(fetchKey);
-    } catch (error) {
-      console.error("Failed to load calendar data:", error);
-    } finally {
-      // 내 요청이 마지막 요청이었을 때만 로딩 종료
-      if (fetchRequestRef.current === fetchKey) {
-        setIsLoading(false);
-      }
-    }
-  };
-
+  // 상태 보존을 위한 효과
   useEffect(() => {
     if (!isHydrated) return;
-
-    fetchSchedules();
-
-    // 상태 저장
     sessionStorage.setItem("calendar_current_month", currentMonth.toISOString());
     sessionStorage.setItem("calendar_filter_mode", filterMode);
     sessionStorage.setItem("calendar_staff_id", staffId);
     sessionStorage.setItem("calendar_only_holidays", String(onlyHolidays));
     sessionStorage.setItem("calendar_only_final_payments", String(onlyFinalPayments));
-  }, [currentMonth, filterMode, staffId, onlyHolidays, onlyFinalPayments, isHydrated, profile?.account?.id]);
+  }, [currentMonth, filterMode, staffId, onlyHolidays, onlyFinalPayments, isHydrated]);
+
+  // 기존 state 호환을 위해 유지 (또는 calendarData 직접 사용으로 리팩토링)
+  const schedules = calendarData.schedules;
+  const contracts = calendarData.contracts;
+  const isLoading = isCalendarLoading;
 
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -1013,7 +1001,7 @@ export default function ScheduleCalendar() {
         onClose={() => setIsModalOpen(false)}
         selectedDate={selectedDate}
         schedule={selectedSchedule}
-        onDataChange={fetchSchedules}
+        onDataChange={refetchCalendar}
         userProfile={profile}
         onCreateContract={handleCreateContract}
       />
@@ -1021,7 +1009,7 @@ export default function ScheduleCalendar() {
       <ScheduleTrashModal
         isOpen={isTrashOpen}
         onClose={() => setIsTrashOpen(false)}
-        onRestored={fetchSchedules}
+        onRestored={refetchCalendar}
       />
 
       <SalesContractRecordsModal
@@ -1030,7 +1018,7 @@ export default function ScheduleCalendar() {
           setIsContractModalOpen(false);
           setContractDefaultData(null);
         }}
-        onDataChange={() => fetchSchedules()}
+        onDataChange={() => refetchCalendar()}
         data={contractDefaultData as any}
       />
     </div>

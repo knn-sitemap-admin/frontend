@@ -39,7 +39,7 @@ import {
 import { Calendar } from "@/components/atoms/Calendar/Calendar";
 import { format, parse } from "date-fns";
 import { ko } from "date-fns/locale";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -76,7 +76,6 @@ export const SCHEDULE_COLORS = [
   { id: "slate", label: "슬레이트", bg: "bg-slate-50", border: "border-slate-200", text: "text-slate-700", dot: "bg-slate-400", dark: "bg-slate-500" },
   { id: "gray", label: "회색", bg: "bg-gray-100", border: "border-gray-200", text: "text-gray-600", dot: "bg-gray-400", dark: "bg-gray-500" },
 ];
-
 export function ScheduleModal({
   isOpen,
   onClose,
@@ -86,6 +85,7 @@ export function ScheduleModal({
   userProfile,
   onCreateContract,
 }: ScheduleModalProps) {
+  const queryClient = useQueryClient();
   const [category, setCategory] = useState("신규");
   const [customCategory, setCustomCategory] = useState("");
   const [platform, setPlatform] = useState("직방");
@@ -279,6 +279,7 @@ export function ScheduleModal({
         await createSchedule(payload);
         toast({ title: "일정 생성 완료", description: "새로운 일정이 등록되었습니다." });
       }
+      queryClient.invalidateQueries({ queryKey: ["calendar"] });
       onDataChange();
       onClose();
     } catch (error: any) {
@@ -314,6 +315,7 @@ export function ScheduleModal({
     try {
       await deleteSchedule(schedule.id);
       setIsLoading(false);
+      queryClient.invalidateQueries({ queryKey: ["calendar"] });
       onDataChange();
       onClose();
     } catch (error) {

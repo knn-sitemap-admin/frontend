@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,29 +18,8 @@ import {
 import { PersonalInfoSection } from "./PersonalInfoSection";
 import { ContractSiteSection } from "./ContractSiteSection";
 import { FinancialInfoSection } from "./FinancialInfoSection";
-import type {
-  SalesContractViewModalProps,
-  SalesContractData,
-} from "../types/contract-records";
-import { formatCurrency, calculateVAT } from "../utils/utils";
 import { StaffAllocationSection } from "./StaffAllocationSection";
 import { ContractImageSection } from "./ContractImageSection";
-import {
-  createContract,
-  updateContract,
-  deleteContract,
-} from "../api/contracts";
-import {
-  transformSalesContractToCreateRequest,
-  transformSalesContractToUpdateRequest,
-} from "../utils/contractTransformers";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import {
-  getProfile,
-  getEmployeesList,
-} from "@/features/users/api/account";
-import { api } from "@/shared/api/api";
 import {
   Popover,
   PopoverContent,
@@ -60,53 +38,8 @@ import {
   SelectValue,
 } from "@/components/atoms/Select/Select";
 import { ChevronDownIcon, X } from "lucide-react";
-
-// 기본 데이터
-const defaultData: SalesContractData = {
-  customerInfo: { name: "", contact: "" },
-  salesManager: { name: "", contact: "" }, // 사용하지 않지만 기본값으로 유지
-  salesPerson: { name: "", contact: "" },
-  contractSite: {
-    address: "",
-    siteName: "",
-    teamContact: "",
-  },
-  financialInfo: {
-    brokerageFee: 0,
-    vat: 0,
-    vatStatus: "vat-included",
-    totalBrokerageFee: 0,
-    totalRebate: 0,
-    taxStatus: "tax-free",
-    totalSupportAmount: 0,
-    supportCashAmount: 0,
-    customerAccountNumber: "",
-    customerBank: "",
-    supportContent: "",
-  },
-  staffAllocations: [
-    {
-      id: "company",
-      name: "회사",
-      type: "company",
-      percentage: 100,
-      isDirectInput: false,
-      rebateAllowance: 0,
-      finalAllowance: 0,
-    },
-    {
-      id: "employee1",
-      name: "영업담당자",
-      type: "employee",
-      percentage: 0,
-      isDirectInput: false,
-      rebateAllowance: 0,
-      finalAllowance: 0,
-    },
-  ],
-  contractImages: [],
-  totalCalculation: 0,
-};
+import { useSalesContractModal, defaultContractData } from "../hooks/useSalesContractModal";
+import type { SalesContractViewModalProps } from "../types/contract-records";
 
 export function SalesContractRecordsModal({
   isOpen,
@@ -114,548 +47,29 @@ export function SalesContractRecordsModal({
   data: initialData,
   onDataChange,
 }: SalesContractViewModalProps) {
-  const [data, setData] = useState<SalesContractData>(defaultData);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(true);
+  // 모든 복잡한 로직을 커스텀 훅으로 위임
+  const {
+    data,
+    isLoading,
+    isEditMode,
+    setIsEditMode,
+    isContractDateOpen,
+    setIsContractDateOpen,
+    isBalanceDateOpen,
+    setIsBalanceDateOpen,
+    profile,
+    myTeamMembers,
+    handleDataChange,
+    handleFinancialInfoChange,
+    handleStaffAllocationsChange,
+    handleSave,
+    handleDelete,
+    handleCancel,
+    recalculateTotal,
+  } = useSalesContractModal(isOpen, onClose, initialData, onDataChange);
 
-  const { toast } = useToast();
-
-  // 날짜 선택 Popover 상태
-  const [isContractDateOpen, setIsContractDateOpen] = useState(false);
-  const [isBalanceDateOpen, setIsBalanceDateOpen] = useState(false);
-
-  // 프로필 정보 가져오기
-  const { data: profile } = useQuery({
-    queryKey: ["profile"],
-    queryFn: getProfile,
-    staleTime: 10 * 60 * 1000, // 10분
-  });
-
-  // 내 팀 멤버 가져오기
-  const { data: myTeamMembers } = useQuery({
-    queryKey: ["my-team-members", profile?.role, profile?.account?.id],
-    queryFn: async () => {
-      const log = (msg: string, extra?: object) => {
-      };
-
-      if (!profile) return [];
-
-      // 1) 관리자/매니저면 전체 직원 리스트 반환 (팀 소속 여부와 무관)
-      if (profile.role === "admin" || profile.role === "manager") {
-        try {
-          const list = await getEmployeesList({ onlyActive: true });
-          return list.map((item) => ({
-            accountId: item.accountId,
-            name: item.name,
-            positionRank: item.positionRank,
-            phone: item.phone,
-            teamRole: (item.teamRole as "manager" | "staff" | null) || "staff",
-          }));
-        } catch (e) {
-          log("getEmployeesList 실패, 기존 로직 폴백", { error: (e as any).message });
-        }
-      }
-
-      try {
-        const accountId = profile?.account?.id;
-        if (!accountId) {
-          log("accountId 없음, 스킵");
-          return [];
-        }
-
-        // 팀 목록 가져오기
-        let teams: Array<{ id: number | string; name: string }> = [];
-        try {
-          const teamsRes = await api.get<{
-            message: string;
-            data: Array<{ id: number | string; name: string }>;
-          }>("/dashboard/accounts/teams");
-          teams = teamsRes.data.data ?? [];
-          log("getTeams 요청: 성공", {
-            status: teamsRes.status,
-            팀수: teams.length,
-          });
-        } catch (err: any) {
-          log("getTeams 요청: 실패", {
-            status: err?.response?.status ?? "network/기타",
-            error: err?.message,
-          });
-          return [];
-        }
-
-        if (teams.length === 0) {
-          log("팀 목록 없음");
-          return [];
-        }
-
-        // 각 팀의 상세 조회를 통해 내가 속한 팀 찾기
-        for (const team of teams) {
-          try {
-            const teamDetailResponse = await api.get<{
-              message: string;
-              data: {
-                id: string;
-                name: string;
-                members: Array<{
-                  accountId: string;
-                  name: string | null;
-                  positionRank?: string | null;
-                  teamRole?: "manager" | "staff" | null;
-                  phone?: string | null;
-                }>;
-              };
-            }>(`/dashboard/accounts/teams/${team.id}`);
-
-            const isMyTeam = teamDetailResponse.data.data.members.some(
-              (member) => String(member.accountId) === String(accountId),
-            );
-
-            if (isMyTeam) {
-              const members = teamDetailResponse.data.data.members;
-              log("최종: 내 팀 멤버 반환", { 멤버수: members.length });
-              return members;
-            }
-          } catch (err: any) {
-            log(`teams/${team.id} 요청: 실패`, {
-              status: err?.response?.status ?? "network/기타",
-              error: err?.message,
-            });
-            continue;
-          }
-        }
-
-        log("최종: 내 팀 없음, 멤버 0명");
-        return [];
-      } catch (error: any) {
-        console.error("[담당자목록] 팀 멤버 조회 실패", {
-          status: error?.response?.status ?? "network/기타",
-          error: error?.message,
-        });
-        return [];
-      }
-    },
-    enabled: !!profile,
-    staleTime: 10 * 60 * 1000,
-  });
-
-  // 데이터 초기화 및 팀 멤버 정보 보완 (통합된 로직)
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const enrichAllocations = (base: SalesContractData) => {
-      let currentData = { ...base };
-      const allocations = currentData.staffAllocations || defaultData.staffAllocations;
-
-      // 1) 본인 정보 자동 채우기 (신규 생성 시)
-      if (profile && !initialData?.id) {
-        const myId = profile.account?.id;
-        const myName = profile.account?.name || "";
-        const myIsLeader = profile.role === "manager" || profile.role === "admin";
-
-        currentData = {
-          ...currentData,
-          salesPerson: {
-            name: currentData.salesPerson?.name || myName,
-            contact: currentData.salesPerson?.contact || profile.account?.phone || "",
-          },
-          staffAllocations: allocations.map((staff) => {
-            if (staff.id === "employee1" && !staff.accountId) {
-              return { ...staff, accountId: myId, name: myName, isTeamLeader: myIsLeader };
-            }
-            return staff;
-          }),
-        };
-      } else {
-        currentData.staffAllocations = allocations;
-      }
-
-      // 2) 팀 멤버 정보 보완
-      if (!myTeamMembers || myTeamMembers.length === 0) return currentData;
-
-      return {
-        ...currentData,
-        staffAllocations: currentData.staffAllocations.map((staff) => {
-          if (staff.type !== "employee" || !staff.accountId) return staff;
-          const member = myTeamMembers.find((m) => String(m.accountId) === String(staff.accountId));
-          if (!member) return staff;
-          return {
-            ...staff,
-            positionRank: (member as any).positionRank ?? staff.positionRank,
-            isTeamLeader: (member as any).teamRole === "manager" || (member as any).teamRole === "admin",
-          };
-        }),
-      };
-    };
-
-    if (initialData) {
-      if (initialData.id) {
-        // 이미 저장된 계약 데이터인 경우
-        setData(enrichAllocations(initialData));
-        setIsEditMode(false);
-      } else {
-        // 달력 등에서 넘어온 부분 데이터 병합
-        const merged: SalesContractData = {
-          ...defaultData,
-          ...(initialData || {}),
-          customerInfo: {
-            ...defaultData.customerInfo,
-            ...(initialData.customerInfo || {}),
-            name: initialData.customerInfo?.name || defaultData.customerInfo.name || "",
-            contact: initialData.customerInfo?.contact || (initialData as any).customerPhone || ""
-          },
-          contractSite: {
-            ...defaultData.contractSite,
-            ...(initialData.contractSite || {}),
-            siteName: (initialData as any).siteName || initialData.contractSite?.siteName || "",
-            address: initialData.contractSite?.address || defaultData.contractSite?.address || "",
-            teamContact: initialData.contractSite?.teamContact || defaultData.contractSite?.teamContact || "",
-          },
-          contractDate: initialData.contractDate || format(new Date(), "yyyy-MM-dd")
-        };
-        setData(enrichAllocations(merged));
-        setIsEditMode(true);
-      }
-    } else {
-      setData(enrichAllocations(defaultData));
-      setIsEditMode(true);
-    }
-  }, [initialData, myTeamMembers, profile, isOpen]);
-
-  // 데이터 변경 핸들러
-  const handleDataChange = (newData: SalesContractData) => {
-    setData(newData);
-    if (onDataChange) {
-      onDataChange(newData);
-    }
-  };
-
-  // 재사용 가능한 내부 계산 함수
-  const recalculateTotal = (
-    financialInfo: SalesContractData["financialInfo"],
-    currentStatus: SalesContractData["status"],
-  ) => {
-    const isInvalidStatus =
-      currentStatus === "rejected" || currentStatus === "cancelled";
-    if (isInvalidStatus) return 0;
-
-    const brokerageAndVat = Number(financialInfo.totalBrokerageFee) || 0;
-    const totalRebate = Number(financialInfo.totalRebate) || 0;
-    const totalSupportAmount = Number(financialInfo.totalSupportAmount) || 0;
-    const supportCashAmount = Number(financialInfo.supportCashAmount) || 0;
-    const rebateMinusSupport =
-      totalRebate - totalSupportAmount;
-    const multiplier = financialInfo.taxStatus === "taxable" ? 0.967 : 1;
-    return brokerageAndVat + rebateMinusSupport * multiplier - supportCashAmount;
-  };
-
-  // 인적 정보 변경 핸들러
-  const handleCustomerInfoChange = (customerInfo: any) => {
-    handleDataChange({ ...data, customerInfo });
-  };
-
-  const handleSalesPersonChange = (salesPerson: any) => {
-    handleDataChange({ ...data, salesPerson });
-  };
-
-  // 계약현장 정보 변경 핸들러
-  const handleContractSiteChange = (contractSite: any) => {
-    handleDataChange({ ...data, contractSite });
-  };
-
-  // 재무 정보 변경 핸들러
-  const handleFinancialInfoChange = (financialInfo: any) => {
-    // 부가세 자동 계산 (부가세 선택시 10%, 미부가세 선택시 0%)
-    const vat = calculateVAT(
-      financialInfo.brokerageFee,
-      financialInfo.vatStatus,
-    );
-
-    // 중개보수금합계 자동 계산
-    const totalBrokerageFee = financialInfo.brokerageFee + vat;
-
-    const updatedFinancialInfo = {
-      ...financialInfo,
-      vat,
-      totalBrokerageFee,
-    };
-
-    // 총 계산 자동 업데이트
-    // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-지원금액)×0.967)
-    // 비과세시 (중개수수료+부가세)+(리베이트-지원금액)
-    // 부결, 해약 시에는 0 처리
-    const totalCalculation = recalculateTotal(
-      updatedFinancialInfo,
-      data.status,
-    );
-
-    handleDataChange({
-      ...data,
-      financialInfo: updatedFinancialInfo,
-      totalCalculation,
-    });
-  };
-
-  const handleStaffAllocationsChange = (newAllocations: any[]) => {
-    // 첫 번째 영업 담당자 찾기
-    const firstEmployee = newAllocations.find(s => s.type === "employee");
-    const member = myTeamMembers?.find(m => String(m.accountId) === String(firstEmployee?.accountId));
-
-    // 담당자 분배가 바뀌면 상단 인적정보의 담당자 섹션(성함, 연락처)도 항상 동기화
-    handleDataChange({
-      ...data,
-      staffAllocations: newAllocations,
-      salesPerson: {
-        name: firstEmployee?.name || data.salesPerson.name,
-        contact: member?.phone || data.salesPerson.contact
-      }
-    });
-  };
-
-  // 계약 이미지 변경 핸들러
-  const handleContractImagesChange = (contractImages: any) => {
-    handleDataChange({ ...data, contractImages });
-  };
-
-  // 수정 모드로 전환
-  const handleEdit = () => {
-    setIsEditMode(true);
-  };
-
-  // 취소 핸들러 (편집 모드에서 읽기 전용으로 되돌림)
-  const handleCancel = () => {
-    if (initialData) {
-      setData(initialData); // 원래 데이터로 복원
-      setIsEditMode(false); // 읽기 전용 모드로 전환
-    } else {
-      onClose(); // 신규 생성 중이면 모달 닫기
-    }
-  };
-
-  // 삭제 핸들러
-  const handleDelete = async () => {
-    if (!data.id) {
-      toast({
-        title: "삭제 불가",
-        description: "계약 ID가 없습니다.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!confirm("정말 이 계약을 삭제하시겠습니까?")) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const contractId = Number(data.id);
-      await deleteContract(contractId);
-
-      toast({
-        title: "계약 삭제 완료",
-        description: "계약이 성공적으로 삭제되었습니다.",
-      });
-
-      // 목록 새로고침을 위한 콜백 호출
-      if (onDataChange) {
-        onDataChange({ ...data }); // 삭제된 계약 정보 전달
-      }
-
-      onClose();
-    } catch (error: any) {
-      console.error("계약 삭제 실패:", error);
-      toast({
-        title: "계약 삭제 실패",
-        description:
-          error?.response?.data?.message || "계약 삭제 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 저장 핸들러 (생성 또는 수정)
-  const handleSave = async () => {
-    // 필수 데이터 검증
-    if (!data.customerInfo.name.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "고객명을 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!data.customerInfo.contact.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "고객 연락처를 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!data.contractSite?.address.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "현장 주소를 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!data.contractSite?.siteName.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "현장명을 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!data.contractSite?.teamContact.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "분양팀 연락처를 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!data.contractDate) {
-      toast({
-        title: "입력 오류",
-        description: "계약일을 선택해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!data.balanceDate) {
-      toast({
-        title: "입력 오류",
-        description: "잔금일자를 선택해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-    const isInvalidStatus =
-      data.status === "rejected" || data.status === "cancelled";
-    if (!isInvalidStatus && data.totalCalculation <= 0) {
-      toast({
-        title: "입력 오류",
-        description: "계약금액을 확인해주세요.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // 날짜 유효성 검사
-    const cDate = data.contractDate ? new Date(data.contractDate) : new Date();
-    const bDate = data.balanceDate ? new Date(data.balanceDate) : null;
-
-    if (bDate && bDate < cDate) {
-      toast({
-        title: "날짜 오류",
-        description: "잔금일은 계약일보다 빠를 수 없습니다.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      let contractData: SalesContractData;
-      const now = new Date();
-
-      if (data.id) {
-        // 수정 모드
-        const contractId = Number(data.id);
-        const updateRequest = transformSalesContractToUpdateRequest(
-          data,
-          profile,
-        );
-        const result = await updateContract(contractId, updateRequest);
-
-        contractData = {
-          ...data,
-          contractDate: data.contractDate || now.toISOString().split("T")[0],
-          updatedAt: now.toISOString(),
-        };
-
-        toast({
-          title: "계약 수정 완료",
-          description: "계약이 성공적으로 수정되었습니다.",
-        });
-
-        setIsEditMode(false); // 수정 후 읽기 전용 모드로 전환
-      } else {
-        // 생성 모드
-        // 백엔드 API 형식으로 변환
-        const requestData = transformSalesContractToCreateRequest(
-          data,
-          profile,
-        );
-
-        // 필수 필드 검증 (타입 체크)
-        if (
-          typeof requestData.brokerageFee !== "number" ||
-          typeof requestData.vat !== "boolean" ||
-          typeof requestData.rebate !== "number" ||
-          typeof requestData.supportAmount !== "number" ||
-          typeof requestData.isTaxed !== "boolean" ||
-          typeof requestData.companyPercent !== "number"
-        ) {
-          throw new Error("필수 필드의 데이터 타입이 올바르지 않습니다.");
-        }
-
-        const result = await createContract(requestData);
-
-        contractData = {
-          ...data,
-          id: result.id.toString(),
-          contractNumber: result.contractNo,
-          contractDate: data.contractDate || now.toISOString().split("T")[0],
-          status: data.status || "ongoing",
-          createdAt: data.createdAt || now.toISOString(),
-          updatedAt: now.toISOString(),
-        };
-
-        toast({
-          title: "계약 생성 완료",
-          description: `계약 ${result.contractNo}이 성공적으로 생성되었습니다.`,
-        });
-
-        onClose(); // 생성 후 모달 닫기
-      }
-
-      // 계약관리 리스트 업데이트를 위한 콜백
-      if (onDataChange) {
-        onDataChange(contractData);
-      }
-    } catch (error: any) {
-      console.error("계약 저장 실패:", error);
-      const errorMessages = error?.response?.data?.messages;
-      const errorMessage = error?.response?.data?.message;
-      let errorDescription =
-        errorMessage ||
-        (data.id
-          ? "계약 수정 중 오류가 발생했습니다."
-          : "계약 생성 중 오류가 발생했습니다.");
-
-      // validation 에러 메시지가 있으면 추가
-      if (
-        errorMessages &&
-        Array.isArray(errorMessages) &&
-        errorMessages.length > 0
-      ) {
-        errorDescription = errorMessages.join(", ");
-      }
-
-      toast({
-        title: data.id ? "계약 수정 실패" : "계약 생성 실패",
-        description: errorDescription,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // 모달이 닫혀 있으면 렌더링하지 않음 (방어 코드)
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -686,211 +100,97 @@ export function SalesContractRecordsModal({
         {/* 스크롤 가능한 콘텐츠 영역 */}
         <div className="flex-1 overflow-y-auto p-4 premium-scrollbar">
           <div className="flex flex-col gap-2">
-            {/* 계약일자, 잔금일자, 계약 상태 */}
+            {/* 계약 정보 카드 */}
             <Card className="flex-shrink-0">
               <CardHeader className="pb-1 pt-2 px-3">
                 <CardTitle className="text-sm">계약 정보</CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-1">
                 <div className="flex flex-col sm:flex-row gap-4">
+                  {/* 계약일자 */}
                   <div className="space-y-1 flex-1">
-                    <Label className="text-xs text-muted-foreground">
-                      계약일자
-                    </Label>
+                    <Label className="text-xs text-muted-foreground">계약일자</Label>
                     <div className="relative">
-                      <Popover>
+                      <Popover open={isContractDateOpen} onOpenChange={setIsContractDateOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             disabled={!isEditMode}
-                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${!data.contractDate ? "text-muted-foreground" : ""
-                              }`}
+                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${!data.contractDate ? "text-muted-foreground" : ""}`}
                           >
-                            {data.contractDate ? (
-                              format(new Date(data.contractDate), "PPP", {
-                                locale: ko,
-                              })
-                            ) : (
-                              <span>계약일자를 선택하세요</span>
-                            )}
+                            {data.contractDate ? format(new Date(data.contractDate), "PPP", { locale: ko }) : <span>계약일자를 선택하세요</span>}
                             <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent
-                          data-contract-calendar="true"
-                          className="w-auto p-0 !z-[2200]"
-                          align="start"
-                        >
+                        <PopoverContent className="w-auto p-0 !z-[2200]" align="start">
                           <Calendar
                             mode="single"
-                            selected={
-                              data.contractDate
-                                ? new Date(data.contractDate)
-                                : undefined
-                            }
+                            selected={data.contractDate ? new Date(data.contractDate) : undefined}
                             locale={ko}
-                            i18nLocale="ko-KR"
-                            captionLayout="dropdown"
-                            fromYear={2020}
-                            toYear={2050}
                             onSelect={(date) => {
                               if (date) {
-                                handleDataChange({
-                                  ...data,
-                                  contractDate: format(date, "yyyy-MM-dd"),
-                                });
+                                handleDataChange({ ...data, contractDate: format(date, "yyyy-MM-dd") });
                                 setIsContractDateOpen(false);
                               }
                             }}
-                            initialFocus
                           />
                         </PopoverContent>
                       </Popover>
-                      {data.contractDate && isEditMode && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-8 top-1/2 -translate-y-1/2 h-5 w-5"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDataChange({
-                              ...data,
-                              contractDate: undefined,
-                            });
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
                     </div>
                   </div>
 
+                  {/* 잔금일자 */}
                   <div className="space-y-1 flex-1">
-                    <Label className="text-xs text-muted-foreground">
-                      잔금일자
-                    </Label>
+                    <Label className="text-xs text-muted-foreground">잔금일자</Label>
                     <div className="relative">
-                      <Popover
-                        open={isBalanceDateOpen}
-                        onOpenChange={setIsBalanceDateOpen}
-                      >
+                      <Popover open={isBalanceDateOpen} onOpenChange={setIsBalanceDateOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             disabled={!isEditMode}
-                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${!data.balanceDate ? "text-muted-foreground" : ""
-                              }`}
+                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${!data.balanceDate ? "text-muted-foreground" : ""}`}
                           >
-                            {data.balanceDate ? (
-                              format(new Date(data.balanceDate), "PPP", {
-                                locale: ko,
-                              })
-                            ) : (
-                              <span>잔금일자를 선택하세요</span>
-                            )}
+                            {data.balanceDate ? format(new Date(data.balanceDate), "PPP", { locale: ko }) : <span>잔금일자를 선택하세요</span>}
                             <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent
-                          data-contract-calendar="true"
-                          className="w-auto p-0 !z-[2200]"
-                          align="start"
-                        >
+                        <PopoverContent className="w-auto p-0 !z-[2200]" align="start">
                           <Calendar
                             mode="single"
-                            selected={
-                              data.balanceDate
-                                ? new Date(data.balanceDate)
-                                : undefined
-                            }
+                            selected={data.balanceDate ? new Date(data.balanceDate) : undefined}
                             locale={ko}
-                            i18nLocale="ko-KR"
-                            captionLayout="dropdown"
-                            fromYear={2020}
-                            toYear={2050}
                             onSelect={(date) => {
                               if (date) {
-                                handleDataChange({
-                                  ...data,
-                                  balanceDate: format(date, "yyyy-MM-dd"),
-                                });
+                                handleDataChange({ ...data, balanceDate: format(date, "yyyy-MM-dd") });
                                 setIsBalanceDateOpen(false);
                               }
                             }}
-                            initialFocus
                           />
                         </PopoverContent>
                       </Popover>
-                      {data.balanceDate && isEditMode && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-8 top-1/2 -translate-y-1/2 h-5 w-5"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDataChange({
-                              ...data,
-                              balanceDate: undefined,
-                            });
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
                     </div>
                   </div>
 
+                  {/* 계약 상태 */}
                   <div className="space-y-1 flex-1">
-                    <Label className="text-xs text-muted-foreground">
-                      계약 상태
-                    </Label>
+                    <Label className="text-xs text-muted-foreground">계약 상태</Label>
                     <Select
                       value={data.status || "ongoing"}
                       onValueChange={(value) => {
-                        const newStatus = value as
-                          | "ongoing"
-                          | "rejected"
-                          | "cancelled"
-                          | "completed";
-                        const newTotal = recalculateTotal(
-                          data.financialInfo,
-                          newStatus,
-                        );
-
-                        handleDataChange({
-                          ...data,
-                          status: newStatus,
-                          totalCalculation: newTotal,
-                        });
+                        const newStatus = value as NonNullable<typeof data.status>;
+                        const newTotal = recalculateTotal(data.financialInfo, newStatus);
+                        handleDataChange({ ...data, status: newStatus, totalCalculation: newTotal });
                       }}
                       disabled={!isEditMode}
                     >
-                      <SelectTrigger
-                        className={`h-7 text-xs ${statusConfigMap[
-                          (data.status ||
-                            "ongoing") as keyof typeof statusConfigMap
-                        ]?.className || ""
-                          }`}
-                        disabled={!isEditMode}
-                      >
+                      <SelectTrigger className={`h-7 text-xs ${statusConfigMap[(data.status || "ongoing") as keyof typeof statusConfigMap]?.className || ""}`}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent
-                        data-contract-records-portal="true"
-                        className="!z-[2200]"
-                      >
-                        <SelectItem value="ongoing" className="text-xs">
-                          계약중
-                        </SelectItem>
-                        <SelectItem value="rejected" className="text-xs">
-                          부결
-                        </SelectItem>
-                        <SelectItem value="cancelled" className="text-xs">
-                          해약
-                        </SelectItem>
-                        <SelectItem value="completed" className="text-xs">
-                          계약완료
-                        </SelectItem>
+                      <SelectContent className="!z-[2200]">
+                        <SelectItem value="ongoing" className="text-xs">계약중</SelectItem>
+                        <SelectItem value="rejected" className="text-xs">부결</SelectItem>
+                        <SelectItem value="cancelled" className="text-xs">해약</SelectItem>
+                        <SelectItem value="completed" className="text-xs">계약완료</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -900,33 +200,33 @@ export function SalesContractRecordsModal({
 
             {/* 인적 정보 */}
             <PersonalInfoSection
-              customerInfo={data.customerInfo}
-              salesPerson={data.salesPerson}
-              onCustomerInfoChange={handleCustomerInfoChange}
-              onSalesPersonChange={handleSalesPersonChange}
+              customerInfo={data.customerInfo || defaultContractData.customerInfo}
+              salesPerson={data.salesPerson || defaultContractData.salesPerson}
+              onCustomerInfoChange={(customerInfo) => handleDataChange({ ...data, customerInfo })}
+              onSalesPersonChange={(salesPerson) => handleDataChange({ ...data, salesPerson })}
               readOnly={!isEditMode}
             />
 
             {/* 계약현장 정보 */}
             <ContractSiteSection
-              contractSite={data.contractSite || defaultData.contractSite!}
-              onContractSiteChange={handleContractSiteChange}
+              contractSite={data.contractSite || defaultContractData.contractSite!}
+              onContractSiteChange={(contractSite) => handleDataChange({ ...data, contractSite })}
               readOnly={!isEditMode}
             />
 
             {/* 재무 정보 */}
             <FinancialInfoSection
-              financialInfo={data.financialInfo}
+              financialInfo={data.financialInfo || defaultContractData.financialInfo}
               onFinancialInfoChange={handleFinancialInfoChange}
               readOnly={!isEditMode}
             />
 
             {/* 담당자 분배 */}
             <StaffAllocationSection
-              staffAllocations={data.staffAllocations}
+              staffAllocations={data.staffAllocations || defaultContractData.staffAllocations}
               onStaffAllocationsChange={handleStaffAllocationsChange}
-              totalCalculation={data.totalCalculation}
-              totalRebate={data.financialInfo.totalRebate}
+              totalCalculation={data.totalCalculation || 0}
+              totalRebate={data.financialInfo?.totalRebate ?? 0}
               teamMembers={myTeamMembers || []}
               userRole={profile?.role}
               readOnly={!isEditMode}
@@ -934,8 +234,8 @@ export function SalesContractRecordsModal({
 
             {/* 계약 이미지 */}
             <ContractImageSection
-              initialImages={data.contractImages}
-              onImagesChange={handleContractImagesChange}
+              initialImages={data.contractImages || []}
+              onImagesChange={(contractImages) => handleDataChange({ ...data, contractImages })}
               readOnly={!isEditMode}
             />
           </div>
@@ -947,49 +247,16 @@ export function SalesContractRecordsModal({
           <div className="flex justify-end space-x-2">
             {isEditMode ? (
               <>
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className="h-7 text-xs"
-                  disabled={isLoading}
-                >
-                  취소
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className="h-7 text-xs"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "저장 중..." : "저장"}
-                </Button>
+                <Button onClick={handleCancel} variant="outline" className="h-7 text-xs" disabled={isLoading}>취소</Button>
+                <Button onClick={handleSave} className="h-7 text-xs" disabled={isLoading}>{isLoading ? "저장 중..." : "저장"}</Button>
               </>
             ) : (
               <>
-                <Button
-                  onClick={onClose}
-                  variant="outline"
-                  className="h-7 text-xs"
-                  disabled={isLoading}
-                >
-                  닫기
-                </Button>
+                <Button onClick={onClose} variant="outline" className="h-7 text-xs" disabled={isLoading}>닫기</Button>
                 {data.id && (
                   <>
-                    <Button
-                      onClick={handleEdit}
-                      className="h-7 text-xs"
-                      disabled={isLoading}
-                    >
-                      수정
-                    </Button>
-                    <Button
-                      onClick={handleDelete}
-                      variant="destructive"
-                      className="h-7 text-xs"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "삭제 중..." : "삭제"}
-                    </Button>
+                    <Button onClick={() => setIsEditMode(true)} className="h-7 text-xs" disabled={isLoading}>수정</Button>
+                    <Button onClick={handleDelete} variant="destructive" className="h-7 text-xs" disabled={isLoading}>{isLoading ? "삭제 중..." : "삭제"}</Button>
                   </>
                 )}
               </>

@@ -36,6 +36,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/atoms/Dialog/Dialog";
+import { getPositionRankLabel } from "../../users/utils/rankUtils";
 
 export function SettlementManagement() {
   const queryClient = useQueryClient();
@@ -239,7 +240,7 @@ export function SettlementManagement() {
                   </div>
                   <div>
                     <div className="font-bold text-gray-900">{val}</div>
-                    <div className="text-[10px] text-gray-500 uppercase">{row.positionRank || "Staff"}</div>
+                    <div className="text-[10px] text-gray-500 uppercase">{getPositionRankLabel(row.positionRank)}</div>
                   </div>
                 </div>
               )
@@ -348,7 +349,7 @@ export function SettlementManagement() {
 
       {/* 실적 상세 내역 모달 */}
       <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="max-w-3xl rounded-[32px] border-none shadow-2xl backdrop-blur-xl bg-white/90">
+        <DialogContent className="max-w-5xl w-full rounded-[32px] border-none shadow-2xl backdrop-blur-xl bg-white/90">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-gray-900 flex items-center gap-2">
               <Users className="text-blue-600" /> {detailTarget?.name}님 상세 실적 내역
@@ -357,7 +358,7 @@ export function SettlementManagement() {
           </DialogHeader>
 
           <div className="py-4">
-            <div className="max-h-[500px] overflow-y-auto rounded-2xl border border-gray-100">
+            <div className="max-h-[60vh] overflow-y-auto rounded-2xl border border-gray-100">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
                   <tr>

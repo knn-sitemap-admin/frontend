@@ -47,6 +47,11 @@ export function ContractImageSection({
     }
   }, [initialImagesKey, initialImages]);
 
+  // images 상태가 변경되면 부모에게 알림 (렌더링 이후에 호출되도록 useEffect 사용)
+  useEffect(() => {
+    onImagesChange?.(images);
+  }, [images]);
+
   const handleAddImage = () => {
     fileInputRef.current?.click();
   };
@@ -55,13 +60,23 @@ export function ContractImageSection({
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const files = event.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
+
+    // 최대 5장 제한 체크
+    if (images.length + files.length > 5) {
+      toast({
+        title: "이미지 개수 초과",
+        description: `이미지는 최대 5장까지 저장할 수 있습니다. (현재: ${images.length}장, 추가: ${files.length}장)`,
+        variant: "destructive",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
 
     const newImages: ImageItem[] = [];
 
     // 먼저 임시 이미지 항목 생성 (업로드 중 표시용)
     Array.from(files).forEach((file) => {
-      // 이미지 파일인지 확인
       if (!file.type.startsWith("image/")) {
         toast({
           title: "파일 형식 오류",
@@ -82,53 +97,52 @@ export function ContractImageSection({
       });
     });
 
-    // 임시 이미지 추가 (업로드 중 표시)
-    const tempImages = [...images, ...newImages];
-    setImages(tempImages);
-    onImagesChange?.(tempImages);
+    if (newImages.length === 0) return;
+
+    // 임시 이미지 추가
+    setImages((prev) => [...prev, ...newImages]);
 
     // 파일 입력 초기화
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
 
-    // 각 파일을 업로드하고 URL로 교체
-    for (let i = 0; i < newImages.length; i++) {
-      const item = newImages[i];
-      try {
-        const meta = await uploadOnePhoto(item.file, { domain: "contracts" });
-        if (!meta?.url) {
-          throw new Error("업로드 응답에 URL이 없습니다.");
+    // 모든 파일을 병렬로 업로드
+    try {
+      const uploadPromises = newImages.map(async (item) => {
+        try {
+          const meta = await uploadOnePhoto(item.file, { domain: "contracts" });
+          if (!meta?.url) throw new Error("URL 없음");
+
+          URL.revokeObjectURL(item.preview); // blob URL 정리
+          
+          const updatedItem = {
+            ...item,
+            preview: meta.url,
+            uploading: false,
+          };
+
+          // 성공 시 해당 항목 업데이트
+          setImages((prev) => prev.map((img) => (img.id === item.id ? updatedItem : img)));
+          
+          return updatedItem;
+        } catch (err) {
+          console.error(`이미지 업로드 실패 (${item.file.name}):`, err);
+          
+          // 실패 시 해당 항목 제거
+          setImages((prev) => prev.filter((img) => img.id !== item.id));
+          URL.revokeObjectURL(item.preview);
+          throw err;
         }
+      });
 
-        // 업로드된 URL로 교체
-        URL.revokeObjectURL(item.preview); // blob URL 정리
-        const updatedItem = {
-          ...item,
-          preview: meta.url,
-          uploading: false,
-        };
-
-        // 해당 항목 업데이트
-        const updatedImages = tempImages.map((img) =>
-          img.id === item.id ? updatedItem : img
-        );
-        setImages(updatedImages);
-        onImagesChange?.(updatedImages);
-      } catch (err: any) {
-        console.error("이미지 업로드 실패:", err);
-        toast({
-          title: "이미지 업로드 실패",
-          description: err?.message ?? "이미지 업로드 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
-
-        // 실패한 항목 제거
-        const updatedImages = tempImages.filter((img) => img.id !== item.id);
-        setImages(updatedImages);
-        onImagesChange?.(updatedImages);
-        URL.revokeObjectURL(item.preview); // blob URL 정리
-      }
+      await Promise.allSettled(uploadPromises);
+    } catch (err) {
+      toast({
+        title: "이미지 업로드 오류",
+        description: "일부 이미지 업로드에 실패했습니다.",
+        variant: "destructive",
+      });
     }
   };
 

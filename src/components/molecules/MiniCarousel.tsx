@@ -111,6 +111,12 @@ export default function MiniCarousel({
     return s.length > 0 ? s : undefined;
   };
 
+  const isImage = (url?: string | null) => {
+    if (!url) return true; // 기본적으로 이미지로 시도
+    const ext = url.split("?")[0].split(".").pop()?.toLowerCase();
+    return ["jpg", "jpeg", "png", "webp", "gif", "svg", "bmp"].includes(ext || "");
+  };
+
   return (
     <div
       ref={wrapRef}
@@ -134,6 +140,7 @@ export default function MiniCarousel({
             const displayTitle =
               img.caption?.trim?.() || img.name?.trim?.() || `image-${i + 1}`;
             const showFallback = !safeSrc || !!errorByIndex[i];
+            const isImg = isImage(safeSrc);
 
             return (
               <div
@@ -143,12 +150,36 @@ export default function MiniCarousel({
                   i === idx ? "opacity-100 z-10" : "opacity-0 pointer-events-none",
                   objectFit === "contain" ? "grid place-items-center" : "",
                 ].join(" ")}
-                onClick={() => onImageClick?.(i)}
-                role="button"
+                onClick={() => isImg && onImageClick?.(i)}
+                role={isImg ? "button" : "presentation"}
                 aria-label={displayTitle}
                 title={displayTitle}
               >
-                {objectFit === "cover" ? (
+                {!isImg ? (
+                  /* 📄 문서 파일 전용 UI */
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-slate-500">
+                        <path d="M13 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V9L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M13 2V9H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div className="flex flex-col gap-1 max-w-full px-4">
+                      <span className="text-sm font-medium text-slate-700 truncate block w-full">{img.name || "문서 파일"}</span>
+                      <span className="text-[10px] text-slate-400 uppercase">{safeSrc?.split(".").pop()} 파일</span>
+                    </div>
+                    <a
+                      href={safeSrc}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-2 rounded-full bg-slate-800 px-4 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 transition-colors"
+                    >
+                      다운로드
+                    </a>
+                  </div>
+                ) : objectFit === "cover" ? (
                   showFallback ? (
                     <div className="absolute inset-0 bg-muted" />
                   ) : (
