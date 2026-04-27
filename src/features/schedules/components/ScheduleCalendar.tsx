@@ -19,7 +19,7 @@ import {
   subDays,
 } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check, X, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/atoms/Button/Button";
@@ -248,12 +248,14 @@ export default function ScheduleCalendar() {
     const matchedSchedules = schedules.filter(s => 
       s.title.toLowerCase().includes(q) || 
       (s.location && s.location.toLowerCase().includes(q)) ||
-      (s.category && s.category.toLowerCase().includes(q))
+      (s.category && s.category.toLowerCase().includes(q)) ||
+      (s.customerPhone && s.customerPhone.includes(q))
     ).map(s => ({ ...s, eventType: "schedule" as const }));
 
     const matchedContracts = contracts.filter(c => 
       c.siteName.toLowerCase().includes(q) || 
-      (c.customerName && c.customerName.toLowerCase().includes(q))
+      (c.customerName && c.customerName.toLowerCase().includes(q)) ||
+      (c.customerPhone && c.customerPhone.includes(q))
     ).map(c => ({
       id: `contract-${c.id}`,
       title: `잔금: ${c.siteName}`,
@@ -557,6 +559,18 @@ export default function ScheduleCalendar() {
               </Select>
             </div>
 
+            {profile?.role === "admin" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push("/admin")}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl hover:bg-emerald-50 text-emerald-500 hover:text-emerald-700 transition-all border border-emerald-100 bg-emerald-50/30"
+                title="관리자 메뉴로 이동"
+              >
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="icon"
@@ -620,8 +634,15 @@ export default function ScheduleCalendar() {
                         {result.title}
                       </div>
                       {result.location && (
-                        <div className="text-[10px] font-bold text-gray-400 truncate mt-0.5">
+                        <div className="text-[10px] font-bold text-gray-400 truncate mt-0.5 flex items-center gap-1">
+                          <Home size={10} className="shrink-0" />
                           {result.location}
+                        </div>
+                      )}
+                      {result.customerPhone && (
+                        <div className="text-[10px] font-bold text-emerald-500/70 truncate mt-0.5 flex items-center gap-1">
+                          <Phone size={10} className="shrink-0" />
+                          {result.customerPhone}
                         </div>
                       )}
                     </div>

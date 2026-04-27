@@ -9,6 +9,8 @@ import {
   StatCardsGrid,
   DataTableSection,
   PeriodFilters,
+  YearlyStatusSection,
+  TableScrollWrapper,
 } from "@/features/data-table";
 import { Table } from "@/features/table";
 import { Button } from "@/components/atoms/Button/Button";
@@ -27,7 +29,7 @@ import {
 import { formatCurrency } from "@/components/contract-management/utils/contractUtils";
 import { cn } from "@/lib/cn";
 import { getAvailablePeriods } from "@/features/performances/api/performance";
-import { getSettlements, saveSettlement, updateSettlementStatus, getSettlementDetail } from "../api/settlement";
+import { getSettlements, saveSettlement, updateSettlementStatus, getSettlementDetail, cleanupOldSettlements, getYearlySettlements } from "../api/settlement";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -77,6 +79,12 @@ export function SettlementManagement() {
     enabled: !!detailTarget && detailModalOpen,
   });
 
+  // 연도별 통계 데이터 조회
+  const { data: yearlyData = [] } = useQuery({
+    queryKey: ["settlement-yearly", selectedYear],
+    queryFn: () => getYearlySettlements(parseInt(selectedYear)),
+  });
+
   const yearOptions = useMemo(() => {
     return (periods?.years || [currentYear]).map(y => y.toString());
   }, [periods, currentYear]);
@@ -93,10 +101,26 @@ export function SettlementManagement() {
   }, [settlements, searchTerm]);
 
   const totals = useMemo(() => {
-    if (!Array.isArray(settlements)) return { total: 0, paid: 0, pending: 0 };
+    if (!Array.isArray(settlements)) return { total: 0, paid: 0, pending: 0, calculated: 0, adjustment: 0 };
     const total = settlements.reduce((acc: number, curr: any) => acc + curr.finalAmount, 0);
+    const calculated = settlements.reduce((acc: number, curr: any) => acc + curr.calculatedAmount, 0);
+    const adjustment = settlements.reduce((acc: number, curr: any) => acc + (curr.adjustmentAmount || 0), 0);
     const paid = settlements.filter((s: any) => s.status === "paid").reduce((acc: number, curr: any) => acc + curr.finalAmount, 0);
-    return { total, paid, pending: total - paid };
+    return { total, paid, pending: total - paid, calculated, adjustment };
+  }, [settlements]);
+
+  const rankStats = useMemo(() => {
+    if (!Array.isArray(settlements)) return [];
+    const stats: Record<string, { count: number; total: number }> = {};
+    settlements.forEach((s: any) => {
+      const rank = s.positionRank || "unknown";
+      if (!stats[rank]) stats[rank] = { count: 0, total: 0 };
+      stats[rank].count += 1;
+      stats[rank].total += s.finalAmount;
+    });
+    return Object.entries(stats)
+      .map(([rank, data]) => ({ rank, ...data }))
+      .sort((a, b) => b.total - a.total);
   }, [settlements]);
 
   // 정산 저장 mutation
@@ -104,6 +128,7 @@ export function SettlementManagement() {
     mutationFn: saveSettlement,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settlements"] });
+      queryClient.invalidateQueries({ queryKey: ["settlement-yearly"] });
       toast({ title: "정산 완료", description: "정산 내역이 성공적으로 저장되었습니다." });
       setIsModalOpen(false);
     },
@@ -133,7 +158,8 @@ export function SettlementManagement() {
       updateSettlementStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settlements"] });
-      toast({ title: "지급 취소 완료", description: "정산 상태가 대기 중으로 변경되었으며 가계부 내역이 삭제되었습니다." });
+      queryClient.invalidateQueries({ queryKey: ["settlement-yearly"] });
+      toast({ title: "지급 취소 완료", description: "정산 상태가 대기 중으로 변경되었습니다." });
     },
   });
 
@@ -153,6 +179,27 @@ export function SettlementManagement() {
     }
   };
 
+  // 기존 내역 정리 mutation
+  const cleanupMutation = useMutation({
+    mutationFn: cleanupOldSettlements,
+    onSuccess: (data: any) => {
+      toast({ 
+        title: "데이터 정리 완료", 
+        description: `가계부 내역 ${data.deletedCount}건이 정리되었습니다.` 
+      });
+      queryClient.invalidateQueries({ queryKey: ["settlements"] });
+    },
+    onError: () => {
+      toast({ title: "정리 실패", description: "데이터 정리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  });
+
+  const handleCleanup = () => {
+    if (confirm("기존에 가계부에 중복으로 기록된 모든 정산 내역을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      cleanupMutation.mutate();
+    }
+  };
+
   return (
     <DataTablePageLayout>
       <DataTablePageHeader
@@ -160,7 +207,7 @@ export function SettlementManagement() {
         description="영업자별 월별 실적 정산 및 급여 지급 관리"
         periodLabel={`${selectedYear}년 ${selectedMonth}월 정산 내역`}
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
             <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
               <input
@@ -185,6 +232,15 @@ export function SettlementManagement() {
               onMonthChange={(m) => setSelectedMonth(m)}
               hidePeriodType={true}
             />
+            <Button 
+              variant="outline" 
+              onClick={handleCleanup} 
+              className="rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+              disabled={cleanupMutation.isPending}
+            >
+              <RefreshCw size={14} className={cn("mr-2", cleanupMutation.isPending && "animate-spin")} />
+              과거 내역 정리
+            </Button>
             <Button variant="outline" size="icon" onClick={() => refetch()} className="rounded-xl">
               <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
             </Button>
@@ -198,6 +254,7 @@ export function SettlementManagement() {
           value={formatCurrency(totals.total)}
           icon={<DollarSign className="h-6 w-6" />}
           variant="blue"
+          description={`실적: ${formatCurrency(totals.calculated)} / 조정: ${totals.adjustment >= 0 ? "+" : ""}${formatCurrency(totals.adjustment)}`}
         />
         <StatCard
           label="지급 완료액"
@@ -205,6 +262,7 @@ export function SettlementManagement() {
           valueClassName="text-green-600"
           icon={<CheckCircle2 className="h-6 w-6" />}
           variant="green"
+          description={`${settlements.filter((s: any) => s.status === "paid").length}명 지급 완료`}
         />
         <StatCard
           label="미지급 잔액"
@@ -212,6 +270,7 @@ export function SettlementManagement() {
           valueClassName="text-orange-600"
           icon={<AlertCircle className="h-6 w-6" />}
           variant="orange"
+          description={`${settlements.filter((s: any) => s.status !== "paid").length}명 대기 중`}
         />
         <StatCard
           label="정산 대상 인원"
@@ -221,131 +280,186 @@ export function SettlementManagement() {
         />
       </StatCardsGrid>
 
-      <DataTableSection
-        title="영업자별 정산 목록"
-        description="월별 실적 기반 정산 금액 확인 및 지급 상태 변경"
-      >
-        <Table
-          data={filteredData}
-          className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] shadow-sm overflow-visible"
-          columns={[
-            {
-              key: "name",
-              label: "영업자",
-              width: "15%",
-              render: (val, row) => (
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs uppercase">
-                    {val?.[0] || "U"}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+        <div className="lg:col-span-3">
+          <DataTableSection
+            title="영업자별 정산 목록"
+            description="월별 실적 기반 정산 금액 확인 및 지급 상태 변경"
+          >
+            <TableScrollWrapper>
+              <Table
+                data={filteredData}
+                className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-[24px] shadow-sm overflow-visible"
+                columns={[
+                  {
+                    key: "name",
+                    label: "영업자",
+                    width: "12%",
+                    render: (val, row) => (
+                      <div className="flex items-center gap-3 whitespace-nowrap">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs uppercase">
+                          {val?.[0] || "U"}
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-900">{val}</div>
+                          <div className="text-[10px] text-gray-500 uppercase">{getPositionRankLabel(row.positionRank)}</div>
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    key: "calculatedAmount",
+                    label: "계산 정산금",
+                    width: "13%",
+                    render: (val) => <span className="font-medium whitespace-nowrap">{formatCurrency(val)}</span>
+                  },
+                  {
+                    key: "adjustmentAmount",
+                    label: "조정액",
+                    width: "11%",
+                    render: (val) => (
+                      <span className={cn(
+                        "font-bold whitespace-nowrap",
+                        val > 0 ? "text-blue-600" : val < 0 ? "text-red-600" : "text-gray-400"
+                      )}>
+                        {val > 0 ? `+${formatCurrency(val)}` : val < 0 ? `-${formatCurrency(Math.abs(val))}` : "0"}
+                      </span>
+                    )
+                  },
+                  {
+                    key: "finalAmount",
+                    label: "최종 지급액",
+                    width: "15%",
+                    render: (val) => <span className="font-black text-blue-700 whitespace-nowrap">{formatCurrency(val)}</span>
+                  },
+                  {
+                    key: "status",
+                    label: "상태",
+                    width: "11%",
+                    render: (val) => (
+                      <div className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap",
+                        val === "paid"
+                          ? "bg-green-50 text-green-700 border-green-100"
+                          : "bg-orange-50 text-orange-700 border-orange-100"
+                      )}>
+                        <div className={cn("h-1.5 w-1.5 rounded-full", val === "paid" ? "bg-green-600" : "bg-orange-600")} />
+                        {val === "paid" ? "지급 완료" : "미지급"}
+                      </div>
+                    )
+                  },
+                  {
+                    key: "paidAt",
+                    label: "지급일",
+                    width: "12%",
+                    render: (val) => <span className="text-gray-500 text-xs whitespace-nowrap">{val ? new Date(val).toLocaleDateString() : "-"}</span>
+                  },
+                  {
+                    key: "actions",
+                    label: "관리",
+                    width: "25%",
+                    render: (_, row) => (
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenSettlement(row)}
+                          className={cn(
+                            "h-8 rounded-lg shadow-sm transition-all active:scale-95 group",
+                            row.status === "paid" ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-blue-600 text-white hover:bg-blue-700"
+                          )}
+                        >
+                          {row.status === "paid" ? "내용 수정" : "정산 확정"}
+                          <ArrowRight className="ml-1.5 h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </Button>
+
+                        {/* 상세 보기 버튼 */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 flex items-center gap-1 transition-all"
+                          onClick={() => {
+                            setDetailTarget(row);
+                            setDetailModalOpen(true);
+                          }}
+                          title="실적 상세 보기"
+                        >
+                          <AlertCircle size={14} />
+                          <span className="text-[11px] font-bold">상세</span>
+                        </Button>
+
+                        {/* 지급 취소 버튼 (지급 완료 상태일 때만) */}
+                        {row.status === "paid" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 flex items-center gap-1 transition-all"
+                            onClick={() => handleRevertPayment(row)}
+                            title="지급 취소 (대기전환)"
+                          >
+                            <RefreshCw size={14} />
+                            <span className="text-[11px] font-bold">취소</span>
+                          </Button>
+                        )}
+                      </div>
+                    )
+                  },
+                ]}
+                loading={isLoading}
+                emptyMessage="정산 대상자가 없습니다."
+              />
+            </TableScrollWrapper>
+          </DataTableSection>
+        </div>
+
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white/70 backdrop-blur-md rounded-[32px] p-6 shadow-xl border border-white/60 h-full">
+            <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+              <CreditCard className="text-blue-500" size={20} /> 직급별 정산 통계
+            </h3>
+            <div className="space-y-6">
+              {rankStats.length > 0 ? (
+                rankStats.map((stat, idx) => (
+                  <div key={idx} className="group">
+                    <div className="flex justify-between items-end mb-2">
+                      <div>
+                        <span className="text-sm font-bold text-gray-900">{getPositionRankLabel(stat.rank)}</span>
+                        <span className="text-[10px] text-gray-400 ml-2">{stat.count}명</span>
+                      </div>
+                      <span className="text-sm font-black text-gray-900">{formatCurrency(stat.total)}</span>
+                    </div>
+                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all duration-1000 group-hover:bg-blue-600"
+                        style={{ width: `${(stat.total / (totals.total || 1)) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-bold text-gray-900">{val}</div>
-                    <div className="text-[10px] text-gray-500 uppercase">{getPositionRankLabel(row.positionRank)}</div>
-                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400 text-center">
+                  <AlertCircle size={48} className="mb-2 opacity-20" />
+                  <p className="text-sm">정산 데이터가 없습니다.</p>
                 </div>
-              )
-            },
-            {
-              key: "calculatedAmount",
-              label: "계산 정산금",
-              width: "15%",
-              render: (val) => <span className="font-medium">{formatCurrency(val)}</span>
-            },
-            {
-              key: "adjustmentAmount",
-              label: "조정액",
-              width: "12%",
-              render: (val) => (
-                <span className={cn(
-                  "font-bold",
-                  val > 0 ? "text-blue-600" : val < 0 ? "text-red-600" : "text-gray-400"
-                )}>
-                  {val > 0 ? `+${formatCurrency(val)}` : val < 0 ? `-${formatCurrency(Math.abs(val))}` : "0"}
+              )}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500 font-medium">지급률</span>
+                <span className="font-bold text-blue-600">
+                  {totals.total > 0 ? Math.round((totals.paid / totals.total) * 100) : 0}%
                 </span>
-              )
-            },
-            {
-              key: "finalAmount",
-              label: "최종 지급액",
-              width: "15%",
-              render: (val) => <span className="font-black text-blue-700">{formatCurrency(val)}</span>
-            },
-            {
-              key: "status",
-              label: "상태",
-              width: "12%",
-              render: (val) => (
-                <div className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border",
-                  val === "paid"
-                    ? "bg-green-50 text-green-700 border-green-100"
-                    : "bg-orange-50 text-orange-700 border-orange-100"
-                )}>
-                  <div className={cn("h-1.5 w-1.5 rounded-full", val === "paid" ? "bg-green-600" : "bg-orange-600")} />
-                  {val === "paid" ? "지급 완료" : "미지급"}
-                </div>
-              )
-            },
-            {
-              key: "paidAt",
-              label: "지급일",
-              width: "15%",
-              render: (val) => <span className="text-gray-500 text-xs">{val ? new Date(val).toLocaleDateString() : "-"}</span>
-            },
-            {
-              key: "actions",
-              label: "관리",
-              width: "16%",
-              render: (_, row) => (
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleOpenSettlement(row)}
-                    className={cn(
-                      "h-8 rounded-lg shadow-sm transition-all active:scale-95 group",
-                      row.status === "paid" ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-blue-600 text-white hover:bg-blue-700"
-                    )}
-                  >
-                    {row.status === "paid" ? "내용 수정" : "정산 확정"}
-                    <ArrowRight className="ml-1.5 h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </Button>
-
-                  {/* 상세 보기 버튼 */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 flex items-center gap-1 transition-all"
-                    onClick={() => {
-                      setDetailTarget(row);
-                      setDetailModalOpen(true);
-                    }}
-                    title="실적 상세 보기"
-                  >
-                    <AlertCircle size={14} />
-                    <span className="text-[11px] font-bold">상세</span>
-                  </Button>
-
-                  {/* 지급 취소 버튼 (지급 완료 상태일 때만) */}
-                  {row.status === "paid" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 flex items-center gap-1 transition-all"
-                      onClick={() => handleRevertPayment(row)}
-                      title="지급 취소 (대기전환)"
-                    >
-                      <RefreshCw size={14} />
-                      <span className="text-[11px] font-bold">취소</span>
-                    </Button>
-                  )}
-                </div>
-              )
-            },
-          ]}
-          loading={isLoading}
-          emptyMessage="정산 대상자가 없습니다."
-        />
-      </DataTableSection>
+              </div>
+              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-green-500 rounded-full transition-all duration-1000"
+                  style={{ width: `${totals.total > 0 ? (totals.paid / totals.total) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 실적 상세 내역 모달 */}
       <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
@@ -493,8 +607,7 @@ export function SettlementManagement() {
                 {revertTarget?.name}님의 지급 처리를 취소하시겠습니까?
               </p>
               <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                취소 시 정산 상태가 <span className="text-orange-600 font-bold">미지급(대기)</span>으로 변경되며,<br />
-                가계부에 연동된 <span className="text-red-600 font-bold">지출 내역이 자동으로 삭제</span>됩니다.
+                취소 시 정산 상태가 <span className="text-orange-600 font-bold">미지급(대기)</span>으로 변경됩니다.
               </p>
             </div>
           </div>
@@ -511,6 +624,13 @@ export function SettlementManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <YearlyStatusSection 
+        title="정산 지급 현황"
+        year={parseInt(selectedYear)}
+        data={yearlyData}
+        type="settlement"
+      />
     </DataTablePageLayout>
   );
 }

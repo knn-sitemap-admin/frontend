@@ -169,3 +169,8 @@ export async function updateExpense(
 export async function deleteExpense(id: string): Promise<void> {
   await apiFetch.delete(`/ledgers/${id}`);
 }
+
+export async function getYearlyExpenseStats(year: number) {
+  const response = await apiFetch.get<{ data: any[] }>("/ledgers/yearly", { year });
+  return response.data || [];
+}

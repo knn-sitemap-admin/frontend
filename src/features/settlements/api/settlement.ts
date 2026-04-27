@@ -32,3 +32,13 @@ export const getSettlementDetail = async (accountId: string, year: number, month
   const response = await apiFetch.get<{ data: any[] }>("/settlements/detail", { accountId, year, month });
   return response.data || [];
 };
+
+export const cleanupOldSettlements = async () => {
+  const response = await apiFetch.post<{ data: any }>("/settlements/cleanup", {});
+  return response.data;
+};
+
+export const getYearlySettlements = async (year: number) => {
+  const response = await apiFetch.get<{ data: any[] }>("/settlements/yearly", { year });
+  return response.data || [];
+};

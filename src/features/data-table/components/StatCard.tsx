@@ -29,6 +29,8 @@ const variantStyles: Record<StatCardVariant, { bg: string; icon: string }> = {
 interface StatCardProps {
   label: string;
   value: ReactNode;
+  /** 추가 설명 (작은 글씨) */
+  description?: string;
   /** Lucide 아이콘 등 */
   icon?: ReactNode;
   variant?: StatCardVariant;
@@ -40,6 +42,7 @@ interface StatCardProps {
 export function StatCard({
   label,
   value,
+  description,
   icon,
   variant = "gray",
   valueClassName,
@@ -47,26 +50,29 @@ export function StatCard({
 }: StatCardProps) {
   const styles = variantStyles[variant];
   return (
-    <Card className={cn("border-gray-200", className)}>
-      <CardContent className="p-6">
+    <Card className={cn("border-gray-200 overflow-hidden", className)}>
+      <CardContent className="p-4 md:p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">{label}</p>
+          <div className="space-y-0.5">
+            <p className="text-xs md:text-sm font-medium text-gray-600">{label}</p>
             <div
-              className={cn("text-2xl font-bold text-gray-900", valueClassName)}
+              className={cn("text-xl md:text-2xl font-black text-gray-900", valueClassName)}
             >
               {value}
             </div>
+            {description && (
+              <p className="text-[10px] md:text-xs text-gray-400 font-medium">{description}</p>
+            )}
           </div>
           {icon && (
             <div
               className={cn(
-                "h-12 w-12 rounded-lg flex items-center justify-center",
+                "h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center shrink-0",
                 styles.bg,
                 styles.icon,
               )}
             >
-              {icon}
+              <div className="scale-90 md:scale-100">{icon}</div>
             </div>
           )}
         </div>

@@ -14,3 +14,4 @@ export {
   generateYearOptions,
   getPeriodLabel,
 } from "./utils/periodUtils";
+export { YearlyStatusSection } from "./components/YearlyStatusSection";

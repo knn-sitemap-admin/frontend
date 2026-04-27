@@ -11,6 +11,7 @@ import {
   TableScrollWrapper,
   PeriodFilters,
   getPeriodLabel,
+  YearlyStatusSection,
 } from "@/features/data-table";
 import { Table, Pagination, SearchBar } from "@/features/table";
 import { Button } from "@/components/atoms/Button/Button";
@@ -22,6 +23,7 @@ import {
   createExpense,
   updateExpense,
   deleteExpense,
+  getYearlyExpenseStats,
   type ExpenseItem,
 } from "../api/expense";
 import { ExpenseAddModal, type ExpenseFormData } from "./ExpenseAddModal";
@@ -108,6 +110,19 @@ export function Expense() {
     queryFn: () => getExpenseSummary(filterQuery),
   });
 
+  const yearlyData = useMemo(() => {
+    const stats: Record<number, { month: number; totalAmount: number }> = {};
+    expenseList.forEach((item) => {
+      const parts = item.date?.split(/[-/.]/);
+      if (parts && parts[0] === selectedYear) {
+        const m = parseInt(parts[1], 10);
+        if (!stats[m]) stats[m] = { month: m, totalAmount: 0 };
+        stats[m].totalAmount += item.amount;
+      }
+    });
+    return Object.values(stats);
+  }, [expenseList, selectedYear]);
+
   const filteredByPeriod = useMemo(
     () => filterExpenseByPeriod(expenseList, filterQuery),
     [expenseList, filterQuery]
@@ -127,7 +142,7 @@ export function Expense() {
   const categoryStats = useMemo(() => {
     const stats: Record<string, { count: number; total: number }> = {};
     filteredAndSearchedList.forEach((item) => {
-      const cat = item.itemName.split(":")[0]; // "인건비(영업정산): 이름" -> "인건비(영업정산)"
+      const cat = item.itemName.split(":")[0]; // 품목명에서 카테고리 추출 (예: "식비: 점심" -> "식비")
       if (!stats[cat]) stats[cat] = { count: 0, total: 0 };
       stats[cat].count += 1;
       stats[cat].total += item.amount;
@@ -199,7 +214,7 @@ export function Expense() {
     <DataTablePageLayout>
       <DataTablePageHeader
         title="가계부"
-        description="지출 내역 및 정산 지출 통합 관리"
+        description="지출 내역 및 운영 비용 관리"
         periodLabel={periodLabel}
         actions={
           <PeriodFilters
@@ -348,6 +363,13 @@ export function Expense() {
         onOpenChange={setAddModalOpen}
         onSubmit={handleAddExpense}
         initialData={editingItem}
+      />
+
+      <YearlyStatusSection 
+        title="지출 현황"
+        year={parseInt(selectedYear)}
+        data={yearlyData}
+        type="expense"
       />
     </DataTablePageLayout>
   );
