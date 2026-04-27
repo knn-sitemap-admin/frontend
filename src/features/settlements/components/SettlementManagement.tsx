@@ -18,7 +18,6 @@ import {
   DollarSign,
   CheckCircle2,
   AlertCircle,
-  CreditCard,
   Search,
   ArrowRight,
   MoreHorizontal,
@@ -109,19 +108,7 @@ export function SettlementManagement() {
     return { total, paid, pending: total - paid, calculated, adjustment };
   }, [settlements]);
 
-  const rankStats = useMemo(() => {
-    if (!Array.isArray(settlements)) return [];
-    const stats: Record<string, { count: number; total: number }> = {};
-    settlements.forEach((s: any) => {
-      const rank = s.positionRank || "unknown";
-      if (!stats[rank]) stats[rank] = { count: 0, total: 0 };
-      stats[rank].count += 1;
-      stats[rank].total += s.finalAmount;
-    });
-    return Object.entries(stats)
-      .map(([rank, data]) => ({ rank, ...data }))
-      .sort((a, b) => b.total - a.total);
-  }, [settlements]);
+
 
   // 정산 저장 mutation
   const saveMutation = useMutation({
@@ -280,8 +267,8 @@ export function SettlementManagement() {
         />
       </StatCardsGrid>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-        <div className="lg:col-span-3">
+      <div className="mb-6">
+        <div>
           <DataTableSection
             title="영업자별 정산 목록"
             description="월별 실적 기반 정산 금액 확인 및 지급 상태 변경"
@@ -409,55 +396,6 @@ export function SettlementManagement() {
               />
             </TableScrollWrapper>
           </DataTableSection>
-        </div>
-
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white/70 backdrop-blur-md rounded-[32px] p-6 shadow-xl border border-white/60 h-full">
-            <h3 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
-              <CreditCard className="text-blue-500" size={20} /> 직급별 정산 통계
-            </h3>
-            <div className="space-y-6">
-              {rankStats.length > 0 ? (
-                rankStats.map((stat, idx) => (
-                  <div key={idx} className="group">
-                    <div className="flex justify-between items-end mb-2">
-                      <div>
-                        <span className="text-sm font-bold text-gray-900">{getPositionRankLabel(stat.rank)}</span>
-                        <span className="text-[10px] text-gray-400 ml-2">{stat.count}명</span>
-                      </div>
-                      <span className="text-sm font-black text-gray-900">{formatCurrency(stat.total)}</span>
-                    </div>
-                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 rounded-full transition-all duration-1000 group-hover:bg-blue-600"
-                        style={{ width: `${(stat.total / (totals.total || 1)) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-400 text-center">
-                  <AlertCircle size={48} className="mb-2 opacity-20" />
-                  <p className="text-sm">정산 데이터가 없습니다.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-500 font-medium">지급률</span>
-                <span className="font-bold text-blue-600">
-                  {totals.total > 0 ? Math.round((totals.paid / totals.total) * 100) : 0}%
-                </span>
-              </div>
-              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-green-500 rounded-full transition-all duration-1000"
-                  style={{ width: `${totals.total > 0 ? (totals.paid / totals.total) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
