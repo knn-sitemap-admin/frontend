@@ -228,9 +228,7 @@ export function SettlementManagement() {
               <RefreshCw size={14} className={cn("mr-2", cleanupMutation.isPending && "animate-spin")} />
               과거 내역 정리
             </Button>
-            <Button variant="outline" size="icon" onClick={() => refetch()} className="rounded-xl">
-              <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-            </Button>
+
           </div>
         }
       />
