@@ -19,7 +19,7 @@ import {
   subDays,
 } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check, X, ShieldCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check, X, ShieldCheck, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/atoms/Button/Button";
@@ -249,13 +249,15 @@ export default function ScheduleCalendar() {
       s.title.toLowerCase().includes(q) || 
       (s.location && s.location.toLowerCase().includes(q)) ||
       (s.category && s.category.toLowerCase().includes(q)) ||
-      (s.customerPhone && s.customerPhone.includes(q))
+      (s.customerPhone && s.customerPhone.includes(q)) ||
+      (s.creator?.name && s.creator.name.toLowerCase().includes(q))
     ).map(s => ({ ...s, eventType: "schedule" as const }));
 
     const matchedContracts = contracts.filter(c => 
       c.siteName.toLowerCase().includes(q) || 
       (c.customerName && c.customerName.toLowerCase().includes(q)) ||
-      (c.customerPhone && c.customerPhone.includes(q))
+      (c.customerPhone && c.customerPhone.includes(q)) ||
+      (c.createdByName && c.createdByName.toLowerCase().includes(q))
     ).map(c => ({
       id: `contract-${c.id}`,
       title: `잔금: ${c.siteName}`,
@@ -625,14 +627,26 @@ export default function ScheduleCalendar() {
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
                           {format(new Date(result.startDate), "MM/dd")}
+                          {result.endDate && format(new Date(result.startDate), "yyyy-MM-dd") !== format(new Date(result.endDate), "yyyy-MM-dd") && (
+                            <> ~ {format(new Date(result.endDate), "MM/dd")}</>
+                          )}
                         </span>
                         <span className="text-[9px] font-bold text-gray-300 uppercase">
                           {result.eventType === "contract" ? "잔금일" : result.category}
                         </span>
                       </div>
                       <div className="text-xs font-black text-gray-700 truncate group-hover/res:text-emerald-700">
-                        {result.title}
+                        {result.category === "휴무" && result.creator?.name 
+                          ? `${result.creator.name} 휴무` 
+                          : result.title}
                       </div>
+                      {/* 휴무가 아닐 때만 작성자 별도 표시 (휴무는 위에서 제목에 포함됨) */}
+                      {result.category !== "휴무" && (result.creator?.name || result.originalData?.createdByName) && (
+                        <div className="text-[10px] font-bold text-gray-400 mt-0.5 flex items-center gap-1">
+                          <Users size={10} className="shrink-0" />
+                          <span>{result.creator?.name || result.originalData?.createdByName}</span>
+                        </div>
+                      )}
                       {result.location && (
                         <div className="text-[10px] font-bold text-gray-400 truncate mt-0.5 flex items-center gap-1">
                           <Home size={10} className="shrink-0" />
