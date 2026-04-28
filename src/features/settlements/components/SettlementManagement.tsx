@@ -412,7 +412,7 @@ export function SettlementManagement() {
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-3 font-bold">계약일</th>
+                    <th className="px-4 py-3 font-bold">잔금일</th>
                     <th className="px-4 py-3 font-bold">매물명</th>
                     <th className="px-4 py-3 font-bold text-right">총 매출</th>
                     <th className="px-4 py-3 font-bold text-center">지분</th>
@@ -427,7 +427,7 @@ export function SettlementManagement() {
                   ) : detailData.length > 0 ? (
                     detailData.map((row: any, idx: number) => (
                       <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
-                        <td className="px-4 py-3 text-gray-500 font-mono text-xs">{row.contractDate}</td>
+                        <td className="px-4 py-3 text-gray-500 font-mono text-xs">{row.finalPaymentDate}</td>
                         <td className="px-4 py-3 font-bold text-gray-900">{row.propertyName}</td>
                         <td className="px-4 py-3 text-right text-gray-600">{formatCurrency(row.grandTotal)}</td>
                         <td className="px-4 py-3 text-center">

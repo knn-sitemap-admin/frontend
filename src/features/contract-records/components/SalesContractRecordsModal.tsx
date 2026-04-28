@@ -73,10 +73,10 @@ export function SalesContractRecordsModal({
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} modal={false}>
       <DialogContent
         data-contract-records-modal-root
-        className="!pointer-events-auto w-[98vw] sm:w-full sm:max-w-[1240px] h-[98dvh] sm:h-[90vh] sm:max-h-[900px] p-0 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border-none shadow-2xl"
+        className="w-[98vw] sm:w-full sm:max-w-[1240px] h-[98dvh] sm:h-[90vh] sm:max-h-[900px] p-0 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border-none shadow-2xl"
         onInteractOutside={(e) => {
           const hasRoot = (e.target as HTMLElement).closest('[data-contract-records-modal-root]');
           if (hasRoot) e.preventDefault();
