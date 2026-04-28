@@ -12,7 +12,7 @@ export function GlobalLoadingOverlay() {
 
   if (!isLoading) return null;
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/20 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/20 backdrop-blur-sm">
       <div className="rounded-xl bg-white px-5 py-3 shadow">Loading…</div>
     </div>
   );

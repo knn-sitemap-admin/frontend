@@ -50,12 +50,20 @@ const DEV_FAKE_MODE = process.env.NEXT_PUBLIC_DEV_FAKE_MODE === "true";
    Axios 인스턴스 (배포/로컬 백엔드로 직접 요청)
    ──────────────────────────────────────────────────────────── */
 const getApiBase = () => {
+  // 1. SSR (서버사이드 렌더링) 환경
   if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_BASE || "";
-  const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const isActuallyLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  if (isMobile || !isActuallyLocal) {
-    return "https://backend-prod-production-a562.up.railway.app";
+
+  const hostname = window.location.hostname;
+  const isActuallyLocal = hostname === "localhost" || hostname === "127.0.0.1";
+
+  // 2. 상용/배포 환경 (Railway 등)
+  // [보안/인증] 아이폰(Safari) 등 모바일에서도 동일하게 환경변수에 정의된 서버로 접속해야 함.
+  if (!isActuallyLocal) {
+    return process.env.NEXT_PUBLIC_API_BASE || "https://backend-test-production-2188.up.railway.app";
   }
+
+  // 3. 로컬 개발 환경
+  // 모바일 기기로 로컬 백엔드에 접속하는 경우(같은 WiFi)를 위해 NEXT_PUBLIC_LOCAL_BACKEND_URL 우선 사용
   return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
 };
 const API_BASE = getApiBase();
@@ -94,6 +102,14 @@ if (!apiInstance) {
     },
     (err) => Promise.reject(err)
   );
+
+  // ✅ [인증 안정화] 즉시 토큰 주입 (인터셉터 대기 시간 최소화)
+  if (typeof window !== "undefined") {
+    const token = window.localStorage.getItem("notemap_token");
+    if (token && token !== "undefined" && token !== "null") {
+      apiInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+  }
 
   G[API_INSTANCE_KEY] = apiInstance;
 }
@@ -326,7 +342,11 @@ api.interceptors.response.use(
       } else {
         // ✅ 재시도 후에도 401/419인 경우: 세션 만료로 판단 (단, 로그인 페이지 자체는 제외)
         if (typeof window !== "undefined" && !config.url?.includes("/signin")) {
-          console.warn("[API] Persistent 401 detected. Redirecting to /login...");
+          console.error("[API Auth Error] Persistent 401/419 error. Possible token/cookie issue.", {
+            url: config.url,
+            token: localStorage.getItem("notemap_token") ? "Present" : "Missing",
+            status: response?.status
+          });
           window.location.href = "/login";
         }
       }
