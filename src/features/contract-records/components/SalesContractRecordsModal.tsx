@@ -40,6 +40,7 @@ import {
 import { ChevronDownIcon, X } from "lucide-react";
 import { useSalesContractModal, defaultContractData } from "../hooks/useSalesContractModal";
 import type { SalesContractViewModalProps } from "../types/contract-records";
+import { cn } from "@/lib/utils";
 
 export function SalesContractRecordsModal({
   isOpen,
@@ -75,7 +76,11 @@ export function SalesContractRecordsModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         data-contract-records-modal-root
-        className="w-[98vw] sm:w-full sm:max-w-[1240px] h-[98dvh] sm:h-[90vh] sm:max-h-[900px] p-0 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border-none shadow-2xl"
+        className="!pointer-events-auto w-[98vw] sm:w-full sm:max-w-[1240px] h-[98dvh] sm:h-[90vh] sm:max-h-[900px] p-0 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border-none shadow-2xl"
+        onInteractOutside={(e) => {
+          const hasRoot = (e.target as HTMLElement).closest('[data-contract-records-modal-root]');
+          if (hasRoot) e.preventDefault();
+        }}
       >
         {/* 고정 헤더 */}
         <DialogHeader className="pb-1 flex-shrink-0 p-4 border-b">
@@ -122,7 +127,7 @@ export function SalesContractRecordsModal({
                             <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 !z-[2200]" align="start">
+                        <PopoverContent className="w-auto p-0 !z-[100005]" align="start">
                           <Calendar
                             mode="single"
                             selected={data.contractDate ? new Date(data.contractDate) : undefined}
@@ -154,7 +159,7 @@ export function SalesContractRecordsModal({
                             <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 !z-[2200]" align="start">
+                        <PopoverContent className="w-auto p-0 !z-[100005]" align="start">
                           <Calendar
                             mode="single"
                             selected={data.balanceDate ? new Date(data.balanceDate) : undefined}
@@ -186,7 +191,7 @@ export function SalesContractRecordsModal({
                       <SelectTrigger className={`h-7 text-xs ${statusConfigMap[(data.status || "ongoing") as keyof typeof statusConfigMap]?.className || ""}`}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="!z-[2200]">
+                      <SelectContent className="!z-[100005]">
                         <SelectItem value="ongoing" className="text-xs">계약중</SelectItem>
                         <SelectItem value="rejected" className="text-xs">부결</SelectItem>
                         <SelectItem value="cancelled" className="text-xs">해약</SelectItem>
@@ -245,21 +250,35 @@ export function SalesContractRecordsModal({
         <div className="flex-shrink-0 border-t p-4">
           <Separator className="mb-3" />
           <div className="flex justify-end space-x-2">
-            {isEditMode ? (
-              <>
-                <Button onClick={handleCancel} variant="outline" className="h-7 text-xs" disabled={isLoading}>취소</Button>
-                <Button onClick={handleSave} className="h-7 text-xs" disabled={isLoading}>{isLoading ? "저장 중..." : "저장"}</Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={onClose} variant="outline" className="h-7 text-xs" disabled={isLoading}>닫기</Button>
-                {data.id && (
-                  <>
-                    <Button onClick={() => setIsEditMode(true)} className="h-7 text-xs" disabled={isLoading}>수정</Button>
-                    <Button onClick={handleDelete} variant="destructive" className="h-7 text-xs" disabled={isLoading}>{isLoading ? "삭제 중..." : "삭제"}</Button>
-                  </>
-                )}
-              </>
+            <Button
+              onClick={isEditMode ? handleCancel : onClose}
+              variant="outline"
+              className="h-7 text-xs"
+              disabled={isLoading}
+            >
+              {isEditMode ? "취소" : "닫기"}
+            </Button>
+
+            {(isEditMode || data.id) && (
+              <Button
+                onClick={isEditMode ? handleSave : () => setIsEditMode(true)}
+                className="h-7 text-xs"
+                disabled={isLoading}
+              >
+                {isEditMode ? (isLoading ? "저장 중..." : "저장") : "수정"}
+              </Button>
+            )}
+
+            {data.id && (
+              <Button
+                onClick={handleDelete}
+                variant="destructive"
+                className={cn("h-7 text-xs", isEditMode ? "hidden" : "flex")}
+                disabled={isLoading}
+                tabIndex={isEditMode ? -1 : 0}
+              >
+                {isLoading ? "삭제 중..." : "삭제"}
+              </Button>
             )}
           </div>
         </div>

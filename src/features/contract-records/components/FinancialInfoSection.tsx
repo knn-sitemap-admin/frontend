@@ -125,7 +125,7 @@ export function FinancialInfoSection({
               </SelectTrigger>
               <SelectContent
                 data-contract-records-portal="true"
-                className="!z-[2200]"
+                className="!z-[100005]"
               >
                 <SelectItem value="vat-included" className="text-xs">
                   부가세
@@ -204,7 +204,7 @@ export function FinancialInfoSection({
               </SelectTrigger>
               <SelectContent
                 data-contract-records-portal="true"
-                className="!z-[2200]"
+                className="!z-[100005]"
               >
                 <SelectItem value="taxable" className="text-xs">
                   과세

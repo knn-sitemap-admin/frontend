@@ -210,6 +210,32 @@ export function transformSalesContractToUpdateRequest(
 export function transformContractResponseToSalesContract(
   contract: ContractResponse,
 ): SalesContractData {
+  const brokerageFee = Number(contract.brokerageFee) || 0;
+  const vatAmount = contract.vat ? Math.round(brokerageFee * 0.1) : 0;
+  const totalBrokerageFee = brokerageFee + vatAmount;
+
+  // 리베이트 금액 계산 (units -> 원)
+  const rebateAmount = (Number(contract.rebate) || 0) * 1000000;
+  const totalRebate = rebateAmount;
+
+  const status =
+    contract.status === "done"
+      ? ("completed" as const)
+      : contract.status === "canceled"
+        ? ("cancelled" as const)
+        : contract.status === "rejected"
+          ? ("rejected" as const)
+          : ("ongoing" as const);
+
+  // 총 금액 계산 (프론트엔드 계산 로직)
+  const isInvalidStatus = status === "rejected" || status === "cancelled";
+  const supportAmount = Number(contract.supportAmount) || 0;
+  const supportCashAmount = Number(contract.supportCashAmount) || 0;
+  const rebateMinusSupport = totalRebate - supportAmount;
+  const multiplier = contract.isTaxed ? 0.967 : 1;
+  const rawTotalCalculation = totalBrokerageFee + rebateMinusSupport * multiplier - supportCashAmount;
+  const totalCalculation = isInvalidStatus ? 0 : rawTotalCalculation;
+
   // 회사 할당 추가 (companyPercent를 percentage로 변환)
   const companyAllocation = {
     id: "company",
@@ -218,8 +244,8 @@ export function transformContractResponseToSalesContract(
     type: "company" as const,
     percentage: contract.companyPercent || 0,
     isDirectInput: false,
-    rebateAllowance: 0,
-    finalAllowance: 0,
+    rebateAllowance: totalCalculation,
+    finalAllowance: (totalCalculation * (contract.companyPercent || 0)) / 100,
   };
 
   // 직원 할당 변환 (백엔드에서 assignees 배열로 제공)
@@ -231,8 +257,8 @@ export function transformContractResponseToSalesContract(
       type: "employee" as const,
       percentage: Number(a.sharePercent) || 0,
       isDirectInput: false,
-      rebateAllowance: 0,
-      finalAllowance: 0,
+      rebateAllowance: totalCalculation,
+      finalAllowance: (totalCalculation * (Number(a.sharePercent) || 0)) / 100,
     })) || [];
 
   const staffAllocations = [companyAllocation, ...employeeAllocations];
@@ -279,35 +305,7 @@ export function transformContractResponseToSalesContract(
       })
       .filter((img): img is NonNullable<typeof img> => img !== null) || [];
 
-  // 부가세 금액 계산
-  const brokerageFee = Number(contract.brokerageFee) || 0;
-  const vatAmount = contract.vat ? Math.round(brokerageFee * 0.1) : 0;
-  const totalBrokerageFee = brokerageFee + vatAmount;
 
-  // 리베이트 금액 계산 (units -> 원)
-  const rebateAmount = (Number(contract.rebate) || 0) * 1000000;
-  const totalRebate = rebateAmount;
-
-  const status =
-    contract.status === "done"
-      ? ("completed" as const)
-      : contract.status === "canceled"
-        ? ("cancelled" as const)
-        : contract.status === "rejected"
-          ? ("rejected" as const)
-          : ("ongoing" as const);
-
-  // 총 금액 계산 (프론트엔드 계산 로직)
-  // 부결 또는 해약일 경우 총금액은 0원 (기록은 유지)
-  const isInvalidStatus = status === "rejected" || status === "cancelled";
-
-  const supportAmount = Number(contract.supportAmount) || 0;
-  const supportCashAmount = Number(contract.supportCashAmount) || 0;
-  const rebateMinusSupport = totalRebate - supportAmount;
-  const multiplier = contract.isTaxed ? 0.967 : 1;
-  const rawTotalCalculation =
-    totalBrokerageFee + rebateMinusSupport * multiplier - supportCashAmount;
-  const totalCalculation = isInvalidStatus ? 0 : rawTotalCalculation;
 
   return {
     id: String(contract.id),

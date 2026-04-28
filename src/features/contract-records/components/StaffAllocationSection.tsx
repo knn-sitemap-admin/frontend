@@ -300,7 +300,7 @@ export function StaffAllocationSection({
                       </SelectTrigger>
                       <SelectContent
                         data-contract-records-portal="true"
-                        className="!z-[2200]"
+                        className="!z-[100005]"
                       >
                         {getFilteredEmployees(staff.id).map((employee) => (
                           <SelectItem
@@ -362,7 +362,7 @@ export function StaffAllocationSection({
                           </SelectTrigger>
                           <SelectContent
                             data-contract-records-portal="true"
-                            className="!z-[2200]"
+                            className="!z-[100005]"
                           >
                             {getAvailablePercentages(staff.id).map(
                               (percentage) => (
