@@ -120,6 +120,7 @@ export default function BirthdayPicker({
             className="min-w-[320px]"
             mode="single"
             selected={selectedDate}
+            defaultMonth={selectedDate}
             onSelect={(d) => {
               if (!d) return;
               const next = toYMD(d); // 로컬 기준 YYYY-MM-DD

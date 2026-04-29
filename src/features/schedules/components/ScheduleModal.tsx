@@ -613,6 +613,7 @@ export function ScheduleModal({
                               mode="single"
                               locale={ko}
                               selected={startDate ? parse(startDate, "yyyy-MM-dd", new Date()) : undefined}
+                              defaultMonth={startDate ? parse(startDate, "yyyy-MM-dd", new Date()) : undefined}
                               onSelect={(date) => date && handleStartDateChange(format(date, "yyyy-MM-dd"))}
                             />
                           </PopoverContent>
@@ -662,6 +663,7 @@ export function ScheduleModal({
                               mode="single"
                               locale={ko}
                               selected={endDate ? parse(endDate, "yyyy-MM-dd", new Date()) : undefined}
+                              defaultMonth={endDate ? parse(endDate, "yyyy-MM-dd", new Date()) : undefined}
                               disabled={{ before: parse(startDate, "yyyy-MM-dd", new Date()) }}
                               onSelect={(date) => {
                                 if (date) {

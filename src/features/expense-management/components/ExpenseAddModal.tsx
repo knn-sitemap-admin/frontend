@@ -154,6 +154,7 @@ export function ExpenseAddModal({
                       <Calendar
                         mode="single"
                         selected={selectedDate}
+                        defaultMonth={selectedDate}
                         locale={ko}
                         i18nLocale="ko-KR"
                         captionLayout="dropdown"

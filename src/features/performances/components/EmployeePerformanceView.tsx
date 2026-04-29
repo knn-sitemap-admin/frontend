@@ -68,6 +68,11 @@ export function EmployeePerformanceView() {
     queryFn: getEmployees,
   });
 
+  // 영업자(staff)만 필터링 (관리자/매니저 제외)
+  const salesEmployees = useMemo(() => {
+    return employees.filter((emp: any) => emp.role === "staff");
+  }, [employees]);
+
   // 선택된 직원의 실적 조회
   const { data: performance, isLoading: isLoadingPerformance } = useQuery({
     queryKey: ["employee-performance", selectedEmployeeId, selectedYear],
@@ -76,8 +81,8 @@ export function EmployeePerformanceView() {
   });
 
   const selectedEmployee = useMemo(() => 
-    employees.find((e: any) => e.id === selectedEmployeeId),
-    [employees, selectedEmployeeId]
+    salesEmployees.find((e: any) => e.id === selectedEmployeeId),
+    [salesEmployees, selectedEmployeeId]
   );
 
   // 차트 데이터 변환
@@ -113,7 +118,7 @@ export function EmployeePerformanceView() {
               <div key={i} className="h-10 w-24 bg-muted animate-pulse rounded-full" />
             ))
           ) : (
-            employees.map((emp: any) => (
+            salesEmployees.map((emp: any) => (
               <Button
                 key={emp.id}
                 variant={selectedEmployeeId === emp.id ? "default" : "outline"}

@@ -230,6 +230,19 @@ export function useSalesContractModal(
     if (!data.contractSite?.siteName.trim()) return toast({ title: "입력 오류", description: "현장명을 입력해주세요.", variant: "destructive" });
     if (!data.contractDate) return toast({ title: "입력 오류", description: "계약일을 선택해주세요.", variant: "destructive" });
 
+    // 날짜 논리 검증 추가
+    if (data.balanceDate && data.contractDate) {
+      const cDate = new Date(data.contractDate);
+      const bDate = new Date(data.balanceDate);
+      if (bDate < cDate) {
+        return toast({ 
+          title: "날짜 오류", 
+          description: "잔금일자는 계약일자보다 과거일 수 없습니다.", 
+          variant: "destructive" 
+        });
+      }
+    }
+
     setIsLoading(true);
     try {
       if (data.id) {

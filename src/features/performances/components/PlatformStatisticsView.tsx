@@ -2,37 +2,38 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  getPlatformStatistics, 
-  getEmployees 
+import {
+  getPlatformStatistics,
+  getEmployees
 } from "../api/performance";
-import type { 
-  PlatformStatisticsResponse, 
-  PlatformStatItem 
+import type {
+  PlatformStatisticsResponse,
+  PlatformStatItem
 } from "../api/types";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
 } from "recharts";
-import { 
-  StatCard, 
-  StatCardsGrid, 
-  DataTableSection 
+import {
+  StatCard,
+  StatCardsGrid,
+  DataTableSection
 } from "@/features/data-table";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/atoms/Select/Select";
-import { Users, Target, CheckCircle2, XCircle, Ban } from "lucide-react";
+import { getPositionRankLabel } from "../../users/utils/rankUtils";
+import { CheckCircle2, Target, Users, XCircle } from "lucide-react";
 
 interface PlatformStatisticsViewProps {
   filterQuery: any;
@@ -46,6 +47,11 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
     queryKey: ["employees-list"],
     queryFn: getEmployees,
   });
+
+  // 영업자(staff)만 필터링 (관리자/매니저 제외)
+  const salesEmployees = useMemo(() => {
+    return employees.filter(emp => emp.role === "staff");
+  }, [employees]);
 
   // 플랫폼 통계 조회 (필터 포함)
   const statsQuery = useMemo(() => ({
@@ -75,8 +81,8 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
     }), { total: 0, contracted: 0, canceled: 0, rejected: 0 });
   }, [stats]);
 
-  const conversionRate = summary.total > 0 
-    ? ((summary.contracted / summary.total) * 100).toFixed(1) 
+  const conversionRate = summary.total > 0
+    ? ((summary.contracted / summary.total) * 100).toFixed(1)
     : "0";
 
   if (isLoading) {
@@ -95,9 +101,9 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
             </SelectTrigger>
             <SelectContent className="rounded-2xl border-gray-100 shadow-2xl">
               <SelectItem value="all" className="font-bold rounded-xl">전체 직원</SelectItem>
-              {employees.map((emp) => (
+              {salesEmployees.map((emp) => (
                 <SelectItem key={emp.id} value={emp.id} className="font-bold rounded-xl">
-                  {emp.name} {emp.positionRank ? `(${emp.positionRank})` : ""}
+                  {emp.name} {emp.positionRank ? `(${getPositionRankLabel(emp.positionRank)})` : ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -138,19 +144,19 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-              <XAxis 
-                dataKey="platform" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#9ca3af', fontWeight: 600, fontSize: 12 }} 
+              <XAxis
+                dataKey="platform"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#9ca3af', fontWeight: 600, fontSize: 12 }}
                 dy={10}
               />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#9ca3af', fontWeight: 600, fontSize: 12 }} 
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#9ca3af', fontWeight: 600, fontSize: 12 }}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                 cursor={{ fill: '#f9fafb' }}
               />

@@ -16,7 +16,8 @@ import {
   LayoutGrid,
   BarChart3,
   Calendar,
-  Clock
+  Clock,
+  CreditCard
 } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -119,47 +120,65 @@ export function AdminMainPage() {
   ], [profile]);
 
   return (
-    <div className="mx-auto max-w-7xl p-6 space-y-8 bg-gray-50">
-      <main className="mt-6 p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {quickActions.map((action, index) => {
-            const Icon = action.icon;
-            return (
-              <Link key={index} href={action.href} className="group">
-                <Card className="h-full bg-white border-gray-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 rounded-[32px] overflow-hidden group-active:scale-[0.98]">
-                  <CardContent className="p-8 flex flex-col h-full">
-                    <div className={cn(
-                      "w-16 h-16 rounded-3xl bg-gradient-to-br flex items-center justify-center text-white mb-3 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg",
-                      action.gradient,
-                      action.shadow
-                    )}>
-                      <Icon size={28} />
-                    </div>
+    <div className="fixed inset-0 bg-gray-50/50 flex flex-col overflow-hidden p-3 sm:p-6">
+      <div className="mx-auto w-full max-w-5xl h-full flex flex-col">
+        {/* 초슬림 헤더 */}
+        <header className="mb-3 sm:mb-6 px-1 shrink-0">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0">
+              <div className="flex items-center gap-1.5 text-blue-600 font-black text-[9px] uppercase tracking-widest">
+                <ShieldCheck size={10} />
+                <span>Admin Console</span>
+              </div>
+              <h1 className="text-lg sm:text-2xl font-black text-gray-900 tracking-tight leading-none">
+                시스템 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">관리자 설정</span>
+              </h1>
+            </div>
+            <div className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-lg shadow-sm border border-gray-100">
+              <Clock size={10} className="text-blue-500" />
+              <span className="text-[10px] sm:text-xs font-black text-gray-700">{currentTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          </div>
+        </header>
 
-                    <div className="flex-1">
-                      <h3 className="text-lg font-black text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                        {action.title}
-                      </h3>
-                      <p className="text-sm text-gray-400 font-medium leading-relaxed mb-2">
-                        {action.description}
-                      </p>
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
-                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest group-hover:text-blue-400 transition-colors">Go to settings</span>
-                      <div className="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                        <ArrowRight size={16} />
+        {/* 3열 그리드 - 카드 비율 고정 및 과도한 확장 방지 */}
+        <main className="flex-1 flex items-center justify-center min-h-0">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full max-w-md sm:max-w-none">
+            {quickActions.map((action, index) => {
+              const Icon = action.icon;
+              return (
+                <Link key={index} href={action.href} className="group block aspect-[4/5] sm:aspect-auto">
+                  <Card className="h-full bg-white border-gray-50 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 rounded-xl sm:rounded-[24px] overflow-hidden group-active:scale-[0.95] flex flex-col">
+                    <CardContent className="p-1.5 sm:p-5 flex flex-col items-center sm:items-start justify-center h-full text-center sm:text-left">
+                      <div className={cn(
+                        "w-7 h-7 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl bg-gradient-to-br flex items-center justify-center text-white mb-1 sm:mb-3 transition-all duration-500 group-hover:scale-110 shadow-sm shrink-0",
+                        action.gradient,
+                        action.shadow
+                      )}>
+                        <Icon className="w-3.5 h-3.5 sm:w-6 sm:h-6" />
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      </main>
+
+                      <div className="w-full overflow-hidden">
+                        <h3 className="text-[9px] xs:text-[10px] sm:text-sm font-black text-gray-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
+                          {action.title.split('(')[0]}
+                        </h3>
+                        <p className="hidden md:block text-[11px] text-gray-400 font-medium leading-tight mt-1 line-clamp-1 opacity-70">
+                          {action.description}
+                        </p>
+                      </div>
+
+                      <div className="hidden sm:flex items-center gap-1 mt-2 text-[9px] font-black text-gray-300 uppercase tracking-tighter group-hover:text-blue-400 transition-colors">
+                        <span>Enter</span>
+                        <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
-
-import { CreditCard } from "lucide-react";

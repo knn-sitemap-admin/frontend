@@ -131,7 +131,9 @@ export function SalesContractRecordsModal({
                           <Calendar
                             mode="single"
                             selected={data.contractDate ? new Date(data.contractDate) : undefined}
+                            defaultMonth={data.contractDate ? new Date(data.contractDate) : undefined}
                             locale={ko}
+                            disabled={data.balanceDate ? { after: new Date(data.balanceDate) } : undefined}
                             onSelect={(date) => {
                               if (date) {
                                 handleDataChange({ ...data, contractDate: format(date, "yyyy-MM-dd") });
@@ -153,9 +155,18 @@ export function SalesContractRecordsModal({
                           <Button
                             variant="outline"
                             disabled={!isEditMode}
-                            className={`flex w-full items-center justify-between text-left font-normal h-7 text-xs ${!data.balanceDate ? "text-muted-foreground" : ""}`}
+                            className={cn(
+                              "flex w-full items-center justify-between text-left font-normal h-7 text-xs",
+                              !data.balanceDate && "text-muted-foreground",
+                              data.balanceDate && data.contractDate && new Date(data.balanceDate) < new Date(data.contractDate) && "border-red-500 bg-red-50 hover:bg-red-50 text-red-600"
+                            )}
                           >
-                            {data.balanceDate ? format(new Date(data.balanceDate), "PPP", { locale: ko }) : <span>잔금일자를 선택하세요</span>}
+                            <div className="flex items-center">
+                              {data.balanceDate && data.contractDate && new Date(data.balanceDate) < new Date(data.contractDate) && (
+                                <X className="w-3 h-3 mr-1 text-red-500" />
+                              )}
+                              {data.balanceDate ? format(new Date(data.balanceDate), "PPP", { locale: ko }) : <span>잔금일자를 선택하세요</span>}
+                            </div>
                             <ChevronDownIcon className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </PopoverTrigger>
@@ -163,7 +174,9 @@ export function SalesContractRecordsModal({
                           <Calendar
                             mode="single"
                             selected={data.balanceDate ? new Date(data.balanceDate) : undefined}
+                            defaultMonth={data.balanceDate ? new Date(data.balanceDate) : undefined}
                             locale={ko}
+                            disabled={data.contractDate ? { before: new Date(data.contractDate) } : undefined}
                             onSelect={(date) => {
                               if (date) {
                                 handleDataChange({ ...data, balanceDate: format(date, "yyyy-MM-dd") });
