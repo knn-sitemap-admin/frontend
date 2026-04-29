@@ -165,10 +165,13 @@ export default function MiniCarousel({
               <div
                 key={i}
                 className={[
-                  "absolute inset-0 transition-opacity duration-300 ease-in-out",
+                  "absolute inset-0 transition-opacity duration-300 ease-in-out transform-gpu",
                   i === idx ? "opacity-100 z-10" : "opacity-0 pointer-events-none",
                   objectFit === "contain" ? "grid place-items-center" : "",
                 ].join(" ")}
+                style={{
+                  willChange: i === idx ? 'opacity' : 'auto'
+                }}
                 onClick={() => isImg && onImageClick?.(i)}
                 role={isImg ? "button" : "presentation"}
                 aria-label={displayTitle}
@@ -216,7 +219,7 @@ export default function MiniCarousel({
                   <img
                     src={safeSrc}
                     alt={displayTitle}
-                    className="max-w-full max-h-full w-auto h-auto object-contain object-center no-save"
+                    className="max-w-full max-h-full w-auto h-auto object-contain object-center no-save transform-gpu"
                     loading="lazy"
                     decoding="async"
                     draggable={false}

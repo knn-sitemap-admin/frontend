@@ -280,11 +280,23 @@ export default function LightboxModal({
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden touch-none">
           <div 
             className={`flex h-full w-full ${scale === 1 && !isSwiping ? 'transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''}`}
-            style={{ transform: scale === 1 ? `translateX(calc(-${index * 100}% + ${swipeOffset}px))` : 'none' }}
+            style={{ 
+              transform: scale === 1 ? `translateX(calc(-${index * 100}% + ${swipeOffset}px))` : 'none',
+              willChange: isSwiping ? 'transform' : 'auto',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden'
+            }}
           >
             {images.map((img, i) => {
+              // 최적화: 현재 인덱스 기준 앞뒤 1개씩만 렌더링 (메모리 및 성능 최적화)
+              const isVisible = Math.abs(i - index) <= 1;
+              if (!isVisible) {
+                return <div key={i} className="flex-shrink-0 w-full h-full" />;
+              }
+
               const src = img.dataUrl ?? img.url;
               const isI = isImage(src);
+              const isCurrent = i === index;
 
               return (
                 <div 
@@ -297,10 +309,11 @@ export default function LightboxModal({
                   style={{ cursor: isI && scale > 1 ? 'grab' : 'default' }}
                 >
                   <div 
-                    className="relative transition-transform duration-300 ease-out"
+                    className="relative transition-transform duration-300 ease-out transform-gpu"
                     style={{ 
-                      transform: i === index && isI ? `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)` : 'none',
-                      zIndex: i === index ? 10 : 0
+                      transform: isCurrent && isI ? `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)` : 'none',
+                      zIndex: isCurrent ? 10 : 0,
+                      willChange: isCurrent && scale > 1 ? 'transform' : 'auto'
                     }}
                   >
                     {!isI ? (
@@ -333,8 +346,14 @@ export default function LightboxModal({
                         <img
                           src={src}
                           alt={`Image ${i + 1}`}
-                          className={`block max-h-[75vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 ${i === index ? 'opacity-100' : 'opacity-40 blur-sm scale-95'}`}
+                          className={`block max-h-[75vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 transform-gpu ${
+                            isCurrent 
+                              ? 'opacity-100 scale-100' 
+                              : `opacity-40 scale-95 ${!isSwiping ? 'blur-sm' : ''}`
+                          }`}
                           draggable={false}
+                          loading="lazy"
+                          decoding="async"
                         />
                         {i === index && scale === 1 && (img.caption || img.name) && (
                           <div className="absolute -bottom-12 left-0 right-0 text-center animate-in slide-in-from-bottom-2 duration-500">
