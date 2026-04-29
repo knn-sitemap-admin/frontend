@@ -268,7 +268,7 @@ export default function ScheduleCalendar() {
     }));
 
     return [...matchedSchedules, ...matchedContracts].sort((a, b) => 
-      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
     ).slice(0, 10); // 최대 10개만 표시
   }, [searchQuery, schedules, contracts]);
 
