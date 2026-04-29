@@ -170,7 +170,7 @@ export function ContractList({
     return {
       years: yearOptions,
       months: monthOptions,
-      statuses: ["all", "ongoing", "completed", "cancelled", "rejected"],
+      statuses: ["all", "ongoing", "done", "canceled", "rejected"],
     };
   }, [yearOptions, monthOptions]);
 
@@ -214,8 +214,8 @@ export function ContractList({
   const statusMap: Record<string, string> = {
     rejected: "부결",
     ongoing: "계약중",
-    completed: "계약완료",
-    cancelled: "해약",
+    done: "계약완료",
+    canceled: "해약",
   };
   return (
     <>

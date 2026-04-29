@@ -631,9 +631,27 @@ export default function ScheduleCalendar() {
                             <> ~ {format(new Date(result.endDate), "MM/dd")}</>
                           )}
                         </span>
-                        <span className="text-[9px] font-bold text-gray-300 uppercase">
-                          {result.eventType === "contract" ? "잔금일" : result.category}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn(
+                            "text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md tracking-tighter",
+                            result.eventType === "contract" ? "bg-zinc-900 text-white" : "text-gray-300 bg-gray-50"
+                          )}>
+                            {result.eventType === "contract" ? "잔금일" : result.category}
+                          </span>
+                          {result.eventType === "contract" && result.originalData?.status && (
+                            <span className={cn(
+                              "text-[9px] font-bold px-1.5 py-0.5 rounded-md",
+                              result.originalData.status === 'rejected' ? "bg-red-50 text-red-500 border border-red-100" :
+                              result.originalData.status === 'canceled' ? "bg-gray-100 text-gray-500 border border-gray-200" :
+                              result.originalData.status === 'done' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                              "bg-blue-50 text-blue-600 border border-blue-100"
+                            )}>
+                              {result.originalData.status === 'rejected' ? '부결' :
+                               result.originalData.status === 'canceled' ? '해약' :
+                               result.originalData.status === 'done' ? '완료' : '계약중'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="text-xs font-black text-gray-700 truncate group-hover/res:text-emerald-700">
                         {result.category === "휴무" && result.creator?.name 

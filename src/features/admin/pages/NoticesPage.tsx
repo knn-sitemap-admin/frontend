@@ -9,6 +9,7 @@ import { CreateNoticeForm } from "../components/CreateNoticeForm";
 import { Users, Eye, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import { getNotices, getNoticeReadStatus, deleteNotice, NoticeReadStatus } from "../api/notices";
 import { Button } from "@/components/atoms/Button/Button";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,11 @@ export function NoticesPage() {
   const [statusData, setStatusData] = useState<NoticeReadStatus | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [currentNoticeTitle, setCurrentNoticeTitle] = useState("");
+  
+  // 삭제 컨펌 관련 상태
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { toast } = useToast();
 
@@ -53,15 +59,25 @@ export function NoticesPage() {
     }
   };
 
-  const handleDelete = async (id: number, title: string) => {
-    if (!window.confirm(`"${title}" 공지사항을 삭제하시겠습니까?`)) return;
+  const handleDeleteClick = (id: number, title: string) => {
+    setDeleteTarget({ id, title });
+    setIsDeleteConfirmOpen(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setIsDeleting(true);
     try {
-      await deleteNotice(id);
+      await deleteNotice(deleteTarget.id);
       toast({ title: "공지사항이 삭제되었습니다." });
       loadNotices();
+      setIsDeleteConfirmOpen(false);
     } catch (error) {
       toast({ title: "삭제 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -124,7 +140,7 @@ export function NoticesPage() {
             className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(row.id, row.title);
+              handleDeleteClick(row.id, row.title);
             }}
           >
             <Trash2 className="w-4 h-4" />
@@ -236,14 +252,14 @@ export function NoticesPage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="flex-1 overflow-y-auto px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-x-8">
                 {/* 읽은 사람 리스트 */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 font-bold text-green-700 pb-2 border-b sticky top-0 bg-white z-10">
+                <div className="relative">
+                  <div className="flex items-center gap-2 font-bold text-green-700 py-4 border-b sticky top-0 bg-white z-20">
                     <CheckCircle2 className="w-5 h-5" />
                     읽은 직원 ({statusData.readList.length})
                   </div>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 gap-2 mt-4">
                     {statusData.readList.length > 0 ? (
                       statusData.readList.map(emp => (
                         <div key={emp.id} className="flex items-center justify-between p-2.5 bg-green-50/30 border border-green-100 rounded-lg text-sm">
@@ -257,12 +273,12 @@ export function NoticesPage() {
                 </div>
 
                 {/* 읽지 않은 사람 리스트 */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 font-bold text-red-700 pb-2 border-b sticky top-0 bg-white z-10">
+                <div className="relative">
+                  <div className="flex items-center gap-2 font-bold text-red-700 py-4 border-b sticky top-0 bg-white z-20">
                     <XCircle className="w-5 h-5" />
                     읽지 않은 직원 ({statusData.unreadList.length})
                   </div>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 gap-2 mt-4">
                     {statusData.unreadList.length > 0 ? (
                       statusData.unreadList.map(emp => (
                         <div key={emp.id} className="flex items-center justify-between p-2.5 bg-red-50/30 border border-red-100 rounded-lg text-sm">
@@ -283,6 +299,18 @@ export function NoticesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={isDeleteConfirmOpen}
+        onOpenChange={setIsDeleteConfirmOpen}
+        title="공지사항 삭제"
+        description={`"${deleteTarget?.title}" 공지사항을 정말로 삭제하시겠습니까?`}
+        onConfirm={confirmDelete}
+        confirmText="삭제하기"
+        cancelText="취소"
+        variant="destructive"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
