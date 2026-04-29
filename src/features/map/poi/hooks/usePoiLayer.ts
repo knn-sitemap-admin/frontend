@@ -41,6 +41,8 @@ export function usePoiLayer({
   map,
   enabledKinds = [],
   maxResultsPerKind = DEFAULTS.maxResultsPerKind,
+  showAtOrBelowLevel = VISIBLE_MAX_LEVEL,
+  minViewportEdgeMeters = DESIRED_SCALEBAR_M,
 }: UsePoiLayerOptions) {
   const kakao =
     kakaoSDK ?? (typeof window !== "undefined" ? (window as any).kakao : null);
@@ -77,14 +79,14 @@ export function usePoiLayer({
       }
 
       const level = map.getLevel();
-      const levelPass = level <= VISIBLE_MAX_LEVEL;
+      const levelPass = level <= showAtOrBelowLevel;
       if (!levelPass) {
-        // 너무 축소/확대면 기존 오버레이는 유지, 검색만 스킵
+        // 너무 축소/확대면 기존 오버레이는 유지, 검색만 스킵 (이후 줌 변경 시에 재검색 유도)
         return;
       }
 
       const minEdgeM = getMinViewportEdgeMeters(map, kakao);
-      const scalebarPass = calcScalebarPass(map, kakao, minEdgeM);
+      const scalebarPass = calcScalebarPass(map, kakao, minEdgeM, minViewportEdgeMeters);
       if (!scalebarPass) {
         // 축척이 너무 넓으면 검색만 스킵
         return;
@@ -229,7 +231,7 @@ export function usePoiLayer({
   useEffect(() => {
     if (!map || !kakao) return;
 
-    wasVisibleRef.current = map.getLevel() <= VISIBLE_MAX_LEVEL;
+    wasVisibleRef.current = map.getLevel() <= showAtOrBelowLevel;
 
     const onZoomChanged = () => {
       const lv = map.getLevel();
@@ -239,7 +241,7 @@ export function usePoiLayer({
         inst.update({ size, iconSize });
       }
 
-      const nowVisible = lv <= VISIBLE_MAX_LEVEL;
+      const nowVisible = lv <= showAtOrBelowLevel;
       if (nowVisible !== wasVisibleRef.current) {
         wasVisibleRef.current = nowVisible;
         if (nowVisible && enabledKindsRef.current.length > 0) {

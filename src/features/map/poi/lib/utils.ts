@@ -44,7 +44,8 @@ export function movedEnough(a: BoundsBox, b: BoundsBox | null): boolean {
 export function calcScalebarPass(
   map: any,
   kakao: any,
-  minEdgeM: number
+  minEdgeM: number,
+  thresholdM: number = DESIRED_SCALEBAR_M
 ): boolean {
   if (!map || !kakao) return false;
   const node: any =
@@ -58,7 +59,7 @@ export function calcScalebarPass(
   );
 
   const currentScaleBarM = (minEdgeM / Math.max(1, minEdgePx)) * SCALEBAR_PX;
-  return currentScaleBarM <= DESIRED_SCALEBAR_M;
+  return currentScaleBarM <= thresholdM;
 }
 
 export function ensurePlacesInstance(
