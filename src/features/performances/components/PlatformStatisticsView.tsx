@@ -75,11 +75,11 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
       canceled: number;
       rejected: number;
     }>((acc, curr: PlatformStatItem) => ({
-      total: acc.total + curr.totalCount,
-      ongoing: acc.ongoing + curr.ongoingCount,
-      completed: acc.completed + curr.completedCount,
-      canceled: acc.canceled + curr.canceledCount,
-      rejected: acc.rejected + curr.rejectedCount,
+      total: (acc.total || 0) + (curr.totalCount || 0),
+      ongoing: (acc.ongoing || 0) + (curr.ongoingCount || 0),
+      completed: (acc.completed || 0) + (curr.completedCount || 0),
+      canceled: (acc.canceled || 0) + (curr.canceledCount || 0),
+      rejected: (acc.rejected || 0) + (curr.rejectedCount || 0),
     }), { total: 0, ongoing: 0, completed: 0, canceled: 0, rejected: 0 });
   }, [stats]);
 
