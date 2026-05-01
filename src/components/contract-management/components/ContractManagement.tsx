@@ -43,8 +43,8 @@ export function ContractManagement() {
       // 상태값 매핑 (UI -> API)
       const statusMap: Record<string, string> = {
         ongoing: "ongoing",
-        completed: "done",
-        cancelled: "canceled",
+        done: "done",
+        canceled: "canceled",
         rejected: "rejected",
       };
       const apiStatus = filters.status && filters.status !== "all" 

@@ -244,25 +244,44 @@ export default function ScheduleCalendar() {
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
+    const qDigits = q.replace(/[^0-9]/g, ""); // 숫자만 추출
     
-    const matchedSchedules = schedules.filter(s => 
-      s.title.toLowerCase().includes(q) || 
-      (s.location && s.location.toLowerCase().includes(q)) ||
-      (s.category && s.category.toLowerCase().includes(q)) ||
-      (s.customerPhone && s.customerPhone.includes(q)) ||
-      (s.creator?.name && s.creator.name.toLowerCase().includes(q))
-    ).map(s => ({ ...s, eventType: "schedule" as const }));
+    const matchedSchedules = schedules.filter(s => {
+      const titleMatch = s.title.toLowerCase().includes(q);
+      const locationMatch = s.location?.toLowerCase().includes(q);
+      const categoryMatch = s.category?.toLowerCase().includes(q);
+      const creatorMatch = s.creator?.name?.toLowerCase().includes(q);
+      
+      // 전화번호 매칭 (하이픈 제거 후 비교)
+      let phoneMatch = false;
+      if (s.customerPhone) {
+        const phoneDigits = s.customerPhone.replace(/[^0-9]/g, "");
+        phoneMatch = s.customerPhone.includes(q) || (qDigits.length > 0 && phoneDigits.includes(qDigits));
+      }
 
-    const matchedContracts = contracts.filter(c => 
-      c.siteName.toLowerCase().includes(q) || 
-      (c.customerName && c.customerName.toLowerCase().includes(q)) ||
-      (c.customerPhone && c.customerPhone.includes(q)) ||
-      (c.createdByName && c.createdByName.toLowerCase().includes(q))
-    ).map(c => ({
+      return titleMatch || locationMatch || categoryMatch || creatorMatch || phoneMatch;
+    }).map(s => ({ ...s, eventType: "schedule" as const }));
+
+    const matchedContracts = contracts.filter(c => {
+      const siteMatch = c.siteName.toLowerCase().includes(q);
+      const customerMatch = c.customerName?.toLowerCase().includes(q);
+      const creatorMatch = c.createdByName?.toLowerCase().includes(q);
+      
+      // 전화번호 매칭
+      let phoneMatch = false;
+      if (c.customerPhone) {
+        const phoneDigits = c.customerPhone.replace(/[^0-9]/g, "");
+        phoneMatch = c.customerPhone.includes(q) || (qDigits.length > 0 && phoneDigits.includes(qDigits));
+      }
+
+      return siteMatch || customerMatch || creatorMatch || phoneMatch;
+    }).map(c => ({
       id: `contract-${c.id}`,
       title: `잔금: ${c.siteName}`,
       startDate: c.finalPaymentDate,
       endDate: c.finalPaymentDate,
+      customerPhone: c.customerPhone, // 누락되었던 필드 추가
+      location: c.siteName,           // 위치 정보 추가
       eventType: "contract" as const,
       originalData: c
     }));
