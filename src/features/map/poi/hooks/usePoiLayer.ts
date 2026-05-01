@@ -6,6 +6,7 @@ import {
   DEFAULTS,
   IDLE_THROTTLE_MS,
   VISIBLE_MAX_LEVEL,
+  DESIRED_SCALEBAR_M,
   RADIUS_BY_KIND,
 } from "../lib/constants";
 import { useThrottle } from "../lib/throttle";

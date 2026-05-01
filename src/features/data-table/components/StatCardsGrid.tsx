@@ -11,8 +11,8 @@ import { cn } from "@/lib/cn";
 interface StatCardsGridProps {
   title?: string;
   children: ReactNode;
-  /** 그리드 컬럼: 1~4 기본 lg:4 */
-  columns?: 1 | 2 | 3 | 4;
+  /** 그리드 컬럼: 1~5 기본 lg:4 */
+  columns?: 1 | 2 | 3 | 4 | 5;
   className?: string;
 }
 
@@ -21,6 +21,7 @@ const gridCols = {
   2: "grid-cols-1 md:grid-cols-2",
   3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
   4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
+  5: "grid-cols-1 md:grid-cols-3 lg:grid-cols-5",
 };
 
 export function StatCardsGrid({
