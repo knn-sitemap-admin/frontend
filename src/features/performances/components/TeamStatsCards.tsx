@@ -1,3 +1,5 @@
+import { TeamStat } from "../utils/performanceUtils";
+
 import {
   Card,
   CardContent,
@@ -5,16 +7,6 @@ import {
   CardTitle,
 } from "@/components/atoms/Card/Card";
 import { formatCurrency } from "@/components/contract-management/utils/contractUtils";
-
-interface TeamStat {
-  team: string;
-  totalAllowance: number; // 팀별 수당 합계
-  totalGrossSales: number; // 팀별 총매출
-  totalNetProfit: number; // 팀별 순수익(회사의 수익)
-  totalContracts: number; // 팀별 건수
-  memberCount: number;
-  avgAllowance: number;
-}
 
 interface TeamStatsCardsProps {
   teamStats: TeamStat[];
@@ -62,9 +54,15 @@ export function TeamStatsCards({
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">계약건수:</span>
-                  <span className="font-semibold text-gray-900">
-                    {stat.totalContracts.toLocaleString()}건
-                  </span>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">
+                      {stat.totalContracts.toLocaleString()}건
+                    </div>
+                    <div className="text-[10px] text-gray-500 space-x-1">
+                      <span className="text-emerald-600">완료 {stat.completedContracts}</span>
+                      <span className="text-red-500">부결 {stat.rejectedContracts}</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t text-xs text-gray-500">
                   <span>인원: {stat.memberCount}명</span>

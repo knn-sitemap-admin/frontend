@@ -12,13 +12,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-interface PerformanceData {
-  employeeName: string;
-  team: string;
-  contractCount: number;
-  finalAllowance: number;
-  period: string;
-}
+import type { PerformanceData } from "../types/PerformanceData";
 
 interface EmployeeChartsProps {
   selectedTeamMembers: PerformanceData[];
@@ -164,13 +158,13 @@ export function EmployeeContractChart({
           />
           <ChartTooltip content={<ChartTooltipContent />} />
           <Bar
-            dataKey="contractCount"
+            dataKey="totalContractCount"
             fill="hsl(var(--secondary))"
             radius={[2, 2, 0, 0]}
             maxBarSize={30}
           >
             <LabelList
-              dataKey="contractCount"
+              dataKey="totalContractCount"
               position="top"
               offset={8}
               formatter={(value: number) => `${value}건`}

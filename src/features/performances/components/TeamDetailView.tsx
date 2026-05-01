@@ -9,15 +9,7 @@ import {
   EmployeeContractChart,
 } from "./EmployeeCharts";
 
-interface PerformanceData {
-  employeeName: string;
-  team: string;
-  contractCount: number;
-  grossSales: number;
-  netProfit: number;
-  finalAllowance: number;
-  period: string;
-}
+import type { PerformanceData } from "../types/PerformanceData";
 
 interface TeamDetailViewProps {
   selectedTeamDetail: string | null;
@@ -113,11 +105,25 @@ export function TeamDetailView({
               sortable: true,
             },
             {
-              key: "contractCount",
-              label: "건수",
+              key: "totalContractCount",
+              label: "총계약",
               sortable: true,
               align: "center",
               render: (value) => `${value}건`,
+            },
+            {
+              key: "completedContractCount",
+              label: "완료",
+              sortable: true,
+              align: "center",
+              render: (value) => <span className="text-emerald-600 font-bold">{value}건</span>,
+            },
+            {
+              key: "rejectedContractCount",
+              label: "부결",
+              sortable: true,
+              align: "center",
+              render: (value) => <span className="text-red-500 font-bold">{value}건</span>,
             },
             {
               key: "grossSales",

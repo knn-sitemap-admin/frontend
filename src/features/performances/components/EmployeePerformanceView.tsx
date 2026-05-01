@@ -93,19 +93,23 @@ export function EmployeePerformanceView() {
       "영업자 수익": stat.finalPayout,
       "회사 수익": stat.netProfit,
       total: stat.grossSales,
-      contracts: stat.contractCount,
+      totalContracts: stat.totalContractCount,
+      completedContracts: stat.completedContractCount,
+      rejectedContracts: stat.rejectedContractCount,
     }));
   }, [performance]);
 
   // 연간 합계 계산
   const totals = useMemo(() => {
-    if (!performance) return { grossSales: 0, netProfit: 0, finalPayout: 0, contractCount: 0 };
+    if (!performance) return { grossSales: 0, netProfit: 0, finalPayout: 0, totalContractCount: 0, completedContractCount: 0, rejectedContractCount: 0 };
     return performance.monthlyStats.reduce((acc: any, curr: any) => ({
       grossSales: acc.grossSales + curr.grossSales,
       netProfit: acc.netProfit + curr.netProfit,
       finalPayout: acc.finalPayout + curr.finalPayout,
-      contractCount: acc.contractCount + curr.contractCount,
-    }), { grossSales: 0, netProfit: 0, finalPayout: 0, contractCount: 0 });
+      totalContractCount: acc.totalContractCount + curr.totalContractCount,
+      completedContractCount: acc.completedContractCount + curr.completedContractCount,
+      rejectedContractCount: acc.rejectedContractCount + curr.rejectedContractCount,
+    }), { grossSales: 0, netProfit: 0, finalPayout: 0, totalContractCount: 0, completedContractCount: 0, rejectedContractCount: 0 });
   }, [performance]);
 
   return (
@@ -200,7 +204,8 @@ export function EmployeePerformanceView() {
             />
              <StatCard
               label="연간 총 계약"
-              value={`${totals.contractCount}건`}
+              value={`${totals.totalContractCount}건`}
+              description={`완료 ${totals.completedContractCount} / 부결 ${totals.rejectedContractCount}`}
               icon={<Users className="h-6 w-6" />}
               variant="orange"
             />
@@ -340,7 +345,9 @@ export function EmployeePerformanceView() {
                 <thead className="bg-gray-50/80 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                   <tr>
                     <th className="py-3 px-6 text-center">분석 월</th>
-                    <th className="py-3 px-4 text-center">계약 건수</th>
+                    <th className="py-3 px-4 text-center">총 계약</th>
+                    <th className="py-3 px-4 text-center text-emerald-600">완료</th>
+                    <th className="py-3 px-4 text-center text-red-500">부결</th>
                     <th className="py-3 px-4 text-right">기여 총 매출</th>
                     <th className="py-3 px-4 text-right">회사 수익</th>
                     <th className="py-3 px-4 text-right">영업자 수익</th>
@@ -351,12 +358,18 @@ export function EmployeePerformanceView() {
                 <tbody className="divide-y divide-gray-100">
                   {chartData.map((stat: any, i: number) => {
                     const totalIncome = stat["영업자 수익"] + stat["회사 수익"];
-                    const avg = stat.contracts > 0 ? stat.total / stat.contracts : 0;
+                    const avg = stat.totalContracts > 0 ? stat.total / stat.totalContracts : 0;
                     return (
                       <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-4 px-6 text-center font-bold text-gray-900">{stat.name}</td>
                         <td className="py-4 px-4 text-center">
-                          <span className="px-2 py-1 rounded-md bg-gray-100 text-[11px] font-bold">{stat.contracts}건</span>
+                          <span className="px-2 py-1 rounded-md bg-gray-100 text-[11px] font-bold">{stat.totalContracts}건</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-emerald-600 font-bold">{stat.completedContracts}건</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-red-500 font-bold">{stat.rejectedContracts}건</span>
                         </td>
                         <td className="py-4 px-4 text-right font-medium tabular-nums">{formatCurrency(stat.total)}</td>
                         <td className="py-4 px-4 text-right text-emerald-600 font-medium tabular-nums">{formatCurrency(stat["회사 수익"])}</td>
@@ -370,13 +383,15 @@ export function EmployeePerformanceView() {
                 <tfoot className="bg-gray-900 text-white font-bold">
                   <tr>
                     <td className="py-4 px-6 text-center">합계</td>
-                    <td className="py-4 px-4 text-center">{totals.contractCount}건</td>
+                    <td className="py-4 px-4 text-center">{totals.totalContractCount}건</td>
+                    <td className="py-4 px-4 text-center text-emerald-400">{totals.completedContractCount}건</td>
+                    <td className="py-4 px-4 text-center text-red-400">{totals.rejectedContractCount}건</td>
                     <td className="py-4 px-4 text-right">{formatCurrency(totals.grossSales)}</td>
                     <td className="py-4 px-4 text-right text-emerald-400">{formatCurrency(totals.netProfit)}</td>
                     <td className="py-4 px-4 text-right text-blue-400">{formatCurrency(totals.finalPayout)}</td>
                     <td className="py-4 px-4 text-right bg-gray-800 text-white">{formatCurrency(totals.netProfit + totals.finalPayout)}</td>
                     <td className="py-4 px-6 text-right text-xs opacity-50">
-                      {formatCurrency(Math.round(totals.contractCount > 0 ? totals.grossSales / totals.contractCount : 0))}
+                      {formatCurrency(Math.round(totals.totalContractCount > 0 ? totals.grossSales / totals.totalContractCount : 0))}
                     </td>
                   </tr>
                 </tfoot>

@@ -110,10 +110,19 @@ export function Performance() {
   }, [performanceSummary]);
 
   // 전체 통계 변환
-  const { totalContracts, totalGrossSales, totalNetProfit, totalEmployees } = useMemo(() => {
+  const { 
+    totalContracts, 
+    completedContracts,
+    rejectedContracts,
+    totalGrossSales, 
+    totalNetProfit, 
+    totalEmployees 
+  } = useMemo(() => {
     if (!performanceSummary) {
       return {
         totalContracts: 0,
+        completedContracts: 0,
+        rejectedContracts: 0,
         totalGrossSales: 0,
         totalNetProfit: 0,
         totalEmployees: 0,
@@ -220,7 +229,7 @@ export function Performance() {
       ) : (
         <div className="space-y-10">
           {/* 1. 회사 총 실적 - 탭 상단 고정 */}
-          <StatCardsGrid title="전체 실적 요약" columns={4}>
+          <StatCardsGrid title="전체 실적 요약" columns={6}>
             <StatCard
               label="총매출"
               value={formatCurrency(totalGrossSales)}
@@ -239,6 +248,18 @@ export function Performance() {
               value={`${totalContracts.toLocaleString()}건`}
               icon={<FileText className="h-6 w-6" />}
               variant="purple"
+            />
+            <StatCard
+              label="계약완료"
+              value={`${completedContracts.toLocaleString()}건`}
+              icon={<FileText className="h-6 w-6" />}
+              variant="green"
+            />
+            <StatCard
+              label="계약부결"
+              value={`${rejectedContracts.toLocaleString()}건`}
+              icon={<FileText className="h-6 w-6" />}
+              variant="red"
             />
             <StatCard
               label="총 인원수"

@@ -19,7 +19,9 @@ export interface ResolvedRange {
 export interface CompanyKpi {
   grossSales: number; // 총매출
   netProfit: number; // 순수익
-  contractCount: number; // 완료 계약 수
+  totalContractCount: number; // 전체 계약 수
+  completedContractCount: number; // 완료 계약 수
+  rejectedContractCount: number; // 부결 계약 수
   headcount: number; // 총 인원수
 }
 
@@ -29,7 +31,9 @@ export interface TeamSummary {
   grossSales: number; // 팀 기여분 총 매출
   netProfit: number; // 팀 기여분 순수익(회사의 수익)
   finalPayout: number; // 팀 최종수당 합
-  contractCount: number; // 팀 계약 건수
+  totalContractCount: number; // 팀 전체 계약 건수
+  completedContractCount: number; // 팀 완료 계약 건수
+  rejectedContractCount: number; // 팀 부결 계약 건수
   memberCount: number; // 팀원 수
 }
 
@@ -39,7 +43,9 @@ export interface TopTeam {
   grossSales: number;
   netProfit: number;
   finalPayout: number;
-  contractCount: number;
+  totalContractCount: number;
+  completedContractCount: number;
+  rejectedContractCount: number;
   rank: 1 | 2 | 3;
 }
 
@@ -57,7 +63,9 @@ export interface TeamEmployeeItem {
   grossSales: number; // 개인 기여분 총 매출
   netProfit: number; // 개인 기여분 순수익(회사의 수익)
   finalPayout: number; // 직원 최종수당
-  contractCount: number; // 직원이 참여한 완료 계약 건수
+  totalContractCount: number; // 직원이 참여한 전체 계약 건수
+  completedContractCount: number; // 직원이 참여한 완료 계약 건수
+  rejectedContractCount: number; // 직원이 참여한 부결 계약 건수
 }
 
 export interface TeamEmployeesResponse {
@@ -74,7 +82,9 @@ export interface EmployeeMonthlyStat {
   grossSales: number;
   netProfit: number;
   finalPayout: number;
-  contractCount: number;
+  totalContractCount: number;
+  completedContractCount: number;
+  rejectedContractCount: number;
 }
 
 export interface EmployeePerformanceResponse {

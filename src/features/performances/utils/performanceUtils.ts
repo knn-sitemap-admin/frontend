@@ -6,6 +6,8 @@ export interface TeamStat {
   totalGrossSales: number;
   totalNetProfit: number;
   totalContracts: number;
+  completedContracts: number;
+  rejectedContracts: number;
   memberCount: number;
   avgAllowance: number;
   avgGrossSales: number;
@@ -13,6 +15,8 @@ export interface TeamStat {
 
 export interface PerformanceStats {
   totalContracts: number;
+  completedContracts: number;
+  rejectedContracts: number;
   totalAllowance: number;
   totalGrossSales: number;
   totalNetProfit: number;
@@ -29,6 +33,8 @@ export function calculateTeamStats(
       totalGrossSales: number;
       totalNetProfit: number;
       totalContracts: number;
+      completedContracts: number;
+      rejectedContracts: number;
       memberCount: number;
     }
   > = {};
@@ -40,13 +46,17 @@ export function calculateTeamStats(
         totalGrossSales: 0,
         totalNetProfit: 0,
         totalContracts: 0,
+        completedContracts: 0,
+        rejectedContracts: 0,
         memberCount: 0,
       };
     }
     stats[item.team].totalAllowance += item.finalAllowance;
     stats[item.team].totalGrossSales += (item.grossSales || 0);
     stats[item.team].totalNetProfit += (item.netProfit || 0);
-    stats[item.team].totalContracts += item.contractCount;
+    stats[item.team].totalContracts += item.totalContractCount;
+    stats[item.team].completedContracts += item.completedContractCount;
+    stats[item.team].rejectedContracts += item.rejectedContractCount;
     stats[item.team].memberCount += 1;
   });
 
@@ -57,6 +67,8 @@ export function calculateTeamStats(
       totalGrossSales: data.totalGrossSales,
       totalNetProfit: data.totalNetProfit,
       totalContracts: data.totalContracts,
+      completedContracts: data.completedContracts,
+      rejectedContracts: data.rejectedContracts,
       memberCount: data.memberCount,
       avgAllowance: data.totalAllowance / data.memberCount,
       avgGrossSales: data.totalGrossSales / data.memberCount,
@@ -68,7 +80,15 @@ export function calculateOverallStats(
   performanceData: PerformanceData[]
 ): PerformanceStats {
   const totalContracts = performanceData.reduce(
-    (sum, item) => sum + item.contractCount,
+    (sum, item) => sum + item.totalContractCount,
+    0
+  );
+  const completedContracts = performanceData.reduce(
+    (sum, item) => sum + item.completedContractCount,
+    0
+  );
+  const rejectedContracts = performanceData.reduce(
+    (sum, item) => sum + item.rejectedContractCount,
     0
   );
   const totalAllowance = performanceData.reduce(
@@ -87,6 +107,8 @@ export function calculateOverallStats(
 
   return {
     totalContracts,
+    completedContracts,
+    rejectedContracts,
     totalAllowance,
     totalGrossSales,
     totalNetProfit,
