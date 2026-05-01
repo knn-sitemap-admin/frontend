@@ -70,19 +70,21 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
   const summary = useMemo(() => {
     return stats.reduce<{
       total: number;
-      contracted: number;
+      ongoing: number;
+      completed: number;
       canceled: number;
       rejected: number;
     }>((acc, curr: PlatformStatItem) => ({
       total: acc.total + curr.totalCount,
-      contracted: acc.contracted + curr.contractedCount,
+      ongoing: acc.ongoing + curr.ongoingCount,
+      completed: acc.completed + curr.completedCount,
       canceled: acc.canceled + curr.canceledCount,
       rejected: acc.rejected + curr.rejectedCount,
-    }), { total: 0, contracted: 0, canceled: 0, rejected: 0 });
+    }), { total: 0, ongoing: 0, completed: 0, canceled: 0, rejected: 0 });
   }, [stats]);
 
   const conversionRate = summary.total > 0
-    ? ((summary.contracted / summary.total) * 100).toFixed(1)
+    ? (((summary.completed + summary.ongoing) / summary.total) * 100).toFixed(1)
     : "0";
 
   if (isLoading) {
@@ -111,7 +113,7 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
         </div>
       </div>
 
-      <StatCardsGrid columns={5}>
+      <StatCardsGrid columns={6}>
         <StatCard
           label="총 유입 건수"
           value={`${summary.total.toLocaleString()}건`}
@@ -119,8 +121,14 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
           variant="blue"
         />
         <StatCard
-          label="최종 계약"
-          value={`${summary.contracted.toLocaleString()}건`}
+          label="계약중"
+          value={`${summary.ongoing.toLocaleString()}건`}
+          icon={<Target className="h-6 w-6" />}
+          variant="purple"
+        />
+        <StatCard
+          label="계약완료"
+          value={`${summary.completed.toLocaleString()}건`}
           icon={<CheckCircle2 className="h-6 w-6" />}
           variant="green"
         />
@@ -140,7 +148,7 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
           label="계약 전환율"
           value={`${conversionRate}%`}
           icon={<Target className="h-6 w-6" />}
-          variant="purple"
+          variant="indigo"
         />
       </StatCardsGrid>
 
@@ -167,9 +175,10 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
                 cursor={{ fill: '#f9fafb' }}
               />
               <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
-              <Bar dataKey="contractedCount" name="계약완료" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="completedCount" name="계약완료" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="ongoingCount" name="계약중" stackId="a" fill="#8b5cf6" />
               <Bar dataKey="newCount" name="신규" stackId="a" fill="#3b82f6" />
-              <Bar dataKey="reCount" name="재미팅" stackId="a" fill="#8b5cf6" />
+              <Bar dataKey="reCount" name="재미팅" stackId="a" fill="#6366f1" />
               <Bar dataKey="canceledCount" name="미팅취소" stackId="a" fill="#f59e0b" />
               <Bar dataKey="rejectedCount" name="계약부결" stackId="a" fill="#ef4444" radius={[6, 6, 0, 0]} />
             </BarChart>
@@ -188,6 +197,7 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
                 <th className="px-6 py-4 text-sm font-black text-purple-600 text-center">재미팅</th>
                 <th className="px-6 py-4 text-sm font-black text-orange-500 text-center">미팅취소</th>
                 <th className="px-6 py-4 text-sm font-black text-red-500 text-center">계약부결</th>
+                <th className="px-6 py-4 text-sm font-black text-purple-600 text-center">계약중</th>
                 <th className="px-6 py-4 text-sm font-black text-emerald-600 text-center">계약완료</th>
                 <th className="px-6 py-4 text-sm font-black text-gray-900 text-right">합계</th>
               </tr>
@@ -200,7 +210,8 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
                   <td className="px-6 py-4 text-center font-bold text-gray-600">{row.reCount}</td>
                   <td className="px-6 py-4 text-center font-bold text-gray-600">{row.canceledCount}</td>
                   <td className="px-6 py-4 text-center font-bold text-gray-600">{row.rejectedCount}</td>
-                  <td className="px-6 py-4 text-center font-bold text-emerald-600 bg-emerald-50/30">{row.contractedCount}</td>
+                  <td className="px-6 py-4 text-center font-bold text-purple-600 bg-purple-50/30">{row.ongoingCount}</td>
+                  <td className="px-6 py-4 text-center font-bold text-emerald-600 bg-emerald-50/30">{row.completedCount}</td>
                   <td className="px-6 py-4 text-right font-black text-gray-900">{row.totalCount}</td>
                 </tr>
               ))}
@@ -217,9 +228,10 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
                 <tr>
                   <td className="px-6 py-4 font-black text-gray-900">총합</td>
                   <td className="px-6 py-4 text-center font-black text-gray-900">{summary.total}</td>
-                  <td className="px-6 py-4" colSpan={4}></td>
+                  <td className="px-6 py-4" colSpan={3}></td>
+                  <td className="px-6 py-4 text-center font-black text-purple-600">{summary.ongoing}건</td>
                   <td className="px-6 py-4 text-right font-black text-emerald-600 text-lg">
-                    {summary.contracted}건 성공
+                    {summary.completed}건 성공
                   </td>
                 </tr>
               </tfoot>

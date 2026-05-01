@@ -95,7 +95,8 @@ export interface PlatformStatItem {
   newCount: number;
   reCount: number;
   canceledCount: number;
-  contractedCount: number;
+  ongoingCount: number;
+  completedCount: number;
   rejectedCount: number;
   totalCount: number;
 }

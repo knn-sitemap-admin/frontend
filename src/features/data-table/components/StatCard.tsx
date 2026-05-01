@@ -15,7 +15,8 @@ export type StatCardVariant =
   | "purple"
   | "orange"
   | "gray"
-  | "red";
+  | "red"
+  | "indigo";
 
 const variantStyles: Record<StatCardVariant, { bg: string; icon: string }> = {
   blue: { bg: "bg-blue-100", icon: "text-blue-600" },
@@ -24,6 +25,7 @@ const variantStyles: Record<StatCardVariant, { bg: string; icon: string }> = {
   orange: { bg: "bg-orange-100", icon: "text-orange-600" },
   gray: { bg: "bg-gray-100", icon: "text-gray-600" },
   red: { bg: "bg-red-100", icon: "text-red-600" },
+  indigo: { bg: "bg-indigo-100", icon: "text-indigo-600" },
 };
 
 interface StatCardProps {
