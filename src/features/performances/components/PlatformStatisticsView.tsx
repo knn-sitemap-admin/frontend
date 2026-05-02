@@ -71,6 +71,9 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
     return stats.reduce<{
       total: number;
       contractRecords: number;
+      new: number;
+      re: number;
+      canceledCount: number;
       ongoing: number;
       completed: number;
       canceled: number;
@@ -78,11 +81,14 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
     }>((acc, curr: PlatformStatItem) => ({
       total: (acc.total || 0) + (curr.totalCount || 0),
       contractRecords: (acc.contractRecords || 0) + (curr.contractCount || 0),
+      new: (acc.new || 0) + (curr.newCount || 0),
+      re: (acc.re || 0) + (curr.reCount || 0),
+      canceledCount: (acc.canceledCount || 0) + (curr.canceledCount || 0),
       ongoing: (acc.ongoing || 0) + (curr.ongoingCount || 0),
       completed: (acc.completed || 0) + (curr.completedCount || 0),
       canceled: (acc.canceled || 0) + (curr.canceledCount || 0),
       rejected: (acc.rejected || 0) + (curr.rejectedCount || 0),
-    }), { total: 0, contractRecords: 0, ongoing: 0, completed: 0, canceled: 0, rejected: 0 });
+    }), { total: 0, contractRecords: 0, new: 0, re: 0, canceledCount: 0, ongoing: 0, completed: 0, canceled: 0, rejected: 0 });
   }, [stats]);
 
   const conversionRate = summary.total > 0
@@ -119,12 +125,14 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
         <StatCard
           label="총 유입 건수"
           value={`${summary.total.toLocaleString()}건`}
+          description="미팅(계약 미전환) + 전체 계약 건수 합계"
           icon={<Users className="h-6 w-6" />}
           variant="blue"
         />
         <StatCard
-          label="계약건"
+          label="총계약건수"
           value={`${summary.contractRecords.toLocaleString()}건`}
+          description="완료, 계약중, 부결/해약 전체 포함"
           icon={<Target className="h-6 w-6" />}
           variant="purple"
         />
@@ -149,6 +157,7 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
         <StatCard
           label="계약 전환율"
           value={`${conversionRate}%`}
+          description="(완료 + 계약중) / 총 유입"
           icon={<Target className="h-6 w-6" />}
           variant="indigo"
         />
@@ -177,7 +186,7 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
                 cursor={{ fill: '#f9fafb' }}
               />
               <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
-              <Bar dataKey="contractCount" name="계약건" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="contractCount" name="총계약건수" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
               <Bar dataKey="newCount" name="신규" stackId="a" fill="#3b82f6" />
               <Bar dataKey="reCount" name="재미팅" stackId="a" fill="#6366f1" />
               <Bar dataKey="canceledCount" name="미팅취소" stackId="a" fill="#f59e0b" radius={[6, 6, 0, 0]} />
@@ -196,7 +205,7 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
                 <th className="px-6 py-4 text-sm font-black text-blue-600 text-center">신규</th>
                 <th className="px-6 py-4 text-sm font-black text-purple-600 text-center">재미팅</th>
                 <th className="px-6 py-4 text-sm font-black text-orange-500 text-center">미팅취소</th>
-                <th className="px-6 py-4 text-sm font-black text-purple-600 text-center">계약건</th>
+                <th className="px-6 py-4 text-sm font-black text-purple-600 text-center">총계약건수</th>
                 <th className="px-6 py-4 text-sm font-black text-gray-900 text-right">합계</th>
               </tr>
             </thead>
@@ -223,11 +232,15 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
               <tfoot className="bg-gray-50/80 border-t border-gray-100">
                 <tr>
                   <td className="px-6 py-4 font-black text-gray-900">총합</td>
-                  <td className="px-6 py-4 text-center font-black text-gray-900">{summary.total}</td>
-                  <td className="px-6 py-4" colSpan={1}></td>
-                  <td className="px-6 py-4 text-center font-black text-purple-600">{summary.contractRecords}건</td>
-                  <td className="px-6 py-4 text-right font-black text-emerald-600 text-lg">
-                    {summary.completed}건 성공
+                  <td className="px-6 py-4 text-center font-bold text-gray-600">{summary.new}</td>
+                  <td className="px-6 py-4 text-center font-bold text-gray-600">{summary.re}</td>
+                  <td className="px-6 py-4 text-center font-bold text-gray-600">{summary.canceledCount}</td>
+                  <td className="px-6 py-4 text-center font-black text-purple-600 bg-purple-50/30">{summary.contractRecords}</td>
+                  <td className="px-6 py-4 text-right font-black text-gray-900">{summary.total}</td>
+                </tr>
+                <tr>
+                  <td colSpan={6} className="px-6 py-3 text-right">
+                    <span className="text-emerald-600 font-bold text-lg">{summary.completed}건 최종 성공</span>
                   </td>
                 </tr>
               </tfoot>
