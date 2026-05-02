@@ -121,7 +121,7 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
         </div>
       </div>
 
-      <StatCardsGrid columns={3}>
+      <StatCardsGrid columns={6} className="gap-3">
         <StatCard
           label="총 유입 건수"
           value={`${summary.total.toLocaleString()}건`}

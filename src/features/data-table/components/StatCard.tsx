@@ -52,19 +52,19 @@ export function StatCard({
 }: StatCardProps) {
   const styles = variantStyles[variant];
   return (
-    <Card className={cn("border-gray-200 overflow-hidden", className)}>
-      <CardContent className="p-5 md:p-6 flex flex-col h-full justify-between gap-3">
+    <Card className={cn("border-gray-200 shadow-sm", className)}>
+      <CardContent className="p-4 flex flex-col gap-2">
         <div className="flex items-center justify-between w-full">
-          <p className="text-xs md:text-sm font-bold text-gray-500 uppercase tracking-wider">{label}</p>
+          <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">{label}</p>
           {icon && (
             <div
               className={cn(
-                "h-8 w-8 md:h-10 md:w-10 rounded-xl flex items-center justify-center shrink-0",
+                "h-7 w-7 md:h-8 md:w-8 rounded-lg flex items-center justify-center shrink-0",
                 styles.bg,
                 styles.icon,
               )}
             >
-              <div className="scale-75 md:scale-90">{icon}</div>
+              <div className="scale-[0.7]">{icon}</div>
             </div>
           )}
         </div>
@@ -72,14 +72,18 @@ export function StatCard({
         <div className="space-y-1">
           <div
             className={cn(
-              "text-lg sm:text-xl lg:text-2xl font-black text-gray-900 leading-none tracking-tighter whitespace-nowrap",
+              "text-lg sm:text-xl font-black text-gray-900 leading-tight",
               valueClassName
             )}
           >
             {value}
           </div>
           {description && (
-            <p className="text-[10px] md:text-xs text-gray-400 font-medium">{description}</p>
+            <div className="mt-1.5 p-1.5 bg-blue-50/50 rounded-lg border border-blue-100/50">
+              <p className="text-[10px] text-blue-800 font-bold leading-tight flex items-center gap-1">
+                <span className="text-blue-500 text-[8px]">ⓘ</span> {description}
+              </p>
+            </div>
           )}
         </div>
       </CardContent>
