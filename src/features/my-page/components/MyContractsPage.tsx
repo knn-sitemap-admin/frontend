@@ -42,15 +42,8 @@ export function MyContractsPage() {
         }
       }
 
-      // 상태값 매핑 (UI -> API)
-      const statusMap: Record<string, string> = {
-        ongoing: "ongoing",
-        completed: "done",
-        cancelled: "canceled",
-        rejected: "rejected",
-      };
       const apiStatus = filters.status && filters.status !== "all" 
-        ? (statusMap[filters.status] as any) 
+        ? (filters.status as any) 
         : undefined;
 
       const contractData = await getMyContracts({

@@ -225,7 +225,15 @@ export function ContractList({
             <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 items-center">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <Select
+              value={selectedYear}
+              onValueChange={(value) => {
+                setSelectedYear(value);
+                if (value === "all") {
+                  setSelectedMonth("all");
+                }
+              }}
+            >
               <SelectTrigger className="w-full sm:w-[120px]">
                 <SelectValue placeholder="년도" />
               </SelectTrigger>
@@ -238,7 +246,15 @@ export function ContractList({
               </SelectContent>
             </Select>
 
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <Select
+              value={selectedMonth}
+              onValueChange={(value) => {
+                setSelectedMonth(value);
+                if (value !== "all" && selectedYear === "all") {
+                  setSelectedYear(new Date().getFullYear().toString());
+                }
+              }}
+            >
               <SelectTrigger className="w-full sm:w-[100px]">
                 <SelectValue placeholder="월" />
               </SelectTrigger>

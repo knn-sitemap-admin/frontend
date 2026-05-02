@@ -57,7 +57,7 @@ export interface SalesContractData {
   totalCalculation: number;
   contractDate?: string; // 계약일
   balanceDate?: string; // 잔금일자
-  status?: "ongoing" | "rejected" | "cancelled" | "completed"; // 계약 상태
+  status?: "ongoing" | "rejected" | "canceled" | "done"; // 계약 상태
   createdAt?: string; // 생성일
   updatedAt?: string; // 수정일
   scheduleId?: string; // 연동된 일정 ID

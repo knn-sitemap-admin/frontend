@@ -28,7 +28,7 @@ import {
 import { formatCurrency } from "@/components/contract-management/utils/contractUtils";
 import { cn } from "@/lib/cn";
 import { getAvailablePeriods } from "@/features/performances/api/performance";
-import { getSettlements, saveSettlement, updateSettlementStatus, getSettlementDetail, cleanupOldSettlements, getYearlySettlements } from "../api/settlement";
+import { getSettlements, saveSettlement, updateSettlementStatus, getSettlementDetail, getYearlySettlements } from "../api/settlement";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -166,26 +166,7 @@ export function SettlementManagement() {
     }
   };
 
-  // 기존 내역 정리 mutation
-  const cleanupMutation = useMutation({
-    mutationFn: cleanupOldSettlements,
-    onSuccess: (data: any) => {
-      toast({ 
-        title: "데이터 정리 완료", 
-        description: `가계부 내역 ${data.deletedCount}건이 정리되었습니다.` 
-      });
-      queryClient.invalidateQueries({ queryKey: ["settlements"] });
-    },
-    onError: () => {
-      toast({ title: "정리 실패", description: "데이터 정리 중 오류가 발생했습니다.", variant: "destructive" });
-    }
-  });
 
-  const handleCleanup = () => {
-    if (confirm("기존에 가계부에 중복으로 기록된 모든 정산 내역을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
-      cleanupMutation.mutate();
-    }
-  };
 
   return (
     <DataTablePageLayout>
@@ -219,15 +200,7 @@ export function SettlementManagement() {
               onMonthChange={(m) => setSelectedMonth(m)}
               hidePeriodType={true}
             />
-            <Button 
-              variant="outline" 
-              onClick={handleCleanup} 
-              className="rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-              disabled={cleanupMutation.isPending}
-            >
-              <RefreshCw size={14} className={cn("mr-2", cleanupMutation.isPending && "animate-spin")} />
-              과거 내역 정리
-            </Button>
+
 
           </div>
         }

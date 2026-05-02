@@ -53,29 +53,33 @@ export function StatCard({
   const styles = variantStyles[variant];
   return (
     <Card className={cn("border-gray-200 overflow-hidden", className)}>
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <p className="text-xs md:text-sm font-medium text-gray-600">{label}</p>
-            <div
-              className={cn("text-xl md:text-2xl font-black text-gray-900", valueClassName)}
-            >
-              {value}
-            </div>
-            {description && (
-              <p className="text-[10px] md:text-xs text-gray-400 font-medium">{description}</p>
-            )}
-          </div>
+      <CardContent className="p-5 md:p-6 flex flex-col h-full justify-between gap-3">
+        <div className="flex items-center justify-between w-full">
+          <p className="text-xs md:text-sm font-bold text-gray-500 uppercase tracking-wider">{label}</p>
           {icon && (
             <div
               className={cn(
-                "h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center shrink-0",
+                "h-8 w-8 md:h-10 md:w-10 rounded-xl flex items-center justify-center shrink-0",
                 styles.bg,
                 styles.icon,
               )}
             >
-              <div className="scale-90 md:scale-100">{icon}</div>
+              <div className="scale-75 md:scale-90">{icon}</div>
             </div>
+          )}
+        </div>
+        
+        <div className="space-y-1">
+          <div
+            className={cn(
+              "text-lg sm:text-xl lg:text-2xl font-black text-gray-900 leading-none tracking-tighter whitespace-nowrap",
+              valueClassName
+            )}
+          >
+            {value}
+          </div>
+          {description && (
+            <p className="text-[10px] md:text-xs text-gray-400 font-medium">{description}</p>
           )}
         </div>
       </CardContent>

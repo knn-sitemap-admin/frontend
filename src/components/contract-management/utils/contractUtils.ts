@@ -10,11 +10,11 @@ export const statusConfigMap: StatusConfigMap = {
     label: "부결",
     className: "bg-orange-100 text-orange-800",
   },
-  cancelled: {
+  canceled: {
     label: "해약",
     className: "bg-red-100 text-red-800",
   },
-  completed: {
+  done: {
     label: "계약완료",
     className: "bg-green-100 text-green-800",
   },

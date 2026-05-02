@@ -66,15 +66,8 @@ export function transformSalesContractToCreateRequest(
       .filter((url) => typeof url === "string" && /^https?:\/\//.test(url)) ??
     [];
 
-  // 상태 매핑 (프론트엔드 4가지 상태 -> 백엔드 4가지 상태)
-  const status: "ongoing" | "done" | "canceled" | "rejected" | undefined =
-    data.status === "completed"
-      ? "done"
-      : data.status === "cancelled"
-        ? "canceled"
-        : data.status === "rejected"
-          ? "rejected"
-          : "ongoing";
+  // 상태 매핑 (백엔드와 키가 동일함)
+  const status = data.status;
 
   const request: CreateContractRequest = {
     customerName: data.customerInfo.name || "",
@@ -158,15 +151,8 @@ export function transformSalesContractToUpdateRequest(
       .filter((url) => typeof url === "string" && /^https?:\/\//.test(url)) ??
     [];
 
-  // 상태 매핑 (프론트엔드 4가지 상태 -> 백엔드 4가지 상태)
-  const status: "ongoing" | "done" | "canceled" | "rejected" | undefined =
-    data.status === "completed"
-      ? "done"
-      : data.status === "cancelled"
-        ? "canceled"
-        : data.status === "rejected"
-          ? "rejected"
-          : "ongoing";
+  // 상태 매핑 (백엔드와 키가 동일함)
+  const status = data.status;
 
   const request: UpdateContractRequest = {
     customerName: data.customerInfo.name || undefined,
@@ -218,17 +204,10 @@ export function transformContractResponseToSalesContract(
   const rebateAmount = (Number(contract.rebate) || 0) * 1000000;
   const totalRebate = rebateAmount;
 
-  const status =
-    contract.status === "done"
-      ? ("completed" as const)
-      : contract.status === "canceled"
-        ? ("cancelled" as const)
-        : contract.status === "rejected"
-          ? ("rejected" as const)
-          : ("ongoing" as const);
+  const status = contract.status;
 
   // 총 금액 계산 (프론트엔드 계산 로직)
-  const isInvalidStatus = status === "rejected" || status === "cancelled";
+  const isInvalidStatus = status === "rejected" || status === "canceled";
   const supportAmount = Number(contract.supportAmount) || 0;
   const supportCashAmount = Number(contract.supportCashAmount) || 0;
   const rebateMinusSupport = totalRebate - supportAmount;
@@ -363,24 +342,17 @@ export function transformContractResponseToContractData(
   contractDate: string;
   balanceDate?: string; // 잔금일자 (백엔드 연결 전까지 undefined)
   amount: number;
-  status: "ongoing" | "rejected" | "cancelled" | "completed";
+  status: "ongoing" | "rejected" | "canceled" | "done";
   createdAt: string;
   backendContractId: string | number;
 } {
-  const status =
-    contract.status === "done"
-      ? ("completed" as const)
-      : contract.status === "canceled"
-        ? ("cancelled" as const) // 백엔드 canceled는 해약으로 매핑
-        : contract.status === "rejected"
-          ? ("rejected" as const)
-          : ("ongoing" as const);
+  const status = contract.status;
 
   // 백엔드 grandTotal 대신 프론트엔드에서 계산 (반올림 방지)
   // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금)×0.967)-현금지원금
   // 비과세시 (중개수수료+부가세)+(리베이트-영수지원금)-현금지원금
   // 부결/해약 상태일 경우 최종 금액은 0원 처리
-  const isInvalidStatus = status === "rejected" || status === "cancelled";
+  const isInvalidStatus = status === "rejected" || status === "canceled";
 
   const calculatedTotal = (() => {
     if (isInvalidStatus) return 0;
@@ -420,16 +392,9 @@ export function transformContractListItemToContractData(
   item: ContractListItemResponse,
 ): ContractData {
   // 상태 매핑
-  const status =
-    item.status === "done"
-      ? ("completed" as const)
-      : item.status === "canceled"
-        ? ("cancelled" as const)
-        : item.status === "rejected"
-          ? ("rejected" as const)
-          : ("ongoing" as const);
+  const status = item.status;
 
-  const isInvalidStatus = status === "rejected" || status === "cancelled";
+  const isInvalidStatus = status === "rejected" || status === "canceled";
 
   // 프론트엔드 계산 로직 사용
   // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금)×0.967)-현금지원금
@@ -474,16 +439,9 @@ export function transformMyContractListItemToContractData(
   item: MyContractListItemResponse,
 ): ContractData {
   // 상태 매핑
-  const status =
-    item.status === "done"
-      ? ("completed" as const)
-      : item.status === "canceled"
-        ? ("cancelled" as const)
-        : item.status === "rejected"
-          ? ("rejected" as const)
-          : ("ongoing" as const);
+  const status = item.status;
 
-  const isInvalidStatus = status === "rejected" || status === "cancelled";
+  const isInvalidStatus = status === "rejected" || status === "canceled";
 
   // 프론트엔드 계산 로직 사용 (관리자 페이지와 동일)
   // 계산 공식: 과세시 (중개수수료+부가세)+((리베이트-영수지원금)×0.967)-현금지원금

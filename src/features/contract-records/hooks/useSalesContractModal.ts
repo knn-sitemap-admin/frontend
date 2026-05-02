@@ -106,7 +106,7 @@ export function useSalesContractModal(
     financialInfo: SalesContractData["financialInfo"],
     currentStatus: SalesContractData["status"]
   ) => {
-    if (currentStatus === "rejected" || currentStatus === "cancelled") return 0;
+    if (currentStatus === "rejected" || currentStatus === "canceled") return 0;
     const brokerageAndVat = Number(financialInfo.totalBrokerageFee) || 0;
     const totalRebate = Number(financialInfo.totalRebate) || 0;
     const totalSupportAmount = Number(financialInfo.totalSupportAmount) || 0;
@@ -235,10 +235,10 @@ export function useSalesContractModal(
       const cDate = new Date(data.contractDate);
       const bDate = new Date(data.balanceDate);
       if (bDate < cDate) {
-        return toast({ 
-          title: "날짜 오류", 
-          description: "잔금일자는 계약일자보다 과거일 수 없습니다.", 
-          variant: "destructive" 
+        return toast({
+          title: "날짜 오류",
+          description: "잔금일자는 계약일자보다 과거일 수 없습니다.",
+          variant: "destructive"
         });
       }
     }

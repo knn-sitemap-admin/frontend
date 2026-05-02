@@ -207,8 +207,8 @@ export function SalesContractRecordsModal({
                       <SelectContent className="!z-[100005]">
                         <SelectItem value="ongoing" className="text-xs">계약중</SelectItem>
                         <SelectItem value="rejected" className="text-xs">부결</SelectItem>
-                        <SelectItem value="cancelled" className="text-xs">해약</SelectItem>
-                        <SelectItem value="completed" className="text-xs">계약완료</SelectItem>
+                        <SelectItem value="canceled" className="text-xs">해약</SelectItem>
+                        <SelectItem value="done" className="text-xs">계약완료</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

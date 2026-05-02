@@ -108,6 +108,7 @@ export interface PlatformStatItem {
   ongoingCount: number;
   completedCount: number;
   rejectedCount: number;
+  contractCount: number;
   totalCount: number;
 }
 

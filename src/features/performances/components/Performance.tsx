@@ -19,24 +19,25 @@ import { TeamDetailView } from "./TeamDetailView";
 import { CHART_CONFIG } from "../utils/chartConfig";
 import { DollarSign, TrendingUp, Users, FileText } from "lucide-react";
 import { formatCurrency } from "@/components/contract-management/utils/contractUtils";
-import { 
-  getPerformanceSummary, 
-  getTeamEmployees, 
+import {
+  getPerformanceSummary,
+  getTeamEmployees,
   buildPerformanceFilterQuery,
   getAvailablePeriods
 } from "../api/performance";
-import { 
-  transformTeamSummaryToTeamStat, 
-  transformCompanyKpiToPerformanceStats, 
-  transformTeamEmployeesToPerformanceData 
+import {
+  transformTeamSummaryToTeamStat,
+  transformCompanyKpiToPerformanceStats,
+  transformTeamEmployeesToPerformanceData
 } from "../utils/transformPerformanceData";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from "@/components/atoms/Tabs/Tabs";
 import { EmployeePerformanceView } from "./EmployeePerformanceView";
+import { cn } from "@/lib/cn";
 
 export function Performance() {
   const [selectedPeriod, setSelectedPeriod] = useState("all");
@@ -110,13 +111,13 @@ export function Performance() {
   }, [performanceSummary]);
 
   // 전체 통계 변환
-  const { 
-    totalContracts, 
+  const {
+    totalContracts,
     completedContracts,
     rejectedContracts,
-    totalGrossSales, 
-    totalNetProfit, 
-    totalEmployees 
+    totalGrossSales,
+    totalNetProfit,
+    totalEmployees
   } = useMemo(() => {
     if (!performanceSummary) {
       return {
@@ -217,7 +218,7 @@ export function Performance() {
             onYearChange={setSelectedYear}
             onQuarterChange={setSelectedQuarter}
             onMonthChange={setSelectedMonth}
-            onClose={() => {}}
+            onClose={() => { }}
           />
         }
       />
@@ -229,7 +230,7 @@ export function Performance() {
       ) : (
         <div className="space-y-10">
           {/* 1. 회사 총 실적 - 탭 상단 고정 */}
-          <StatCardsGrid title="전체 실적 요약" columns={6}>
+          <StatCardsGrid title="전체 실적 요약" columns={4}>
             <StatCard
               label="총매출"
               value={formatCurrency(totalGrossSales)}
@@ -239,7 +240,9 @@ export function Performance() {
             <StatCard
               label="순수익"
               value={formatCurrency(totalNetProfit)}
-              valueClassName="text-green-600"
+              valueClassName={cn(
+                "text-base sm:text-lg lg:text-xl font-black text-green-600 leading-none tracking-tight whitespace-nowrap overflow-hidden text-ellipsis"
+              )}
               icon={<TrendingUp className="h-6 w-6" />}
               variant="green"
             />
@@ -272,13 +275,13 @@ export function Performance() {
           <Tabs defaultValue="team" className="w-full">
             <div className="flex items-center justify-between mb-6">
               <TabsList className="bg-gray-100/80 p-1 rounded-xl ring-1 ring-gray-200">
-                <TabsTrigger 
-                  value="team" 
+                <TabsTrigger
+                  value="team"
                   className="px-8 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-bold transition-all"
                 >
                   팀별 실적
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="employee"
                   className="px-8 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-bold transition-all"
                 >
@@ -346,7 +349,7 @@ export function Performance() {
             </TabsContent>
 
             <TabsContent value="employee" className="focus:outline-none">
-               <EmployeePerformanceView />
+              <EmployeePerformanceView />
             </TabsContent>
           </Tabs>
         </div>
