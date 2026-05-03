@@ -674,7 +674,7 @@ export default function ScheduleCalendar() {
                       </div>
                       <div className={cn(
                         "text-xs font-black text-gray-700 truncate group-hover/res:text-emerald-700",
-                        ((result as any).originalData?.status === "canceled" || (result as any).originalData?.status === "rejected" || result.status === "canceled") && "line-through decoration-red-500 decoration-2 opacity-60"
+                        ((result as any).originalData?.status === "canceled" || (result as any).originalData?.status === "rejected" || result.status === "canceled") && "line-through decoration-red-500 decoration-2"
                       )}>
                         {result.category === "휴무" && result.creator?.name 
                           ? `${result.creator.name} 휴무` 
@@ -877,7 +877,7 @@ export default function ScheduleCalendar() {
                                 {!isMultiDay && !(s.eventType === "contract" && s.status === "done") && <div className={cn("w-1.5 h-1.5 rounded-full shrink-0 shadow-sm", getScheduleColor(s.category, s.color).dot)} />}
                                 <span className={cn(
                                   "truncate",
-                                  (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2 opacity-60"
+                                  (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2"
                                 )}>
                                   {s.eventType === "contract" ? (
                                     <span className="flex items-center gap-1">
@@ -938,7 +938,7 @@ export default function ScheduleCalendar() {
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <span className={cn(
                               "whitespace-nowrap px-0.5 shrink-0 min-w-0 text-center",
-                              (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2 opacity-60"
+                              (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2"
                             )}>
                               {(isStart || (i % 7 === 0 && !isStart) || !isMultiDay) && (
                                 `${s.creator?.name || "유저"}: ${s.eventType === "contract" ? s.title : (s.location || s.title)}`
@@ -1095,7 +1095,7 @@ export default function ScheduleCalendar() {
                     </div>
                     <div className={cn(
                       "text-sm sm:text-base font-black text-gray-900 group-hover/item:text-emerald-700 transition-colors",
-                      (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2 opacity-60"
+                      (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2"
                     )}>
                       {(s.eventType === "contract" || s.contractId) && (
                         <FileText className="w-4 h-4 inline mr-1 text-blue-500" />
