@@ -34,6 +34,7 @@ import {
 } from "@/components/atoms/Select/Select";
 import { getPositionRankLabel } from "../../users/utils/rankUtils";
 import { CheckCircle2, Target, Users, XCircle } from "lucide-react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface PlatformStatisticsViewProps {
   filterQuery: any;
@@ -41,6 +42,7 @@ interface PlatformStatisticsViewProps {
 
 export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewProps) {
   const [selectedStaffId, setSelectedStaffId] = useState<string>("all");
+  const isMobile = useIsMobile();
 
   // 직원 목록 조회
   const { data: employees = [] } = useQuery({
@@ -100,13 +102,13 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-10">
       {/* 직원 필터 및 요약 */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-full sm:w-auto">
           <span className="pl-3 text-sm font-bold text-gray-400">담당자 필터:</span>
           <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
-            <SelectTrigger className="w-[180px] h-10 border-none bg-transparent hover:bg-gray-50 rounded-xl font-bold focus:ring-0">
+            <SelectTrigger className="flex-1 sm:w-[180px] h-10 border-none bg-transparent hover:bg-gray-50 rounded-xl font-bold focus:ring-0">
               <SelectValue placeholder="직원 선택" />
             </SelectTrigger>
             <SelectContent className="rounded-2xl border-gray-100 shadow-2xl">
@@ -121,7 +123,7 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
         </div>
       </div>
 
-      <StatCardsGrid columns={6} className="gap-3">
+      <StatCardsGrid columns={6} className="gap-3 sm:gap-4">
         <StatCard
           label="총 유입 건수"
           value={`${summary.total.toLocaleString()}건`}
@@ -165,27 +167,33 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
 
       {/* 차트 섹션 */}
       <DataTableSection title="플랫폼별 퍼포먼스 분석">
-        <div className="h-[400px] w-full bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <div className="h-[350px] sm:h-[400px] w-full bg-white p-4 sm:p-6 rounded-3xl border border-gray-100 shadow-sm">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <BarChart data={stats} margin={{ top: 20, right: isMobile ? 10 : 30, left: isMobile ? -10 : 20, bottom: isMobile ? 30 : 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
               <XAxis
                 dataKey="platform"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#9ca3af', fontWeight: 600, fontSize: 12 }}
+                tick={{ fill: '#9ca3af', fontWeight: 600, fontSize: isMobile ? 10 : 12 }}
                 dy={10}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#9ca3af', fontWeight: 600, fontSize: 12 }}
+                tick={{ fill: '#9ca3af', fontWeight: 600, fontSize: isMobile ? 10 : 12 }}
               />
               <Tooltip
                 contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                 cursor={{ fill: '#f9fafb' }}
               />
-              <Legend verticalAlign="top" align="right" height={36} iconType="circle" />
+              <Legend 
+                verticalAlign={isMobile ? "bottom" : "top"} 
+                align={isMobile ? "center" : "right"} 
+                height={isMobile ? 36 : 36}
+                iconType="circle"
+                wrapperStyle={isMobile ? { paddingTop: '30px', fontSize: '11px' } : { paddingBottom: '20px' }}
+              />
               <Bar dataKey="contractCount" name="총계약건수" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]} />
               <Bar dataKey="newCount" name="신규" stackId="a" fill="#3b82f6" />
               <Bar dataKey="reCount" name="재미팅" stackId="a" fill="#6366f1" />
@@ -197,8 +205,8 @@ export function PlatformStatisticsView({ filterQuery }: PlatformStatisticsViewPr
 
       {/* 데이터 테이블 */}
       <DataTableSection title="플랫폼별 상세 수치">
-        <div className="overflow-hidden bg-white rounded-3xl border border-gray-100 shadow-sm">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto bg-white rounded-3xl border border-gray-100 shadow-sm">
+          <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
               <tr className="bg-gray-50/50">
                 <th className="px-6 py-4 text-sm font-black text-gray-500">플랫폼</th>
