@@ -5,7 +5,7 @@ import type { ContractData } from "../types";
 export const transformSalesContractToContract = (
   salesData: SalesContractData,
   id?: string,
-  status: "completed" | "ongoing" | "rejected" | "cancelled" = "completed"
+  status: ContractData["status"] = "done"
 ): ContractData => {
   // 필수 데이터 검증
   if (!salesData.customerInfo?.name || !salesData.salesPerson?.name) {
@@ -19,6 +19,20 @@ export const transformSalesContractToContract = (
 
   const contractId = salesData.id || id!;
 
+  // 상태 값 정규화 (completed -> done, cancelled -> canceled)
+  const rawStatus = salesData.status || status;
+  let normalizedStatus: ContractData["status"] = "ongoing";
+
+  if (rawStatus === "done") {
+    normalizedStatus = "done";
+  } else if (rawStatus === "canceled") {
+    normalizedStatus = "canceled";
+  } else if (rawStatus === "rejected") {
+    normalizedStatus = "rejected";
+  } else {
+    normalizedStatus = "ongoing";
+  }
+
   return {
     id: contractId,
     contractNumber: salesData.contractNumber || contractId,
@@ -29,7 +43,7 @@ export const transformSalesContractToContract = (
     salesPersonSalary: 0, // 담당자 급여 (별도 계산 필요)
     contractDate:
       salesData.contractDate || new Date().toISOString().split("T")[0],
-    status: salesData.status || status,
+    status: normalizedStatus,
   };
 };
 

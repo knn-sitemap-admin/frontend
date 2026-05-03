@@ -11,7 +11,7 @@ export const mockContracts: ContractData[] = [
     salesPersonSalary: 1500000,
     totalCalculation: 15000000,
     contractDate: "2024-01-20",
-    status: "completed",
+    status: "done",
   },
   {
     id: "2",
@@ -33,7 +33,7 @@ export const mockContracts: ContractData[] = [
     salesPersonSalary: 1800000,
     totalCalculation: 18000000,
     contractDate: "2024-01-18",
-    status: "completed",
+    status: "done",
   },
   {
     id: "4",
@@ -44,7 +44,7 @@ export const mockContracts: ContractData[] = [
     salesPersonSalary: 950000,
     totalCalculation: 9500000,
     contractDate: "2024-01-17",
-    status: "cancelled",
+    status: "canceled",
   },
   {
     id: "5",
@@ -66,7 +66,7 @@ export const mockContracts: ContractData[] = [
     salesPersonSalary: 1350000,
     totalCalculation: 13500000,
     contractDate: "2024-01-15",
-    status: "completed",
+    status: "done",
   },
   {
     id: "7",
@@ -77,7 +77,7 @@ export const mockContracts: ContractData[] = [
     salesPersonSalary: 1650000,
     totalCalculation: 16500000,
     contractDate: "2024-01-14",
-    status: "completed",
+    status: "done",
   },
   {
     id: "8",
@@ -99,7 +99,7 @@ export const mockContracts: ContractData[] = [
     salesPersonSalary: 1950000,
     totalCalculation: 19500000,
     contractDate: "2024-01-12",
-    status: "completed",
+    status: "done",
   },
   {
     id: "10",
@@ -110,6 +110,6 @@ export const mockContracts: ContractData[] = [
     salesPersonSalary: 1750000,
     totalCalculation: 17500000,
     contractDate: "2024-01-11",
-    status: "cancelled",
+    status: "canceled",
   },
 ];

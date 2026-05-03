@@ -41,7 +41,7 @@ export const contractTableColumns: TableColumn<ContractData>[] = [
     width: "120px",
     align: "right",
     render: (value, row) => {
-      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      const isZeroStatus = row.status === "rejected" || row.status === "canceled";
       return (
         <div className="font-semibold text-gray-900 whitespace-nowrap">
           {formatCurrency(isZeroStatus ? 0 : value)}
@@ -73,7 +73,7 @@ export const contractTableColumns: TableColumn<ContractData>[] = [
     width: "125px",
     align: "right",
     render: (value, row) => {
-      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      const isZeroStatus = row.status === "rejected" || row.status === "canceled";
       return (
         <div className="font-medium text-blue-600 whitespace-nowrap">
           {formatCurrency(isZeroStatus ? 0 : (value ?? 0))}
@@ -87,7 +87,7 @@ export const contractTableColumns: TableColumn<ContractData>[] = [
     width: "125px",
     align: "right",
     render: (value, row) => {
-      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      const isZeroStatus = row.status === "rejected" || row.status === "canceled";
       return (
         <div className="font-medium text-emerald-600 whitespace-nowrap">
           {formatCurrency(isZeroStatus ? 0 : (value ?? 0))}
@@ -101,7 +101,7 @@ export const contractTableColumns: TableColumn<ContractData>[] = [
     width: "125px",
     align: "right",
     render: (value, row) => {
-      const isZeroStatus = row.status === "rejected" || row.status === "cancelled";
+      const isZeroStatus = row.status === "rejected" || row.status === "canceled";
       return (
         <div className="font-medium text-orange-600 whitespace-nowrap">
           {formatCurrency(isZeroStatus ? 0 : (value ?? 0))}
