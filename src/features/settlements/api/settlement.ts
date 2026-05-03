@@ -4,7 +4,6 @@ export const getSettlements = async (year: number, month: number) => {
   const response = await apiFetch.get<{ data: any[] }>("/settlements", { year, month });
   return (response.data || []).map(item => ({
     ...item,
-    id: item.accountId,
     calculatedAmount: Number(item.calculatedAmount || 0),
     adjustmentAmount: Number(item.adjustmentAmount || 0),
     finalAmount: Number(item.finalAmount || 0),

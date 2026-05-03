@@ -100,12 +100,13 @@ export function SettlementManagement() {
   }, [settlements, searchTerm]);
 
   const totals = useMemo(() => {
-    if (!Array.isArray(settlements)) return { total: 0, paid: 0, pending: 0, calculated: 0, adjustment: 0 };
+    if (!Array.isArray(settlements)) return { total: 0, paid: 0, pending: 0, calculated: 0, realTimeTotal: 0, adjustment: 0 };
     const total = settlements.reduce((acc: number, curr: any) => acc + curr.finalAmount, 0);
     const calculated = settlements.reduce((acc: number, curr: any) => acc + curr.calculatedAmount, 0);
+    const realTimeTotal = settlements.reduce((acc: number, curr: any) => acc + (curr.realTimeAmount || 0), 0);
     const adjustment = settlements.reduce((acc: number, curr: any) => acc + (curr.adjustmentAmount || 0), 0);
     const paid = settlements.filter((s: any) => s.status === "paid").reduce((acc: number, curr: any) => acc + curr.finalAmount, 0);
-    return { total, paid, pending: total - paid, calculated, adjustment };
+    return { total, paid, pending: total - paid, calculated, realTimeTotal, adjustment };
   }, [settlements]);
 
 
@@ -212,7 +213,14 @@ export function SettlementManagement() {
           value={formatCurrency(totals.total)}
           icon={<DollarSign className="h-6 w-6" />}
           variant="blue"
-          description={`실적: ${formatCurrency(totals.calculated)} / 조정: ${totals.adjustment >= 0 ? "+" : ""}${formatCurrency(totals.adjustment)}`}
+          description={
+            <div className="flex flex-col">
+              <span>실적: {formatCurrency(totals.calculated)} / 조정: {totals.adjustment >= 0 ? "+" : ""}{formatCurrency(totals.adjustment)}</span>
+              {totals.realTimeTotal > totals.calculated && (
+                <span className="text-red-500 font-bold">누락된 실적 감지: +{formatCurrency(totals.realTimeTotal - totals.calculated)}</span>
+              )}
+            </div>
+          }
         />
         <StatCard
           label="지급 완료액"
@@ -269,7 +277,17 @@ export function SettlementManagement() {
                     key: "calculatedAmount",
                     label: "계산 정산금",
                     width: "13%",
-                    render: (val) => <span className="font-medium whitespace-nowrap">{formatCurrency(val)}</span>
+                    render: (val, row: any) => (
+                      <div className="flex flex-col">
+                        <span className="font-medium whitespace-nowrap">{formatCurrency(val)}</span>
+                        {row.hasDiscrepancy && (
+                          <div className="flex items-center gap-1 text-[10px] text-red-500 font-bold">
+                            <RefreshCw size={10} className="animate-spin-slow" />
+                            <span>실적 변동 (+{formatCurrency(row.realTimeAmount - val)})</span>
+                          </div>
+                        )}
+                      </div>
+                    )
                   },
                   {
                     key: "adjustmentAmount",
@@ -449,9 +467,20 @@ export function SettlementManagement() {
           <div className="py-6 space-y-6">
             <div className="p-4 bg-gray-50 rounded-2xl space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">실적 계산 금액</span>
+                <span className="text-gray-500">
+                  {selectedEmp?.hasDiscrepancy ? "기존 저장 금액" : "실적 계산 금액"}
+                </span>
                 <span className="font-bold">{formatCurrency(selectedEmp?.calculatedAmount || 0)}</span>
               </div>
+              
+              {selectedEmp?.hasDiscrepancy && (
+                <div className="flex justify-between text-sm p-2 bg-red-50 rounded-lg border border-red-100">
+                  <span className="text-red-600 font-bold flex items-center gap-1">
+                    <RefreshCw size={12} className="animate-spin-slow" /> 최신 실적 반영액
+                  </span>
+                  <span className="font-black text-red-700">{formatCurrency(selectedEmp?.realTimeAmount || 0)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm items-center">
                 <span className="text-gray-500">조정 금액</span>
                 <div className="flex items-center gap-2">
@@ -467,7 +496,7 @@ export function SettlementManagement() {
               <div className="pt-3 border-t border-gray-200 flex justify-between items-center">
                 <span className="font-bold text-gray-900">최종 지급액</span>
                 <span className="text-xl font-black text-blue-600">
-                  {formatCurrency(Number(selectedEmp?.calculatedAmount || 0) + Number(adjustment))}
+                  {formatCurrency(Number(selectedEmp?.hasDiscrepancy ? selectedEmp?.realTimeAmount : selectedEmp?.calculatedAmount || 0) + Number(adjustment))}
                 </span>
               </div>
             </div>

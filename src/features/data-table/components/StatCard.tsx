@@ -32,7 +32,7 @@ interface StatCardProps {
   label: string;
   value: ReactNode;
   /** 추가 설명 (작은 글씨) */
-  description?: string;
+  description?: ReactNode;
   /** Lucide 아이콘 등 */
   icon?: ReactNode;
   variant?: StatCardVariant;
@@ -80,9 +80,10 @@ export function StatCard({
           </div>
           {description && (
             <div className="mt-1.5 p-1.5 bg-blue-50/50 rounded-lg border border-blue-100/50">
-              <p className="text-[10px] text-blue-800 font-bold leading-tight flex items-center gap-1">
-                <span className="text-blue-500 text-[8px]">ⓘ</span> {description}
-              </p>
+              <div className="text-[10px] text-blue-800 font-bold leading-tight flex items-center gap-1">
+                <span className="text-blue-500 text-[8px] shrink-0">ⓘ</span> 
+                <div className="flex-1">{description}</div>
+              </div>
             </div>
           )}
         </div>
