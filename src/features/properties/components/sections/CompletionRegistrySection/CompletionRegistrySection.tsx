@@ -12,6 +12,16 @@ import type {
 } from "@/features/properties/types/property-domain";
 import type { CompletionRegistrySectionProps } from "./types";
 import ElevatorSegment from "../HeaderSection/components/ElevatorSegment";
+import { CalendarIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/atoms/Popover/Popover";
+import { Calendar } from "@/components/atoms/Calendar/Calendar";
+import { Button } from "@/components/atoms/Button/Button";
+import { format, parse } from "date-fns";
+import { ko } from "date-fns/locale";
 
 /** ───────── 상수/타입 ───────── */
 const SLOPE_GRADES = ["좋음", "평범", "복잡"] as const;
@@ -269,25 +279,61 @@ export default function CompletionRegistrySection({
         </Field>
 
         <Field label="준공일" align="center">
-          <Input
-            type="text"
-            inputMode="numeric"
-            value={localDate}
-            onChange={(e) => setLocalDate(softNormalize(e.target.value))}
-            onBlur={commitDate}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                commitDate();
-              }
-              if (e.key === "Escape") {
-                setLocalDate(toYmd(completionDate));
-              }
-            }}
-            placeholder="예: 2024-04-14"
-            className="h-9 w-36 max-w-full"
-            aria-label="준공일 입력(YYYY-MM-DD)"
-          />
+          <div className="flex items-center gap-1">
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={localDate}
+              onChange={(e) => setLocalDate(softNormalize(e.target.value))}
+              onBlur={commitDate}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commitDate();
+                }
+                if (e.key === "Escape") {
+                  setLocalDate(toYmd(completionDate));
+                }
+              }}
+              placeholder="예: 2024-04-14"
+              className="h-9 w-32 max-w-full"
+              aria-label="준공일 입력(YYYY-MM-DD)"
+            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  type="button"
+                  onPointerDown={(e) => e.preventDefault()}
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  captionLayout="dropdown"
+                  startMonth={new Date(1960, 0)}
+                  endMonth={new Date(2040, 11)}
+                  selected={
+                    localDate && /^\d{4}-\d{2}-\d{2}$/.test(localDate)
+                      ? parse(localDate, "yyyy-MM-dd", new Date())
+                      : undefined
+                  }
+                  onSelect={(date) => {
+                    if (date) {
+                      const formatted = format(date, "yyyy-MM-dd");
+                      setLocalDate(formatted);
+                      setCompletionDate(formatted);
+                    }
+                  }}
+                  locale={ko}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </Field>
 
         <Field

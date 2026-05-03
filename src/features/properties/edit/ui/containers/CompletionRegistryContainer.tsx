@@ -2,6 +2,7 @@
 
 import CompletionRegistrySection from "@/features/properties/components/sections/CompletionRegistrySection/CompletionRegistrySection";
 import type { CompletionRegistryFormSlice } from "@/features/properties/edit/types/editForm.slices";
+import { useMemo } from "react";
 
 /** YYYY-MM-DD 로 잘라서 반환(없으면 빈 문자열) */
 const toYmd = (s?: string | null) =>
@@ -22,7 +23,10 @@ export default function CompletionRegistryContainer({
   form: CompletionRegistryFormSlice; // ✅ 슬라이스 타입
 }) {
   const completionDate = toYmd(form.completionDate);
-  const setCompletionDate = clampYmdSetter(form.setCompletionDate);
+  const setCompletionDate = useMemo(
+    () => clampYmdSetter(form.setCompletionDate),
+    [form.setCompletionDate]
+  );
   const salePrice = toStr(form.salePrice);
   const rebateText = toStr(form.rebateText);
 

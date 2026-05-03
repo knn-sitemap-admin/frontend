@@ -932,9 +932,11 @@ export default function ScheduleCalendar() {
                             )
                           )}
                         >
-                          {/* 중앙 정렬 크롭을 위한 절대 위치 래퍼 */}
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className="whitespace-nowrap px-0.5 shrink-0 min-w-0 text-center">
+                            <span className={cn(
+                              "whitespace-nowrap px-0.5 shrink-0 min-w-0 text-center",
+                              (s.status === "canceled" || s.status === "rejected") && "line-through decoration-red-500 opacity-60"
+                            )}>
                               {(isStart || (i % 7 === 0 && !isStart) || !isMultiDay) && (
                                 `${s.creator?.name || "유저"}: ${s.eventType === "contract" ? s.title : (s.location || s.title)}`
                               )}

@@ -39,7 +39,6 @@ export default function AspectCell({
         items={orientations.map((o) => ({ value: o, label: o }))}
         placeholder="방향"
         className="w-[110px] h-9"
-        contentClassName="z-[1205]"
       />
 
       {canRemove && (

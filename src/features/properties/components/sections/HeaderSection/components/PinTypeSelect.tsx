@@ -79,7 +79,6 @@ export default function PinTypeSelect({
       items={items}
       placeholder={placeholder}
       className={className ?? "w-[220px] h-9"}
-      contentClassName="z-[1100] max-h-[320px]"
     />
   );
 }

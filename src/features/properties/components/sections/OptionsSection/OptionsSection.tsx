@@ -53,31 +53,46 @@ export default function OptionsSection({
   livingRoomView,
   setLivingRoomView,
 }: OptionsSectionProps) {
-  const safeOptions = Array.isArray(options) ? options.map(String) : [];
+  const safeOptions = useMemo(
+    () => (Array.isArray(options) ? options.map(String) : []),
+    [options]
+  );
   const safeSetOptions =
-    typeof setOptions === "function" ? setOptions : (_: string[]) => {};
+    typeof setOptions === "function" ? setOptions : (_: string[]) => { };
   const safeSetEtcChecked =
-    typeof setEtcChecked === "function" ? setEtcChecked : (_: boolean) => {};
+    typeof setEtcChecked === "function" ? setEtcChecked : (_: boolean) => { };
   const safeOptionEtc = typeof optionEtc === "string" ? optionEtc : "";
   const safeSetOptionEtc =
-    typeof setOptionEtc === "function" ? setOptionEtc : (_: string) => {};
+    typeof setOptionEtc === "function" ? setOptionEtc : (_: string) => { };
 
   // ----- 프리셋 / 커스텀 분리 -----
-  const PRESETS_NO_ETC = PRESET_OPTIONS.filter((op) => !isEtcLabel(op));
-  const presetSet = new Set(PRESETS_NO_ETC.map((v) => normalize(v)));
+  const PRESETS_NO_ETC = useMemo(
+    () => PRESET_OPTIONS.filter((op) => !isEtcLabel(op)),
+    [PRESET_OPTIONS]
+  );
 
-  const presetSelected = safeOptions.filter((v) => presetSet.has(normalize(v)));
-  const customFromOptions = safeOptions.filter(
-    (v) => !presetSet.has(normalize(v))
+  const presetSet = useMemo(
+    () => new Set(PRESETS_NO_ETC.map((v) => normalize(v))),
+    [PRESETS_NO_ETC]
+  );
+
+  const presetSelected = useMemo(
+    () => safeOptions.filter((v) => presetSet.has(normalize(v))),
+    [safeOptions, presetSet]
+  );
+
+  const customFromOptions = useMemo(
+    () => safeOptions.filter((v) => !presetSet.has(normalize(v))),
+    [safeOptions, presetSet]
   );
 
   // optionEtc 쪽에서도 커스텀 후보 추출
   const customFromOptionEtc: string[] =
     typeof safeOptionEtc === "string"
       ? safeOptionEtc
-          .split(SPLIT_RE)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0)
+        .split(SPLIT_RE)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
       : [];
 
   // ----- 로컬 입력 필드 상태 (한 번만 초기화) -----
@@ -111,9 +126,9 @@ export default function OptionsSection({
     const latestCustomFromOptionEtc: string[] =
       typeof safeOptionEtc === "string"
         ? safeOptionEtc
-            .split(SPLIT_RE)
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
+          .split(SPLIT_RE)
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0)
         : [];
 
     const hasCustom =
@@ -268,20 +283,20 @@ export default function OptionsSection({
 
   const removeCustomField = useCallback(
     (idx: number) => {
-      setCustomInputs((prev) => {
-        const copy = [...prev];
-        copy.splice(idx, 1);
+      const current = customInputsRef.current;
+      const next = [...current];
+      next.splice(idx, 1);
 
-        // ✅ 모든 칸을 X 눌러서 "하나도 안 남았을 때"만 직접입력 자동 OFF
-        if (copy.length === 0) {
-          setEtcOn(false);
-          safeSetEtcChecked(false);
-          safeSetOptionEtc("");
-        }
+      setCustomInputs(next);
 
-        syncOptionsDebounced(copy);
-        return copy;
-      });
+      // ✅ 모든 칸을 X 눌러서 "하나도 안 남았을 때"만 직접입력 자동 OFF
+      if (next.length === 0) {
+        setEtcOn(false);
+        safeSetEtcChecked(false);
+        safeSetOptionEtc("");
+      }
+
+      syncOptionsDebounced(next);
     },
     [syncOptionsDebounced, safeSetEtcChecked, safeSetOptionEtc]
   );
@@ -289,13 +304,14 @@ export default function OptionsSection({
   // IME 안전: 로컬만 즉시 업데이트, 부모는 디바운스
   const handleCustomChangeLocal = useCallback(
     (idx: number, val: string) => {
-      setCustomInputs((prev) => {
-        const next = [...prev];
-        if (next[idx] === val) return prev;
-        next[idx] = val;
-        syncOptionsDebounced(next);
-        return next;
-      });
+      const current = customInputsRef.current;
+      if (current[idx] === val) return;
+
+      const next = [...current];
+      next[idx] = val;
+
+      setCustomInputs(next);
+      syncOptionsDebounced(next);
     },
     [syncOptionsDebounced]
   );
@@ -345,7 +361,6 @@ export default function OptionsSection({
             ]}
             placeholder="선택"
             className="h-9 text-sm"
-            contentClassName="z-[1200]"
             allowUnset
           />
         </div>
@@ -361,7 +376,6 @@ export default function OptionsSection({
             ]}
             placeholder="선택"
             className="h-9 text-sm"
-            contentClassName="z-[1200]"
             allowUnset
           />
         </div>
@@ -377,7 +391,6 @@ export default function OptionsSection({
             ]}
             placeholder="선택"
             className="h-9 text-sm"
-            contentClassName="z-[1200]"
             allowUnset
           />
         </div>
@@ -393,7 +406,6 @@ export default function OptionsSection({
             ]}
             placeholder="선택"
             className="h-9 text-sm"
-            contentClassName="z-[1200]"
             allowUnset
           />
         </div>

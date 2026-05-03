@@ -35,7 +35,7 @@ export default function RenderRow({
           <Input
             className="h-9 w-24"
             value={m2Min}
-            onChange={(e) => onM2Min(e.target.value)}
+            onChange={(e) => onM2Min(e.target.value.replace(/[^0-9.]/g, ""))}
             placeholder="최소"
             inputMode="numeric"
           />
@@ -43,7 +43,7 @@ export default function RenderRow({
           <Input
             className="h-9 w-24"
             value={m2Max}
-            onChange={(e) => onM2Max(e.target.value)}
+            onChange={(e) => onM2Max(e.target.value.replace(/[^0-9.]/g, ""))}
             placeholder="최대"
             inputMode="numeric"
           />
@@ -54,7 +54,7 @@ export default function RenderRow({
           <Input
             className="h-9 w-24"
             value={pyMin}
-            onChange={(e) => onPyMin(e.target.value)}
+            onChange={(e) => onPyMin(e.target.value.replace(/[^0-9.]/g, ""))}
             placeholder="최소"
             inputMode="numeric"
           />
@@ -62,7 +62,7 @@ export default function RenderRow({
           <Input
             className="h-9 w-24"
             value={pyMax}
-            onChange={(e) => onPyMax(e.target.value)}
+            onChange={(e) => onPyMax(e.target.value.replace(/[^0-9.]/g, ""))}
             placeholder="최대"
             inputMode="numeric"
           />
@@ -76,7 +76,7 @@ export default function RenderRow({
             <Input
               className="h-9 w-20"
               value={m2Min}
-              onChange={(e) => onM2Min(e.target.value)}
+              onChange={(e) => onM2Min(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="최소"
               inputMode="numeric"
             />
@@ -84,7 +84,7 @@ export default function RenderRow({
             <Input
               className="h-9 w-20"
               value={m2Max}
-              onChange={(e) => onM2Max(e.target.value)}
+              onChange={(e) => onM2Max(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="최대"
               inputMode="numeric"
             />
@@ -96,7 +96,7 @@ export default function RenderRow({
             <Input
               className="h-9 w-20"
               value={pyMin}
-              onChange={(e) => onPyMin(e.target.value)}
+              onChange={(e) => onPyMin(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="최소"
               inputMode="numeric"
             />
@@ -104,7 +104,7 @@ export default function RenderRow({
             <Input
               className="h-9 w-20"
               value={pyMax}
-              onChange={(e) => onPyMax(e.target.value)}
+              onChange={(e) => onPyMax(e.target.value.replace(/[^0-9.]/g, ""))}
               placeholder="최대"
               inputMode="numeric"
             />

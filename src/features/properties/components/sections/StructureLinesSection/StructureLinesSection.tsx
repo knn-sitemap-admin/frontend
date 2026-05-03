@@ -113,7 +113,7 @@ export default function StructureLinesSection({
                   <div className="flex-1 flex items-center gap-1.5">
                     <Input
                       value={line.primary}
-                      onChange={(e) => onUpdate(idx, { primary: e.target.value })}
+                      onChange={(e) => onUpdate(idx, { primary: e.target.value.replace(/[^0-9]/g, "") })}
                       placeholder="최소"
                       className="h-8 md:h-9 flex-1 min-w-0"
                       inputMode="numeric"
@@ -126,7 +126,7 @@ export default function StructureLinesSection({
                   <div className="flex-1 flex items-center gap-1.5">
                     <Input
                       value={line.secondary}
-                      onChange={(e) => onUpdate(idx, { secondary: e.target.value })}
+                      onChange={(e) => onUpdate(idx, { secondary: e.target.value.replace(/[^0-9]/g, "") })}
                       placeholder="최대"
                       className="h-8 md:h-9 flex-1 min-w-0"
                       inputMode="numeric"
