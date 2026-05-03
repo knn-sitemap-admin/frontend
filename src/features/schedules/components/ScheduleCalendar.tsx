@@ -519,7 +519,7 @@ export default function ScheduleCalendar() {
         <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => router.push("/")}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm hover:shadow-md hover:border-emerald-200 transition-all active:scale-95 group"
+            className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-gray-100 items-center justify-center shadow-sm hover:shadow-md hover:border-emerald-200 transition-all active:scale-95 group"
             title="홈으로 이동"
           >
             <HomeIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-emerald-600 transition-colors" />
@@ -672,10 +672,15 @@ export default function ScheduleCalendar() {
                           )}
                         </div>
                       </div>
-                      <div className={cn(
-                        "text-xs font-black text-gray-700 truncate group-hover/res:text-emerald-700",
-                        ((result as any).originalData?.status === "canceled" || (result as any).originalData?.status === "rejected" || result.status === "canceled") && "line-through decoration-red-500 decoration-2"
-                      )}>
+                      <div 
+                        className={cn(
+                          "text-xs font-black text-gray-700 truncate group-hover/res:text-emerald-700",
+                        )}
+                        style={((result as any).originalData?.status === "canceled" || (result as any).originalData?.status === "rejected" || result.status === "canceled" || result.status === "rejected") ? {
+                          textDecoration: 'line-through #ef4444 2px',
+                          color: '#9ca3af'
+                        } : {}}
+                      >
                         {result.category === "휴무" && result.creator?.name 
                           ? `${result.creator.name} 휴무` 
                           : result.title}
@@ -710,7 +715,7 @@ export default function ScheduleCalendar() {
             variant="ghost"
             size="sm"
             onClick={() => setIsTrashOpen(true)}
-            className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-gray-500 hover:bg-gray-100 font-bold"
+            className="hidden sm:flex h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-gray-500 hover:bg-gray-100 font-bold"
           >
             <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
             <span className="hidden sm:inline text-xs sm:text-sm ml-2">삭제 내역</span>
@@ -744,7 +749,7 @@ export default function ScheduleCalendar() {
                 if (nextValue) setOnlyHolidays(false);
               }}
               className={cn(
-                "h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold transition-all",
+                "hidden sm:flex h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold transition-all",
                 onlyFinalPayments ? "bg-black text-white border-none shadow-gray-200 hover:bg-zinc-800" : "border-gray-200 bg-white/50 text-gray-600"
               )}
             >
@@ -763,7 +768,7 @@ export default function ScheduleCalendar() {
               }
             }}
             className={cn(
-              "h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold transition-all",
+              "hidden sm:flex h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[10px] sm:text-xs font-bold transition-all",
               onlyHolidays ? "bg-amber-500 hover:bg-amber-600 border-none shadow-amber-100" : "border-gray-200 bg-white/50 text-gray-600"
             )}
           >
@@ -876,9 +881,13 @@ export default function ScheduleCalendar() {
                               <div className="flex items-center gap-1 min-w-0 flex-1">
                                 {!isMultiDay && !(s.eventType === "contract" && s.status === "done") && <div className={cn("w-1.5 h-1.5 rounded-full shrink-0 shadow-sm", getScheduleColor(s.category, s.color).dot)} />}
                                 <span className={cn(
-                                  "truncate",
-                                  (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2"
-                                )}>
+                                  "truncate"
+                                )}
+                                style={(s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") ? {
+                                  textDecoration: 'line-through #ef4444 2px',
+                                  opacity: 0.7
+                                } : {}}
+                              >
                                   {s.eventType === "contract" ? (
                                     <span className="flex items-center gap-1">
                                       {s.status === "done" ? (
@@ -936,10 +945,15 @@ export default function ScheduleCalendar() {
                           )}
                         >
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className={cn(
-                              "whitespace-nowrap px-0.5 shrink-0 min-w-0 text-center",
-                              (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2"
-                            )}>
+                            <span 
+                              className={cn(
+                                "whitespace-nowrap px-0.5 shrink-0 min-w-0 text-center",
+                              )}
+                              style={(s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") ? {
+                                textDecoration: 'line-through #ff0000 2px',
+                                color: s.color === 'royal' ? '#cccccc' : '#9ca3af'
+                              } : {}}
+                            >
                               {(isStart || (i % 7 === 0 && !isStart) || !isMultiDay) && (
                                 `${s.creator?.name || "유저"}: ${s.eventType === "contract" ? s.title : (s.location || s.title)}`
                               )}
@@ -1093,10 +1107,15 @@ export default function ScheduleCalendar() {
                         </span>
                       </div>
                     </div>
-                    <div className={cn(
-                      "text-sm sm:text-base font-black text-gray-900 group-hover/item:text-emerald-700 transition-colors",
-                      (s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") && "line-through decoration-red-500 decoration-2"
-                    )}>
+                    <div 
+                      className={cn(
+                        "text-sm sm:text-base font-black text-gray-900 group-hover/item:text-emerald-700 transition-colors",
+                      )}
+                      style={(s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") ? {
+                        textDecoration: 'line-through #ef4444 2px',
+                        color: '#9ca3af'
+                      } : {}}
+                    >
                       {(s.eventType === "contract" || s.contractId) && (
                         <FileText className="w-4 h-4 inline mr-1 text-blue-500" />
                       )}
@@ -1153,15 +1172,65 @@ export default function ScheduleCalendar() {
         </button>
       </div>
 
-      <div className="flex items-center justify-around py-3 bg-white border-t sm:hidden z-40 px-6">
-        <Button variant="ghost" onClick={() => router.push("/")} className="flex flex-col gap-1 text-gray-400 hover:text-emerald-600">
-          <HomeIcon className="w-6 h-6" />
-          <span className="text-[10px] font-bold tracking-tight">홈</span>
-        </Button>
-        <Button variant="ghost" className="flex flex-col gap-1 text-emerald-600">
-          <CalIcon className="w-6 h-6" />
-          <span className="text-[10px] font-bold tracking-tight text-emerald-600">달력</span>
-        </Button>
+      <div className="sm:hidden flex flex-col bg-white border-t z-40">
+        {/* 모바일 퀵 필터 툴바 */}
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50/50">
+          <div className="flex gap-1.5">
+            {isPowerful && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const nextValue = !onlyFinalPayments;
+                  setOnlyFinalPayments(nextValue);
+                  if (nextValue) setOnlyHolidays(false);
+                }}
+                className={cn(
+                  "h-8 px-2.5 rounded-lg text-[10px] font-black transition-all",
+                  onlyFinalPayments ? "bg-black text-white border-none" : "border-gray-200 bg-white text-gray-600"
+                )}
+              >
+                잔금일만
+              </Button>
+            )}
+            <Button
+              variant={onlyHolidays ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                const nextValue = !onlyHolidays;
+                setOnlyHolidays(nextValue);
+                if (nextValue) setOnlyFinalPayments(false);
+              }}
+              className={cn(
+                "h-8 px-2.5 rounded-lg text-[10px] font-black transition-all",
+                onlyHolidays ? "bg-amber-500 hover:bg-amber-600 border-none" : "border-gray-200 bg-white text-gray-600"
+              )}
+            >
+              휴무일만
+            </Button>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsTrashOpen(true)}
+            className="h-8 px-2 rounded-lg text-gray-400 flex items-center gap-1"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black">삭제내역</span>
+          </Button>
+        </div>
+
+        {/* 메인 하단 내비게이션 */}
+        <div className="flex items-center justify-around py-2 px-6">
+          <Button variant="ghost" onClick={() => router.push("/")} className="flex flex-col gap-1 text-gray-400 hover:text-emerald-600 h-auto py-1">
+            <HomeIcon className="w-6 h-6" />
+            <span className="text-[10px] font-black tracking-tight">홈</span>
+          </Button>
+          <Button variant="ghost" className="flex flex-col gap-1 text-emerald-600 h-auto py-1">
+            <CalIcon className="w-6 h-6" />
+            <span className="text-[10px] font-black tracking-tight">달력</span>
+          </Button>
+        </div>
       </div>
 
       <ScheduleModal
