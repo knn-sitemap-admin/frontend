@@ -1184,13 +1184,13 @@ export default function ScheduleCalendar() {
           </Button>
 
           {/* 달력 (현재 활성) */}
-          <Button
+          {/* <Button
             variant="ghost"
             className="flex flex-col items-center gap-1 text-emerald-600 h-auto py-1 px-0 flex-1"
           >
             <CalIcon className="w-5 h-5" />
             <span className="text-[9px] font-black tracking-tight">달력</span>
-          </Button>
+          </Button> */}
 
           {/* 잔금일 필터 */}
           {isPowerful && (
