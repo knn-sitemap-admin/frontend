@@ -19,7 +19,7 @@ import {
   subDays,
 } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check, X, ShieldCheck, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check, X, ShieldCheck, Users, Coffee } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/atoms/Button/Button";
@@ -172,18 +172,18 @@ export default function ScheduleCalendar() {
     enabled: isPowerful,
   });
 
-  const { 
-    data: calendarData = { schedules: [], contracts: [] }, 
+  const {
+    data: calendarData = { schedules: [], contracts: [] },
     isLoading: isCalendarLoading,
-    refetch: refetchCalendar 
+    refetch: refetchCalendar
   } = useQuery({
-    queryKey: ["calendar", { 
-      year: currentMonth.getFullYear(), 
-      staffId, 
-      filterMode, 
-      onlyHolidays, 
-      onlyFinalPayments, 
-      profileId: profile?.account?.id 
+    queryKey: ["calendar", {
+      year: currentMonth.getFullYear(),
+      staffId,
+      filterMode,
+      onlyHolidays,
+      onlyFinalPayments,
+      profileId: profile?.account?.id
     }],
     queryFn: async () => {
       const year = currentMonth.getFullYear();
@@ -212,8 +212,8 @@ export default function ScheduleCalendar() {
 
       const [scheduleData, contractData] = await Promise.all([
         getSchedules(params),
-        (!isPowerful || filterMode === "mine") 
-          ? getMyContracts(contractParams) 
+        (!isPowerful || filterMode === "mine")
+          ? getMyContracts(contractParams)
           : getContracts(contractParams)
       ]);
 
@@ -245,13 +245,13 @@ export default function ScheduleCalendar() {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
     const qDigits = q.replace(/[^0-9]/g, ""); // 숫자만 추출
-    
+
     const matchedSchedules = schedules.filter(s => {
       const titleMatch = s.title.toLowerCase().includes(q);
       const locationMatch = s.location?.toLowerCase().includes(q);
       const categoryMatch = s.category?.toLowerCase().includes(q);
       const creatorMatch = s.creator?.name?.toLowerCase().includes(q);
-      
+
       // 전화번호 매칭 (하이픈 제거 후 비교)
       let phoneMatch = false;
       if (s.customerPhone) {
@@ -266,7 +266,7 @@ export default function ScheduleCalendar() {
       const siteMatch = c.siteName.toLowerCase().includes(q);
       const customerMatch = c.customerName?.toLowerCase().includes(q);
       const creatorMatch = c.createdByName?.toLowerCase().includes(q);
-      
+
       // 전화번호 매칭
       let phoneMatch = false;
       if (c.customerPhone) {
@@ -286,7 +286,7 @@ export default function ScheduleCalendar() {
       originalData: c
     }));
 
-    return [...matchedSchedules, ...matchedContracts].sort((a, b) => 
+    return [...matchedSchedules, ...matchedContracts].sort((a, b) =>
       new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
     ).slice(0, 10); // 최대 10개만 표시
   }, [searchQuery, schedules, contracts]);
@@ -583,12 +583,11 @@ export default function ScheduleCalendar() {
             {profile?.role === "admin" && (
               <Button
                 variant="ghost"
-                size="icon"
                 onClick={() => router.push("/admin")}
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl hover:bg-emerald-50 text-emerald-500 hover:text-emerald-700 transition-all border border-emerald-100 bg-emerald-50/30"
-                title="관리자 메뉴로 이동"
+                className="h-8 sm:h-10 px-2 sm:px-3 rounded-xl hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 transition-all border border-emerald-200 bg-emerald-50 font-black text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 shadow-sm"
               >
-                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>관리자</span>
               </Button>
             )}
 
@@ -661,18 +660,18 @@ export default function ScheduleCalendar() {
                             <span className={cn(
                               "text-[9px] font-bold px-1.5 py-0.5 rounded-md",
                               result.originalData.status === 'rejected' ? "bg-red-50 text-red-500 border border-red-100" :
-                              result.originalData.status === 'canceled' ? "bg-gray-100 text-gray-500 border border-gray-200" :
-                              result.originalData.status === 'done' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                              "bg-blue-50 text-blue-600 border border-blue-100"
+                                result.originalData.status === 'canceled' ? "bg-gray-100 text-gray-500 border border-gray-200" :
+                                  result.originalData.status === 'done' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                                    "bg-blue-50 text-blue-600 border border-blue-100"
                             )}>
                               {result.originalData.status === 'rejected' ? '부결' :
-                               result.originalData.status === 'canceled' ? '해약' :
-                               result.originalData.status === 'done' ? '완료' : '계약중'}
+                                result.originalData.status === 'canceled' ? '해약' :
+                                  result.originalData.status === 'done' ? '완료' : '계약중'}
                             </span>
                           )}
                         </div>
                       </div>
-                      <div 
+                      <div
                         className={cn(
                           "text-xs font-black text-gray-700 truncate group-hover/res:text-emerald-700",
                         )}
@@ -681,8 +680,8 @@ export default function ScheduleCalendar() {
                           color: '#9ca3af'
                         } : {}}
                       >
-                        {result.category === "휴무" && result.creator?.name 
-                          ? `${result.creator.name} 휴무` 
+                        {result.category === "휴무" && result.creator?.name
+                          ? `${result.creator.name} 휴무`
                           : result.title}
                       </div>
                       {/* 휴무가 아닐 때만 작성자 별도 표시 (휴무는 위에서 제목에 포함됨) */}
@@ -722,22 +721,22 @@ export default function ScheduleCalendar() {
           </Button>
 
           {isPowerful && (
-              <div className="hidden md:block">
-                <Select value={staffId} onValueChange={setStaffId}>
-                  <SelectTrigger className="w-[120px] h-9 rounded-xl border-gray-200 bg-white/50 text-xs font-bold">
-                    <SelectValue placeholder="직원 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">전체 직원</SelectItem>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.accountId} value={emp.accountId}>
-                        {emp.name || "이름없음"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="hidden md:block">
+              <Select value={staffId} onValueChange={setStaffId}>
+                <SelectTrigger className="w-[120px] h-9 rounded-xl border-gray-200 bg-white/50 text-xs font-bold">
+                  <SelectValue placeholder="직원 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 직원</SelectItem>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.accountId} value={emp.accountId}>
+                      {emp.name || "이름없음"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {isPowerful && (
             <Button
@@ -883,11 +882,11 @@ export default function ScheduleCalendar() {
                                 <span className={cn(
                                   "truncate"
                                 )}
-                                style={(s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") ? {
-                                  textDecoration: 'line-through #ef4444 2px',
-                                  opacity: 0.7
-                                } : {}}
-                              >
+                                  style={(s.status === "canceled" || s.status === "rejected" || (s as any).originalData?.status === "canceled" || (s as any).originalData?.status === "rejected") ? {
+                                    textDecoration: 'line-through #ef4444 2px',
+                                    opacity: 0.7
+                                  } : {}}
+                                >
                                   {s.eventType === "contract" ? (
                                     <span className="flex items-center gap-1">
                                       {s.status === "done" ? (
@@ -945,7 +944,7 @@ export default function ScheduleCalendar() {
                           )}
                         >
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span 
+                            <span
                               className={cn(
                                 "whitespace-nowrap px-0.5 shrink-0 min-w-0 text-center",
                               )}
@@ -1107,7 +1106,7 @@ export default function ScheduleCalendar() {
                         </span>
                       </div>
                     </div>
-                    <div 
+                    <div
                       className={cn(
                         "text-sm sm:text-base font-black text-gray-900 group-hover/item:text-emerald-700 transition-colors",
                       )}
@@ -1172,63 +1171,81 @@ export default function ScheduleCalendar() {
         </button>
       </div>
 
-      <div className="sm:hidden flex flex-col bg-white border-t z-40">
-        {/* 모바일 퀵 필터 툴바 */}
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50/50">
-          <div className="flex gap-1.5">
-            {isPowerful && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const nextValue = !onlyFinalPayments;
-                  setOnlyFinalPayments(nextValue);
-                  if (nextValue) setOnlyHolidays(false);
-                }}
-                className={cn(
-                  "h-8 px-2.5 rounded-lg text-[10px] font-black transition-all",
-                  onlyFinalPayments ? "bg-black text-white border-none" : "border-gray-200 bg-white text-gray-600"
-                )}
-              >
-                잔금일만
-              </Button>
-            )}
-            <Button
-              variant={onlyHolidays ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                const nextValue = !onlyHolidays;
-                setOnlyHolidays(nextValue);
-                if (nextValue) setOnlyFinalPayments(false);
-              }}
-              className={cn(
-                "h-8 px-2.5 rounded-lg text-[10px] font-black transition-all",
-                onlyHolidays ? "bg-amber-500 hover:bg-amber-600 border-none" : "border-gray-200 bg-white text-gray-600"
-              )}
-            >
-              휴무일만
-            </Button>
-          </div>
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-50 px-2 pb-safe-area-inset-bottom">
+        <div className="flex items-center justify-around h-16">
+          {/* 홈 */}
           <Button
             variant="ghost"
-            size="sm"
-            onClick={() => setIsTrashOpen(true)}
-            className="h-8 px-2 rounded-lg text-gray-400 flex items-center gap-1"
+            onClick={() => router.push("/")}
+            className="flex flex-col items-center gap-1 text-gray-400 hover:text-emerald-600 h-auto py-1 px-0 flex-1"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-black">삭제내역</span>
+            <HomeIcon className="w-5 h-5" />
+            <span className="text-[9px] font-black tracking-tight">홈</span>
           </Button>
-        </div>
 
-        {/* 메인 하단 내비게이션 */}
-        <div className="flex items-center justify-around py-2 px-6">
-          <Button variant="ghost" onClick={() => router.push("/")} className="flex flex-col gap-1 text-gray-400 hover:text-emerald-600 h-auto py-1">
-            <HomeIcon className="w-6 h-6" />
-            <span className="text-[10px] font-black tracking-tight">홈</span>
+          {/* 달력 (현재 활성) */}
+          <Button
+            variant="ghost"
+            className="flex flex-col items-center gap-1 text-emerald-600 h-auto py-1 px-0 flex-1"
+          >
+            <CalIcon className="w-5 h-5" />
+            <span className="text-[9px] font-black tracking-tight">달력</span>
           </Button>
-          <Button variant="ghost" className="flex flex-col gap-1 text-emerald-600 h-auto py-1">
-            <CalIcon className="w-6 h-6" />
-            <span className="text-[10px] font-black tracking-tight">달력</span>
+
+          {/* 잔금일 필터 */}
+          {isPowerful && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                const nextValue = !onlyFinalPayments;
+                setOnlyFinalPayments(nextValue);
+                if (nextValue) setOnlyHolidays(false);
+              }}
+              className={cn(
+                "flex flex-col items-center gap-1 h-auto py-1 px-0 flex-1 transition-all",
+                onlyFinalPayments ? "text-emerald-700" : "text-gray-400"
+              )}
+            >
+              <div className={cn(
+                "p-1 rounded-lg transition-all",
+                onlyFinalPayments ? "bg-emerald-100 shadow-inner" : "bg-transparent"
+              )}>
+                <Banknote className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] font-black tracking-tight">잔금일만</span>
+            </Button>
+          )}
+
+          {/* 휴무일 필터 */}
+          <Button
+            variant="ghost"
+            onClick={() => {
+              const nextValue = !onlyHolidays;
+              setOnlyHolidays(nextValue);
+              if (nextValue) setOnlyFinalPayments(false);
+            }}
+            className={cn(
+              "flex flex-col items-center gap-1 h-auto py-1 px-0 flex-1 transition-all",
+              onlyHolidays ? "text-amber-600" : "text-gray-400"
+            )}
+          >
+            <div className={cn(
+              "p-1 rounded-lg transition-all",
+              onlyHolidays ? "bg-amber-100 shadow-inner" : "bg-transparent"
+            )}>
+              <Coffee className="w-5 h-5" />
+            </div>
+            <span className="text-[9px] font-black tracking-tight">휴무일만</span>
+          </Button>
+
+          {/* 삭제내역 */}
+          <Button
+            variant="ghost"
+            onClick={() => setIsTrashOpen(true)}
+            className="flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 h-auto py-1 px-0 flex-1"
+          >
+            <Trash2 className="w-5 h-5" />
+            <span className="text-[9px] font-black tracking-tight">삭제내역</span>
           </Button>
         </div>
       </div>

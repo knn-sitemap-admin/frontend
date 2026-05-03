@@ -116,45 +116,58 @@ export function AdminPageHeader({ className }: AdminPageHeaderProps) {
         </div>
       </nav>
 
-      {/* 모바일 메뉴 (Hamburger) */}
-      <div className="lg:hidden flex items-center gap-2">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-gray-100">
-              <Menu className="h-6 w-6 text-gray-600" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[280px] p-0 border-l-0">
-            <SheetHeader className="p-6 border-b border-gray-50 text-left">
-              <SheetTitle className="text-xl font-black text-gray-900 flex items-center gap-2">
-                <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
-                관리자 메뉴
-              </SheetTitle>
-            </SheetHeader>
-            <div className="flex flex-col p-3 gap-1">
-              {menuItems.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all",
-                      isActive 
-                        ? "bg-blue-50 text-blue-700 font-bold" 
-                        : "text-gray-600 hover:bg-gray-50 active:scale-98"
-                    )}
-                  >
-                    <Icon className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-gray-400")} />
-                    <span className="text-sm">{item.label}</span>
-                    {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />}
-                  </Link>
-                );
-              })}
-            </div>
-          </SheetContent>
-        </Sheet>
+      {/* 우측 액션 영역 (일정 바로가기 등) */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <Link href="/schedules">
+          <Button
+            variant="outline"
+            className="h-9 sm:h-11 px-2 sm:px-4 rounded-xl sm:rounded-2xl border-emerald-100 bg-emerald-50/50 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-200 transition-all flex items-center gap-1.5 sm:gap-2 shadow-sm"
+          >
+            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 hidden sm:inline" />
+            <span className="text-[11px] sm:text-sm font-black whitespace-nowrap">일정 확인</span>
+          </Button>
+        </Link>
+
+        {/* 모바일 메뉴 (Hamburger) */}
+        <div className="lg:hidden flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-gray-100">
+                <Menu className="h-6 w-6 text-gray-600" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[280px] p-0 border-l-0">
+              <SheetHeader className="p-6 border-b border-gray-50 text-left">
+                <SheetTitle className="text-xl font-black text-gray-900 flex items-center gap-2">
+                  <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                  관리자 메뉴
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col p-3 gap-1">
+                {menuItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all",
+                        isActive 
+                          ? "bg-blue-50 text-blue-700 font-bold" 
+                          : "text-gray-600 hover:bg-gray-50 active:scale-98"
+                      )}
+                    >
+                      <Icon className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-gray-400")} />
+                      <span className="text-sm">{item.label}</span>
+                      {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );
