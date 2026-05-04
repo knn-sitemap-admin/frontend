@@ -282,18 +282,28 @@ export function ScheduleModal({
         category: finalCategory,
         location: isMeeting ? (location?.trim() || undefined) : undefined,
         customerPhone: isMeeting ? (customerPhone?.trim() || undefined) : undefined,
-        platform: finalPlatform || undefined,
-        meetingType: (category === "신규" || category === "재미팅") ? category : "신규",
+        platform: isMeeting ? (finalPlatform || undefined) : undefined,
+        meetingType: isMeeting ? category : undefined,
         startDate: fullStartDate,
         endDate: fullEndDate,
         isAllDay,
         color,
       };
 
-      if (isPowerful && assignedAccountId) {
-        // ID가 숫자 형태면 숫자로 변환하여 전송 (UUID와 Number 혼용 대응)
-        const numericId = Number(assignedAccountId);
-        payload.createdByAccountId = isNaN(numericId) ? assignedAccountId : numericId;
+      if (isPowerful) {
+        if (!assignedAccountId) {
+          toast({
+            title: "저장 불가",
+            description: "현재 계정의 프로필 정보(Account ID)를 찾을 수 없습니다. [계정 관리]에서 프로필 설정을 완료해주세요.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        const finalId = String(assignedAccountId);
+        payload.assignedStaffId = finalId;
+        payload.createdByAccountId = finalId;
       }
 
       if (schedule) {
