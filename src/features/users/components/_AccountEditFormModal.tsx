@@ -103,13 +103,12 @@ const UpdateUserSchema = z
       }),
     photo_url: z
       .string()
-      .url("URL 형식이 올바르지 않습니다.")
       .optional()
       .or(z.literal("").transform(() => undefined)),
-    id_photo_urls: z.array(z.string().url()).optional().default([]),
-    resident_register_urls: z.array(z.string().url()).optional().default([]),
-    resident_extract_urls: z.array(z.string().url()).optional().default([]),
-    family_relation_urls: z.array(z.string().url()).optional().default([]),
+    id_photo_urls: z.array(z.string()).optional().default([]),
+    resident_register_urls: z.array(z.string()).optional().default([]),
+    resident_extract_urls: z.array(z.string()).optional().default([]),
+    family_relation_urls: z.array(z.string()).optional().default([]),
   })
   .refine(
     (data) => {
