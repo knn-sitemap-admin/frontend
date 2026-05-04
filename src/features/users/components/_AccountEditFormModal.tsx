@@ -66,17 +66,21 @@ const UpdateUserSchema = z
     phone: z
       .string()
       .regex(phoneRegex, "연락처 형식이 올바르지 않습니다.")
-      .max(20),
+      .max(20)
+      .optional()
+      .or(z.literal("")),
     birthday: z
       .union([birthdaySchema, z.literal("")])
       .transform((v) => (v === "" ? undefined : v)),
     emergency_contact: z
       .string()
       .regex(phoneRegex, "연락처 형식이 올바르지 않습니다.")
-      .max(20),
-    address: z.string().min(1, "주소를 입력하세요.").max(200),
-    salary_bank_name: z.string().min(1, "은행명을 입력하세요.").max(50),
-    salary_account: z.string().min(1, "계좌번호를 입력하세요.").max(50),
+      .max(20)
+      .optional()
+      .or(z.literal("")),
+    address: z.string().max(200).optional().or(z.literal("")),
+    salary_bank_name: z.string().max(50).optional().or(z.literal("")),
+    salary_account: z.string().max(50).optional().or(z.literal("")),
     password: z
       .string()
       .min(8, "비밀번호는 8자 이상이어야 합니다.")
@@ -324,21 +328,21 @@ function AccountEditFormModalBody({
 
     try {
       const employeeData = {
-        name: v.name,
-        phone: v.phone,
-        emergencyContact: v.emergency_contact,
-        addressLine: v.address,
-        salaryBankName: v.salary_bank_name,
-        salaryAccount: v.salary_account,
+        name: v.name || "",
+        phone: v.phone || "",
+        emergencyContact: v.emergency_contact || "",
+        addressLine: v.address || "",
+        salaryBankName: v.salary_bank_name || "",
+        salaryAccount: v.salary_account || "",
         positionRank: v.positionRank,
-        profileUrl: v.photo_url,
-        docUrlIdCard: v.id_photo_urls,
-        docUrlResidentRegistration: v.resident_register_urls,
-        docUrlResidentAbstract: v.resident_extract_urls,
-        docUrlFamilyRelation: v.family_relation_urls,
+        profileUrl: v.photo_url || undefined,
+        docUrlIdCard: v.id_photo_urls || [],
+        docUrlResidentRegistration: v.resident_register_urls || [],
+        docUrlResidentAbstract: v.resident_extract_urls || [],
+        docUrlFamilyRelation: v.family_relation_urls || [],
       };
 
-      await createEmployeeInfo(credentialId, employeeData);
+      await createEmployeeInfo(credentialId, employeeData as any);
 
       // 비밀번호 변경이 필요한 경우 별도 처리
       if (v.password && v.password.length >= 8) {
@@ -906,9 +910,19 @@ function AccountEditFormModalBody({
             type="button"
             onClick={form.handleSubmit(handleSubmit, (errors) => {
               console.error("Validation Errors:", errors);
+              
+              // 첫 번째 에러 필드로 스크롤
+              const firstErrorField = Object.keys(errors)[0];
+              if (firstErrorField) {
+                const element = document.querySelector(`[name="${firstErrorField}"]`);
+                if (element) {
+                  element.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+              }
+
               toast({
                 title: "입력 오류",
-                description: "필수 입력 항목이 누락되었거나 형식이 올바르지 않습니다. 모든 필드를 확인해주세요.",
+                description: "필수 입력 항목이 누락되었거나 형식이 올바르지 않습니다. 빨간색으로 표시된 항목을 확인해주세요.",
                 variant: "destructive",
               });
             })}
