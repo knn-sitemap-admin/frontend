@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ChevronDownIcon } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
@@ -65,7 +65,7 @@ export function ExpenseAddModal({
   } = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
-      date: new Date().toISOString().slice(0, 10),
+      date: format(new Date(), "yyyy-MM-dd"),
       itemName: "",
       amount: undefined as unknown as number,
       memo: "",
@@ -78,7 +78,7 @@ export function ExpenseAddModal({
         reset(initialData);
       } else {
         reset({
-          date: new Date().toISOString().slice(0, 10),
+          date: format(new Date(), "yyyy-MM-dd"),
           itemName: "",
           amount: undefined as unknown as number,
           memo: "",
@@ -92,7 +92,7 @@ export function ExpenseAddModal({
     try {
       await onSubmit(data);
       reset({
-        date: new Date().toISOString().slice(0, 10),
+        date: format(new Date(), "yyyy-MM-dd"),
         itemName: "",
         amount: undefined as unknown as number,
         memo: "",
@@ -123,7 +123,7 @@ export function ExpenseAddModal({
               name="date"
               render={({ field }) => {
                 const selectedDate = field.value
-                  ? new Date(field.value)
+                  ? parse(field.value, "yyyy-MM-dd", new Date())
                   : undefined;
                 return (
                   <Popover
@@ -148,7 +148,7 @@ export function ExpenseAddModal({
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-auto p-0 z-[2200]"
+                      className="w-auto p-0"
                       align="start"
                     >
                       <Calendar
@@ -159,11 +159,12 @@ export function ExpenseAddModal({
                         i18nLocale="ko-KR"
                         captionLayout="dropdown"
                         onSelect={(date) => {
-                          field.onChange(
-                            date ? format(date, "yyyy-MM-dd") : ""
-                          );
-                          setIsDatePickerOpen(false);
+                          if (date) {
+                            field.onChange(format(date, "yyyy-MM-dd"));
+                            setIsDatePickerOpen(false);
+                          }
                         }}
+                        required
                         initialFocus
                       />
                     </PopoverContent>
