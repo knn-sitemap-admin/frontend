@@ -326,35 +326,68 @@ function AccountEditFormModalBody({
     setIsSubmitting(true);
 
     try {
+      // 1. 다른 정보가 변경되었는지 확인 (단순화를 위해 비밀번호 외 필드 존재 여부 체크)
+      // 실제로는 initial values와 비교하는 것이 좋지만, 
+      // 사용자가 비밀번호 관리 섹션을 열고 입력했다는 점에 착안하여 처리
+      
+      const hasPassword = v.password && v.password.length >= 8;
+      
+      // 비밀번호 외에 이름, 연락처 등 다른 정보가 수정되었는지 여부
+      // (여기서는 안전하게 하기 위해 항상 보낼 수도 있지만, 사용자의 요청에 따라 
+      // 비밀번호만 있는 경우 정보 수정을 건너뛰는 옵션을 고려)
+      
+      // 사용자가 비밀번호만 변경하려고 하는지 판단 (isChangingPassword 상태 활용 가능)
+      // 여기서는 더 확실하게, 다른 필드들이 기존값과 동일하다면 건너뛰는 로직을 적용할 수도 있으나
+      // 우선 "비밀번호만 변경" 버튼의 의도에 맞게 처리합니다.
+
       const employeeData = {
-        name: v.name || "",
-        phone: v.phone || "",
-        emergencyContact: v.emergency_contact || "",
-        addressLine: v.address || "",
-        salaryBankName: v.salary_bank_name || "",
-        salaryAccount: v.salary_account || "",
+        name: v.name || null,
+        phone: v.phone || null,
+        emergencyContact: v.emergency_contact || null,
+        addressLine: v.address || null,
+        salaryBankName: v.salary_bank_name || null,
+        salaryAccount: v.salary_account || null,
         positionRank: v.positionRank,
-        profileUrl: v.photo_url || undefined,
-        docUrlIdCard: v.id_photo_urls || [],
-        docUrlResidentRegistration: v.resident_register_urls || [],
-        docUrlResidentAbstract: v.resident_extract_urls || [],
-        docUrlFamilyRelation: v.family_relation_urls || [],
+        profileUrl: v.photo_url || null,
+        docUrlIdCard: v.id_photo_urls && v.id_photo_urls.length > 0 ? v.id_photo_urls : null,
+        docUrlResidentRegistration: v.resident_register_urls && v.resident_register_urls.length > 0 ? v.resident_register_urls : null,
+        docUrlResidentAbstract: v.resident_extract_urls && v.resident_extract_urls.length > 0 ? v.resident_extract_urls : null,
+        docUrlFamilyRelation: v.family_relation_urls && v.family_relation_urls.length > 0 ? v.family_relation_urls : null,
       };
 
-      await createEmployeeInfo(credentialId, employeeData as any);
+      // 비밀번호 외에 다른 필드가 하나라도 수정되었는지 (dirty check)
+      const isInfoDirty = form.formState.dirtyFields.name || 
+                         form.formState.dirtyFields.phone || 
+                         form.formState.dirtyFields.emergency_contact || 
+                         form.formState.dirtyFields.address || 
+                         form.formState.dirtyFields.salary_bank_name || 
+                         form.formState.dirtyFields.salary_account ||
+                         form.formState.dirtyFields.positionRank ||
+                         form.formState.dirtyFields.photo_url ||
+                         form.formState.dirtyFields.id_photo_urls ||
+                         form.formState.dirtyFields.resident_register_urls ||
+                         form.formState.dirtyFields.resident_extract_urls ||
+                         form.formState.dirtyFields.family_relation_urls;
+
+      // 다른 정보가 수정된 경우에만 직원 정보 API 호출
+      if (isInfoDirty) {
+        await createEmployeeInfo(credentialId, employeeData as any);
+      }
 
       // 비밀번호 변경이 필요한 경우 별도 처리
-      if (v.password && v.password.length >= 8) {
-        await patchAccountPassword(credentialId, v.password);
+      if (hasPassword) {
+        await patchAccountPassword(credentialId, v.password!);
       }
 
       toast({
         title: "계정 수정 완료",
-        description: "계정 정보가 성공적으로 수정되었습니다.",
+        description: hasPassword && !isInfoDirty 
+          ? "비밀번호가 성공적으로 변경되었습니다." 
+          : "계정 정보가 성공적으로 수정되었습니다.",
       });
 
       // 본인 비밀번호를 수정한 경우 로그아웃 및 리다이렉트
-      if (v.password && v.password.length >= 8 && profile?.credentialId === credentialId) {
+      if (hasPassword && profile?.credentialId === credentialId) {
         toast({
           title: "비밀번호 변경 완료",
           description: "보안을 위해 다시 로그인해주세요. 2초 후 로그인 페이지로 이동합니다.",
@@ -362,7 +395,7 @@ function AccountEditFormModalBody({
         setTimeout(() => {
           router.push("/login");
         }, 2000);
-        return; // 나머지 로직(onClose 등) 건너뜀
+        return;
       }
 
       onSuccess();
@@ -372,9 +405,9 @@ function AccountEditFormModalBody({
 
       const errorMessages = error?.response?.data?.messages || [];
       const errorMessage =
-        errorMessages.length > 0
-          ? errorMessages.join(", ")
-          : "계정 수정 중 오류가 발생했습니다.";
+        Array.isArray(errorMessages) && errorMessages.length > 0
+          ? errorMessages.join("\n")
+          : error?.response?.data?.message || "계정 수정 중 오류가 발생했습니다.";
 
       toast({
         title: "계정 수정 실패",
