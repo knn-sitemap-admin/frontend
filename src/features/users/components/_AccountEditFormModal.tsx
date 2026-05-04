@@ -121,9 +121,9 @@ const UpdateUserSchema = z
   )
   .refine(
     (data) => {
-      // 팀장은 팀 배정 불가
-      if (data.positionRank === "TEAM_LEADER" && data.team) {
-        return false; // 팀장은 팀 배정 불가
+      // 팀장은 팀 배정 불가 (이미 transform에서 처리되지만 명시적으로 검증)
+      if (data.positionRank === "TEAM_LEADER") {
+        return !data.team;
       }
       return true;
     },
@@ -226,6 +226,15 @@ function AccountEditFormModalBody({
   const [teamsLoading, setTeamsLoading] = useState(true);
 
   // 팀 목록 로드
+  const watchedPositionRank = form.watch("positionRank");
+
+  // 팀장 직급일 경우 팀 정보 초기화 (검증 오류 방지)
+  useEffect(() => {
+    if (watchedPositionRank === "TEAM_LEADER") {
+      form.setValue("team", undefined);
+    }
+  }, [watchedPositionRank, form]);
+
   useEffect(() => {
     const loadTeams = async () => {
       try {
@@ -781,56 +790,54 @@ function AccountEditFormModalBody({
                 />
                 {/* staff 직급일 때만 팀 선택 표시 (선택사항) */}
                 {form.watch("positionRank") !== "TEAM_LEADER" && (
-                    <>
-                      <FormField
-                        control={form.control}
-                        name="team"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>팀 (선택사항)</FormLabel>
-                            <FormControl>
-                              <select
-                                value={field.value?.teamId || ""}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  if (value === "") {
-                                    // 빈 문자열이면 team을 undefined로 설정
-                                    field.onChange(undefined);
-                                  } else {
-                                    // 값이 있으면 team 객체 설정
-                                    field.onChange({
-                                      teamId: value,
-                                      isPrimary: true,
-                                    });
-                                  }
-                                }}
-                                disabled={teamsLoading}
-                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                <option value="">
-                                  {teamsLoading
-                                    ? "팀 목록 로딩 중..."
-                                    : "팀을 선택하세요 (선택사항)"}
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="team"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>팀 (선택사항)</FormLabel>
+                          <FormControl>
+                            <select
+                              value={field.value?.teamId || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "") {
+                                  field.onChange(undefined);
+                                } else {
+                                  field.onChange({
+                                    teamId: value,
+                                    isPrimary: true,
+                                  });
+                                }
+                              }}
+                              disabled={teamsLoading}
+                              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <option value="">
+                                {teamsLoading
+                                  ? "팀 목록 로딩 중..."
+                                  : "팀을 선택하세요 (선택사항)"}
+                              </option>
+                              {teams.map((team) => (
+                                <option
+                                  key={team.id}
+                                  value={team.id.toString()}
+                                >
+                                  {team.name}
                                 </option>
-                                {teams.map((team) => (
-                                  <option
-                                    key={team.id}
-                                    value={team.id.toString()}
-                                  >
-                                    {team.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </FormControl>
-                            <FormMessage />
-                            <p className="text-xs text-muted-foreground">
-                              팀장 직급은 팀 배정이 불가능합니다.
-                            </p>
-                          </FormItem>
-                        )}
-                      />
-                    </>
-                  )}
+                              ))}
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                          <p className="text-xs text-muted-foreground">
+                            팀장 직급은 팀 배정이 불가능합니다.
+                          </p>
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
               </div>
 
               {/* 추가 정보 (파일 업로드) */}
@@ -897,7 +904,14 @@ function AccountEditFormModalBody({
           </Button>
           <Button
             type="button"
-            onClick={form.handleSubmit(handleSubmit)}
+            onClick={form.handleSubmit(handleSubmit, (errors) => {
+              console.error("Validation Errors:", errors);
+              toast({
+                title: "입력 오류",
+                description: "필수 입력 항목이 누락되었거나 형식이 올바르지 않습니다. 모든 필드를 확인해주세요.",
+                variant: "destructive",
+              });
+            })}
             disabled={!!uploading || isSubmitting}
           >
             {isSubmitting ? "수정 중..." : uploading ? "업로드 대기…" : "수정"}
