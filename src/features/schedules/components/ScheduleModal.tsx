@@ -302,7 +302,6 @@ export function ScheduleModal({
         }
         
         const finalId = String(assignedAccountId);
-        payload.assignedStaffId = finalId;
         payload.createdByAccountId = finalId;
       }
 
