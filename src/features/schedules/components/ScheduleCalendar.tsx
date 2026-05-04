@@ -803,7 +803,7 @@ export default function ScheduleCalendar() {
                   !isCurrMonth && "bg-gray-50/50 opacity-40 grayscale-[0.5]"
                 )}
               >
-                <div className="flex justify-between items-start mb-0.5 sm:mb-3 px-0.5 sm:px-2 w-full">
+                <div className="flex justify-between items-start h-7 sm:h-12 mb-0.5 sm:mb-3 px-0.5 sm:px-2 w-full">
                   <div className="flex flex-col">
                     <span className={cn(
                       "text-[10px] sm:text-[15px] font-black w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-all group-hover/day:bg-white group-hover/day:shadow-sm",

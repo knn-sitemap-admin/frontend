@@ -45,7 +45,7 @@ export function TableBody<T extends TableData>({
     <tbody className="bg-white divide-y divide-gray-200">
       {data.map((row, index) => (
         <tr
-          key={row.id}
+          key={row.id ?? `row-${index}`}
           className={cn(
             "hover:bg-gray-50 transition-colors",
             onRowClick && "cursor-pointer"

@@ -142,7 +142,7 @@ export function ScheduleModal({
         setCategory("기타");
         setCustomCategory(schedule.category || "");
       }
-      
+
       const knownPlatforms = ["직방", "다방", "네이버"];
       if (schedule.platform && knownPlatforms.includes(schedule.platform)) {
         setPlatform(schedule.platform);
@@ -211,7 +211,7 @@ export function ScheduleModal({
       const endH = (h + 1) % 24;
       const endTimeStr = `${endH.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
       setEndTime(endTimeStr);
-      
+
       // 만약 시작 시간이 23시인 경우 다음날로 넘어가야 하므로 날짜도 체크 (복잡해지므로 우선 시간만 조정)
       if (h === 23) {
         // 날짜 조정 로직은 일단 보류하거나 필요시 추가
@@ -225,7 +225,7 @@ export function ScheduleModal({
     const finalCategory = category === "기타" ? customCategory : category;
     const isMeeting = category === "신규" || category === "재미팅";
     const finalPlatform = (isMeeting && platform === "기타") ? customPlatform.replace(/\s/g, "") : (isMeeting ? platform : "");
-    
+
     if (!finalCategory.trim()) {
       toast({ title: "입력 오류", description: "일정구분을 선택하거나 입력해주세요.", variant: "destructive" });
       return;
@@ -278,11 +278,11 @@ export function ScheduleModal({
     try {
       const payload: any = {
         title: title || (category === "휴무" ? `[휴무] ${location}` : `${category}(${finalPlatform})${location}${customerPhone ? "-" + customerPhone : ""}`).trim(),
-        content,
+        content: content || undefined,
         category: finalCategory,
-        location: isMeeting ? location : "",
-        customerPhone: isMeeting ? customerPhone : "",
-        platform: finalPlatform,
+        location: isMeeting ? (location?.trim() || undefined) : undefined,
+        customerPhone: isMeeting ? (customerPhone?.trim() || undefined) : undefined,
+        platform: finalPlatform || undefined,
         meetingType: (category === "신규" || category === "재미팅") ? category : "신규",
         startDate: fullStartDate,
         endDate: fullEndDate,
@@ -291,11 +291,13 @@ export function ScheduleModal({
       };
 
       if (isPowerful && assignedAccountId) {
-        payload.createdByAccountId = assignedAccountId;
+        // ID가 숫자 형태면 숫자로 변환하여 전송 (UUID와 Number 혼용 대응)
+        const numericId = Number(assignedAccountId);
+        payload.createdByAccountId = isNaN(numericId) ? assignedAccountId : numericId;
       }
 
       if (schedule) {
-        payload.status = status; // 수정 시에만 status 포함
+        payload.status = status;
         await updateSchedule(schedule.id, payload);
         toast({ title: "일정 수정 완료", description: "일정이 성공적으로 수정되었습니다." });
       } else {
@@ -306,9 +308,17 @@ export function ScheduleModal({
       onDataChange();
       onClose();
     } catch (error: any) {
+      console.error("일정 저장 실패:", error);
+      
+      const errorMessages = error?.response?.data?.messages || [];
+      const errorMessage =
+        Array.isArray(errorMessages) && errorMessages.length > 0
+          ? errorMessages.join("\n")
+          : error?.response?.data?.message || "일정 저장 중 오류가 발생했습니다.";
+
       toast({
         title: "오류 발생",
-        description: error?.response?.data?.message || "일정 저장 중 오류가 발생했습니다.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -350,7 +360,7 @@ export function ScheduleModal({
     const [h, m] = current.split(":");
     return (
       <div className="flex bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-2xl divide-x divide-gray-50">
-        <div 
+        <div
           className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y"
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
@@ -372,7 +382,7 @@ export function ScheduleModal({
             ))}
           </div>
         </div>
-        <div 
+        <div
           className="flex flex-col max-h-[250px] overflow-y-auto premium-scrollbar w-[85px] bg-white overscroll-contain touch-pan-y"
           onWheel={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.stopPropagation()}
