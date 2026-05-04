@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
+import { X, Lock, Key, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { Input } from "@/components/atoms/Input/Input";
 import {
@@ -211,6 +211,7 @@ function AccountEditFormModalBody({
   const [isBirthdayOpen, setIsBirthdayOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const { toast } = useToast();
 
   const { data: profile } = useQuery({
@@ -560,7 +561,7 @@ function AccountEditFormModalBody({
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
-                            className="w-auto p-0 z-[2200]"
+                            className="w-auto p-0"
                             align="start"
                           >
                             <Calendar
@@ -589,41 +590,105 @@ function AccountEditFormModalBody({
                     );
                   }}
                 />
-                {/* 비밀번호 (선택) */}
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>비밀번호 (변경 시에만 입력)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="8자 이상"
-                          {...field}
+                {/* 비밀번호 관리 섹션 */}
+                <div className="col-span-1 md:col-span-2 mt-4">
+                  <div className="rounded-xl border bg-slate-50/50 p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-white rounded-lg shadow-sm border">
+                          <Lock className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900">비밀번호 관리</h3>
+                          <p className="text-xs text-slate-500">계정의 보안 설정을 관리합니다.</p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant={isChangingPassword ? "ghost" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          const next = !isChangingPassword;
+                          setIsChangingPassword(next);
+                          if (!next) {
+                            form.setValue("password", "");
+                            form.setValue("password_confirm", "");
+                          }
+                        }}
+                        className={isChangingPassword ? "text-slate-500" : "bg-white border-slate-200 text-slate-700 font-bold"}
+                      >
+                        {isChangingPassword ? "취소" : "비밀번호 변경하기"}
+                      </Button>
+                    </div>
+
+                    {isChangingPassword && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs font-bold text-slate-700">새 비밀번호</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    type="password"
+                                    placeholder="8자 이상 입력"
+                                    className="bg-white"
+                                    {...field}
+                                  />
+                                  <Key className="absolute right-3 top-2.5 w-4 h-4 text-slate-300" />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password_confirm"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>비밀번호 확인</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="비밀번호 다시 입력"
-                          {...field}
+                        <FormField
+                          control={form.control}
+                          name="password_confirm"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs font-bold text-slate-700">비밀번호 확인</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="password"
+                                  placeholder="비밀번호 다시 입력"
+                                  className="bg-white"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+                        {/* 관리자 전용 퀵 리셋 버튼 */}
+                        {profile?.role === "admin" && (
+                          <div className="col-span-1 md:col-span-2 pt-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                form.setValue("password", "00000000", { shouldValidate: true });
+                                form.setValue("password_confirm", "00000000", { shouldValidate: true });
+                                toast({
+                                  title: "비밀번호 자동 입력",
+                                  description: "비밀번호가 '00000000'으로 입력되었습니다. 저장 버튼을 눌러 확정하세요.",
+                                });
+                              }}
+                              className="w-full border-dashed border-slate-300 text-slate-500 hover:bg-slate-100 h-9"
+                            >
+                              <RefreshCcw className="w-3 h-3 mr-2" />
+                              기본 비밀번호로 초기화 (00000000)
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 {/* 연락처 */}
                 <FormField
                   control={form.control}

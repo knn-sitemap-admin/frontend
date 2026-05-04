@@ -142,7 +142,7 @@ export function AssignManagerModal({
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="팀장을 선택하세요" />
               </SelectTrigger>
-              <SelectContent className="!z-[2200]">
+              <SelectContent>
                 {eligibleManagers.length === 0 ? (
                   <SelectItem value="no-members" disabled>
                     지정 가능한 팀원이 없습니다.

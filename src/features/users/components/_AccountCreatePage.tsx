@@ -577,7 +577,7 @@ export default function AccountCreatePage({
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
-                          className="w-auto p-0 z-[2200]"
+                          className="w-auto p-0"
                           align="start"
                         >
                           <Calendar
