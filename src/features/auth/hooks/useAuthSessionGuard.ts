@@ -34,14 +34,30 @@ export function useAuthSessionGuard(options: Options = {}) {
     };
 
     /** /auth/me로 세션 유효성 체크 */
-    const checkSession = async () => {
+    const checkSession = async (isInitial = false) => {
       if (isChecking || destroyed) return;
+
+      // 🔹 [iPhone PWA 대응] 새로고침 직후에는 환경(localStorage, 등)이 안정화될 때까지 약간 대기
+      if (isInitial) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
       isChecking = true;
       try {
         await api.get("/auth/me"); // 200 이면 OK
       } catch (e: any) {
-        // 401, 419 등 나오면 세션 만료로 판단
-        handleForceLogout();
+        // 🔹 [보안/안정화] 401 에러가 났더라도, 로컬에 토큰이 있다면 즉시 로그아웃 시키지 않고 
+        // 인터셉터의 재시도 로직이 끝날 때까지 기다리거나 한 번 더 기회를 줍니다.
+        const hasToken = !!localStorage.getItem("notemap_token");
+        
+        if (!hasToken) {
+          handleForceLogout();
+        } else {
+          // 토큰은 있는데 401인 경우: 인터셉터가 이미 처리 중일 수 있으므로 
+          // 여기서 즉시 로그아웃 시키는 것은 위험합니다. 
+          // 정말 만료된 거라면 인터셉터가 결국 /login으로 보낼 것입니다.
+          console.warn("[AuthSessionGuard] 401 detected but token exists. Letting interceptor handle it.");
+        }
       } finally {
         isChecking = false;
       }
@@ -82,8 +98,8 @@ export function useAuthSessionGuard(options: Options = {}) {
       }, pollIntervalMs);
     }
 
-    // 처음 마운트될 때 한 번 체크
-    void checkSession();
+    // 처음 마운트될 때 한 번 체크 (지연 실행)
+    void checkSession(true);
 
     return () => {
       destroyed = true;

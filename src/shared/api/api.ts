@@ -24,10 +24,14 @@ if (typeof window !== "undefined") {
     const url = typeof input === "string" ? input : (input as any).url;
 
     // ✅ [보안] 도메인 화이트리스트 체크: 우리 백엔드(API_BASE)로 향하는 요청에만 토큰 주입
-    // 외부 도메인(예: google-analytics, cloud-storage 등)으로 우리 토큰이 유출되는 것을 방지합니다.
-    const isOurApi = url && (url.startsWith(API_BASE) || url.startsWith("/"));
+    // url이 / 로 시작하거나 API_BASE로 시작하는 경우
+    const isOurApi = url && (
+      url.startsWith(API_BASE) || 
+      url.startsWith("/") || 
+      (typeof process.env.NEXT_PUBLIC_API_BASE === "string" && url.startsWith(process.env.NEXT_PUBLIC_API_BASE))
+    );
     
-    if (isOurApi && url.includes("/auth/me")) {
+    if (isOurApi) {
       const token = window.localStorage.getItem("notemap_token");
       if (token && token !== "undefined" && token !== "null") {
         const headers = new Headers(init.headers || {});
@@ -36,8 +40,17 @@ if (typeof window !== "undefined") {
           (init as any).headers = headers;
         }
       }
+
+      // /auth/me의 경우 캐시 방지 파라미터 추가 (fetch의 경우 url 수정이 까다로우니 headers로 대체 시도 가능하지만 
+      // 여기서는 url 파싱하여 _t 추가)
+      if (url.includes("/auth/me") && typeof input === "string") {
+        const separator = url.includes("?") ? "&" : "?";
+        if (!url.includes("_t=")) {
+          args[0] = `${url}${separator}_t=${Date.now()}`;
+        }
+      }
     }
-    return originalFetch(input, init);
+    return originalFetch(...args);
   };
 }
 
@@ -57,16 +70,14 @@ const getApiBase = () => {
   const isActuallyLocal = hostname === "localhost" || hostname === "127.0.0.1";
 
   // 2. 상용/배포 환경 (Railway 등)
-  // [보안/인증] 아이폰(Safari) 등 모바일에서도 동일하게 환경변수에 정의된 서버로 접속해야 함.
   if (!isActuallyLocal) {
     return process.env.NEXT_PUBLIC_API_BASE || "https://backend-test-production-2188.up.railway.app";
   }
 
   // 3. 로컬 개발 환경
-  // 모바일 기기로 로컬 백엔드에 접속하는 경우(같은 WiFi)를 위해 NEXT_PUBLIC_LOCAL_BACKEND_URL 우선 사용
   return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
 };
-const API_BASE = getApiBase();
+export const API_BASE = getApiBase();
 
 // ✅ [인스턴스 파편화 방지] 전역 싱글톤 잠금
 const G = (typeof window !== "undefined" ? window : globalThis) as any;
@@ -90,8 +101,12 @@ if (!apiInstance) {
         const bearer = (token && token !== "undefined" && token !== "null") ? `Bearer ${token}` : null;
         
         if (bearer) {
-          config.headers.set("Authorization", bearer);
-          apiInstance.defaults.headers.common["Authorization"] = bearer;
+          // Axios 1.x 에서는 config.headers 가 Headers 객체일 수 있음
+          if (config.headers.set) {
+            config.headers.set("Authorization", bearer);
+          } else {
+            (config.headers as any)["Authorization"] = bearer;
+          }
         }
 
         if (config.url?.includes("/auth/me")) {

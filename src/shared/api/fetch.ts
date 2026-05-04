@@ -3,17 +3,7 @@
  * Axios 보안 이슈 대응을 위해 Native Fetch를 사용하도록 구현되었습니다.
  */
 
-const getApiBase = () => {
-  if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_BASE || "";
-  const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const isActuallyLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  if (isMobile || !isActuallyLocal) {
-    return "https://backend-prod-production-a562.up.railway.app";
-  }
-  return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
-};
-
-const API_BASE = getApiBase();
+import { API_BASE } from "./api";
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, any>;
