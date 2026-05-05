@@ -185,36 +185,7 @@ export default function PropertyViewModal({
 
   useEffect(() => {
     if (!q.data) return;
-
-    const raw = (q.data as any).raw ?? null;
-    const view = (q.data as any).view ?? null;
-
-    const debug = {
-      raw: raw
-        ? {
-          buildingType: raw.buildingType ?? null,
-          propertyType: raw.propertyType ?? null,
-          type: raw.type ?? null,
-          registry: raw.registry ?? null,
-          registryOne: raw.registryOne ?? null,
-          registrationType: raw.registrationType ?? null,
-          registrationTypeName: raw.registrationTypeName ?? null,
-          registrationTypeId: raw.registrationTypeId ?? null,
-        }
-        : null,
-      view: view
-        ? {
-          buildingType: view.buildingType ?? null,
-          propertyType: view.propertyType ?? null,
-          type: view.type ?? null,
-          registry: view.registry ?? null,
-          registryOne: view.registryOne ?? null,
-          registrationType: view.registrationType ?? null,
-          registrationTypeName: view.registrationTypeName ?? null,
-          registrationTypeId: view.registrationTypeId ?? null,
-        }
-        : null,
-    };
+    // 데이터 로드 완료 후 추가 처리가 필요하면 여기에 작성
   }, [q.data]);
 
   const viewData: PropertyViewDetails | null = useMemo(() => {

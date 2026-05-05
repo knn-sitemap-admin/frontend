@@ -132,9 +132,20 @@ export default function ViewStage({
     }
   }, []);
 
+  // ✅ [깜빡임 방지] 첫 렌더링이 완전히 끝난 후 즐겨찾기 데이터 로드
+  // requestIdleCallback: 브라우저가 유휴 상태일 때 실행하여 첫 렌더링 차단 방지
   useEffect(() => {
-    void loadFavorites();
-  }, [loadFavorites]);
+    const load = () => void loadFavorites();
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = (window as any).requestIdleCallback(load, { timeout: 2000 });
+      return () => (window as any).cancelIdleCallback(id);
+    } else {
+      // requestIdleCallback 미지원 브라우저 fallback
+      const t = setTimeout(load, 300);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 마운트 1회만 실행
 
   // 즐겨찾기 토글
   const handleToggleFavorite = useCallback(async () => {
@@ -616,6 +627,8 @@ export default function ViewStage({
         overscrollBehavior: "none",
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
+        willChange: "transform",
+        contain: "strict",
       }}
       role="dialog"
       aria-modal="true"
