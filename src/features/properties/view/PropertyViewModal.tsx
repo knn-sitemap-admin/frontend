@@ -16,6 +16,8 @@ import EditStage from "./ui/stage/EditStage";
 import { deriveAgeTypeFrom } from "./utils/ageType";
 import { deletePin } from "@/shared/api/pins";
 
+import { isMobile } from "@/lib/utils";
+
 /* utils */
 const toUndef = <T,>(v: T | null | undefined): T | undefined => v ?? undefined;
 
@@ -140,16 +142,21 @@ export default function PropertyViewModal({
   }, [onClose]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || asInner || !isMobile()) return;
 
     // 1. 모달이 열릴 때 히스토리에 가짜 상태 추가
     isPopStateRef.current = false;
-    window.history.pushState({ propertyViewOpen: true }, "");
+    const modalId = Math.random().toString(36).substring(2, 11);
+    window.history.pushState({ propertyViewOpen: true, modalId }, "");
 
     // 2. 뒤로가기(popstate) 발생 시 핸들러
-    const handlePopState = () => {
-      isPopStateRef.current = true;
-      onCloseRef.current(); // Ref를 통해 호출
+    const handlePopState = (event: PopStateEvent) => {
+      // 만약 현재 state에 우리 모달의 식별자가 없다면, 사용자가 뒤로가기를 눌러서 나간 것임
+      // (단, 다른 모달이 위에 쌓여있는 상태에서 발생한 popstate인지는 modalId로 구분)
+      if (event.state?.modalId !== modalId) {
+        isPopStateRef.current = true;
+        onCloseRef.current();
+      }
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -159,7 +166,9 @@ export default function PropertyViewModal({
       
       // 3. 수동으로 닫힌 경우 (X 버튼 등), 가짜 히스토리 원복
       if (!isPopStateRef.current) {
-        if (window.history.state?.propertyViewOpen) {
+        // 현재 히스토리의 최상단이 내가 푸시한 그 상태가 맞을 때만 back() 실행
+        // (리마운트 등으로 이미 다음 ID가 쌓였다면 back()을 하지 않음으로써 깜빡임 방지)
+        if (window.history.state?.modalId === modalId) {
           window.history.back();
         }
       }

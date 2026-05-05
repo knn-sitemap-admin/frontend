@@ -6,6 +6,7 @@ import {
   getEmployeesList,
   deleteAccount,
   updateAccountDisabled,
+  updateAccountCanDownloadImage,
   type EmployeeListItem,
 } from "@/features/users/api/account";
 import AccountsListPage from "@/features/users/components/_AccountsListPage";
@@ -136,6 +137,54 @@ export default function AccountsPage() {
     },
   });
 
+  // 이미지 다운로드 권한 토글 mutation
+  const toggleImageDownloadMutation = useMutation({
+    mutationFn: async ({
+      credentialId,
+      canDownload,
+    }: { credentialId: string; canDownload: boolean }) => {
+      return await updateAccountCanDownloadImage(credentialId, canDownload);
+    },
+    onMutate: async ({ credentialId, canDownload }) => {
+      const targetIdStr = String(credentialId);
+      await queryClient.cancelQueries({ queryKey: ["employees-list"] });
+      const queryKeyPrefix = ["employees-list"];
+      const previousQueriesData = queryClient.getQueriesData<EmployeeListItem[]>({ queryKey: queryKeyPrefix });
+
+      queryClient.setQueriesData<EmployeeListItem[]>(
+        { queryKey: queryKeyPrefix },
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData)) return oldData;
+          return oldData.map((item) =>
+            String(item.credentialId) === targetIdStr
+              ? { ...item, canDownloadImage: canDownload }
+              : item
+          );
+        }
+      );
+      return { previousQueriesData };
+    },
+    onError: (error: any, variables, context: any) => {
+      if (context?.previousQueriesData) {
+        context.previousQueriesData.forEach(([key, data]: [any, any]) => {
+          queryClient.setQueryData(key, data);
+        });
+      }
+      toast({
+        title: "권한 변경 실패",
+        description: error?.message || "알 수 없는 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees-list"] });
+      toast({
+        title: "권한 변경 완료",
+        description: "이미지 다운로드 권한이 변경되었습니다.",
+      });
+    },
+  });
+
   // 계정 가삭제 (Soft Delete)
   const deleteAccountMutation = useMutation({
     mutationFn: async (credentialId: string) => {
@@ -176,6 +225,7 @@ export default function AccountsPage() {
         reservedPinDrafts: employee.reservedPinDrafts || [], // 계정별 예약한 핀 목록 포함
         role: employee.role, // role 정보 포함
         disabled: !!employee.isDisabled, // 확실히 불리언으로 변환
+        canDownloadImage: !!employee.canDownloadImage,
       };
     });
   };
@@ -226,6 +276,29 @@ export default function AccountsPage() {
     toggleAccountMutation.mutate({
       credentialId,
       disabled: !currentDisabled,
+    });
+  };
+
+  // 이미지 다운로드 권한 토글 핸들러
+  const handleToggleImageDownload = (
+    accountId: string,
+    currentCanDownload: boolean,
+  ) => {
+    const account = userRows.find((row) => row.id === accountId);
+    const credentialId = account?.credentialId;
+
+    if (!credentialId) {
+      toast({
+        title: "오류",
+        description: "계정 정보를 찾을 수 없습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toggleImageDownloadMutation.mutate({
+      credentialId,
+      canDownload: !currentCanDownload,
     });
   };
 
@@ -341,6 +414,7 @@ export default function AccountsPage() {
             onChangeRole={handleChangeRole}
             onRemove={handleRemove}
             onToggleStatus={handleToggleStatus}
+            onToggleImageDownload={handleToggleImageDownload}
             onEdit={handleEdit}
             onViewFavorites={handleViewFavorites}
             onViewReservedPins={handleViewReservedPins}

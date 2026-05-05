@@ -37,7 +37,7 @@ export default function ImageCarouselUpload({
   const count = items?.length ?? 0;
 
   const [current, setCurrent] = useState(0);
-  const [imgErrorMap, setImgErrorMap] = useState<Record<number, boolean>>({});
+  const [imgErrorMap, setImgErrorMap] = useState<Record<string, boolean>>({});
 
   // ✅ 폴더 제목 로컬 상태
   const [folderTitleLocal, setFolderTitleLocal] = useState(folderTitle ?? "");
@@ -137,6 +137,9 @@ export default function ImageCarouselUpload({
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (count <= 1) return;
+    // 버튼이나 입력창 클릭 시에는 드래그/캡처 방지
+    if ((e.target as HTMLElement).closest("button, input")) return;
+
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     dragStartX.current = e.clientX;
     isDragging.current = true;
@@ -268,12 +271,13 @@ export default function ImageCarouselUpload({
               }}
             >
               {items.map((it, idx) => {
+                const key = makeKey(it, idx);
                 const src = getSafeSrc(it, idx);
-                const isError = imgErrorMap[idx];
+                const isError = imgErrorMap[key];
                 const isVisible = Math.abs(idx - current) <= 1; // 현재 및 인접 이미지면 렌더링
 
                 return (
-                  <div key={makeKey(it, idx)} className="w-full h-full flex-shrink-0 relative bg-white">
+                  <div key={key} className="w-full h-full flex-shrink-0 relative bg-white">
                     {isVisible && src && !isError ? (
                       <ProtectedImage
                         src={src}
@@ -284,7 +288,7 @@ export default function ImageCarouselUpload({
                         )}
                         disablePointerEvents={false}
                         loading={Math.abs(idx - current) === 0 ? "eager" : "lazy"}
-                        onError={() => setImgErrorMap(prev => ({ ...prev, [idx]: true }))}
+                        onError={() => setImgErrorMap(prev => ({ ...prev, [key]: true }))}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs">

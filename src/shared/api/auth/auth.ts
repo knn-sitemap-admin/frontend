@@ -31,6 +31,7 @@ export type MeData = {
   username?: string;
   role?: UserRole; // 🔥 여기로 'admin' 등 직급/권한 문자열이 들어옴
   deviceType?: string;
+  canDownloadImage?: boolean;
 } | null;
 
 /** /auth/me 응답: { message, data: MeData } */
@@ -98,7 +99,7 @@ export function useMe() {
   return useQuery<MeData>({
     queryKey: ["me"],
     queryFn: fetchMe,
-    staleTime: 5 * 60 * 1000, // 5분 캐시
+    staleTime: 1000 * 60 * 5,
   });
 }
 

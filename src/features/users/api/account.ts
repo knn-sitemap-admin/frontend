@@ -7,6 +7,7 @@ export type ProfileResponse = {
   role: "admin" | "manager" | "staff";
   disabled: boolean;
   profileCompleted: boolean;
+  canDownloadImage: boolean;
   account: {
     id: string;
     name: string | null;
@@ -347,6 +348,7 @@ export type EmployeeListItem = {
     contractDate: string; // YYYY-MM-DD
   }>;
   isDisabled: boolean;
+  canDownloadImage: boolean;
 };
 
 export async function getEmployeesList(
@@ -445,6 +447,21 @@ export async function updateAccountDisabled(
     });
   } catch (error: any) {
     console.error("계정 활성/비활성 상태 변경 실패:", error);
+    throw error;
+  }
+}
+
+/** 계정 이미지 다운로드 권한 변경 */
+export async function updateAccountCanDownloadImage(
+  credentialId: string,
+  canDownloadImage: boolean,
+): Promise<void> {
+  try {
+    await api.patch(`/dashboard/accounts/credentials/${credentialId}/can-download-image`, {
+      canDownloadImage,
+    });
+  } catch (error: any) {
+    console.error("이미지 다운로드 권한 변경 실패:", error);
     throw error;
   }
 }

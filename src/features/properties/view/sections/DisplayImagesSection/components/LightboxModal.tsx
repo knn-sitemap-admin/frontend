@@ -1,10 +1,10 @@
-"use client";
-
-import { X, ChevronLeft, ChevronRight, RotateCw, ZoomIn, ZoomOut, RotateCcw, RefreshCcw } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, RotateCw, ZoomIn, ZoomOut, RotateCcw, RefreshCcw, Download } from "lucide-react";
 import type { ImageItem } from "@/features/properties/types/media";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProtectedImage } from "@/shared/components/ProtectedImage";
 import { useMeRole } from "@/features/auth/hooks/useMeRole";
+import { isMobile } from "@/lib/utils";
+import { API_BASE } from "@/shared/api/api";
 
 type Props = {
   open: boolean;
@@ -26,7 +26,8 @@ export default function LightboxModal({
   title,
 }: Props) {
   /* ---------- 권한 ---------- */
-  const { isPrivileged } = useMeRole();
+  const { isPrivileged, canDownloadImage } = useMeRole();
+  const hasDownloadAccess = isPrivileged || canDownloadImage;
 
   /* ---------- 상태 ---------- */
   const len = Array.isArray(images) ? images.length : 0;
@@ -112,6 +113,54 @@ export default function LightboxModal({
     setRotation(r => r + 90); // 누적 방식으로 변경
   };
 
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const currentItem = images[index];
+    if (!currentItem?.url) return;
+
+    try {
+      // 🔒 [CORS 이슈 해결] 백엔드 프록시를 통해 이미지를 다운로드합니다.
+      // 외부 도메인(Cloudfront)의 이미지를 직접 fetch할 때 발생하는 CORS 문제를 회피합니다.
+      const proxyUrl = `${API_BASE}/photo/upload/proxy?url=${encodeURIComponent(currentItem.url)}`;
+      
+      const token = typeof window !== "undefined" ? localStorage.getItem("notemap_token") : null;
+      const headers: Record<string, string> = {};
+      if (token && token !== "undefined" && token !== "null") {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(proxyUrl, {
+        headers,
+        credentials: 'include', // 세션 쿠키 포함
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      
+      // 파일명 결정
+      let fileName = currentItem.name;
+      if (!fileName) {
+        const urlParts = currentItem.url.split('/');
+        fileName = urlParts[urlParts.length - 1] || `image_${index + 1}.webp`;
+      }
+      
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    } catch (error) {
+      console.error("이미지 다운로드 실패:", error);
+      // 폴백: 최후의 수단으로 새 창에서 열기
+      window.open(currentItem.url, "_blank");
+    }
+  };
+
   const handlePointerDown = (e: React.PointerEvent) => {
     if (scale > 1) {
       isDraggingRef.current = true;
@@ -162,16 +211,19 @@ export default function LightboxModal({
   }, [onClose]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !isMobile()) return;
 
     // 1. 모달이 열릴 때 히스토리에 가짜 상태 추가
     isPopStateRef.current = false;
-    window.history.pushState({ lightboxOpen: true }, "");
+    const modalId = Math.random().toString(36).substring(2, 11);
+    window.history.pushState({ lightboxOpen: true, modalId }, "");
 
     // 2. 뒤로가기(popstate) 발생 시 핸들러
-    const handlePopState = () => {
-      isPopStateRef.current = true;
-      onCloseRef.current();
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state?.modalId !== modalId) {
+        isPopStateRef.current = true;
+        onCloseRef.current();
+      }
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -183,7 +235,7 @@ export default function LightboxModal({
       //    쌓아두었던 가짜 히스토리를 수동으로 제거해줌 (원복)
       if (!isPopStateRef.current) {
         // 히스토리 상태가 우리가 넣은 것인지 확인 후 뒤로가기 실행
-        if (window.history.state?.lightboxOpen) {
+        if (window.history.state?.modalId === modalId) {
           window.history.back();
         }
       }
@@ -277,6 +329,17 @@ export default function LightboxModal({
                   <RotateCw size={16} />
                 </button>
               </div>
+
+              {/* 다운로드 버튼 (권한 있을 때만) */}
+              {hasDownloadAccess && (
+                <button
+                  onClick={handleDownload}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/80 hover:bg-emerald-500 text-white transition-all active:scale-90 ml-1"
+                  title="이미지 다운로드"
+                >
+                  <Download size={18} />
+                </button>
+              )}
 
               {/* 초기화 버튼 */}
               <button
