@@ -132,6 +132,12 @@ export default function PropertyViewModal({
 
   // --- 모바일 뒤로가기 제어 (History API) ---
   const isPopStateRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  
+  // 최신 onClose 함수를 ref에 유지
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -143,14 +149,14 @@ export default function PropertyViewModal({
     // 2. 뒤로가기(popstate) 발생 시 핸들러
     const handlePopState = () => {
       isPopStateRef.current = true;
-      onClose();
+      onCloseRef.current(); // Ref를 통해 호출
     };
 
     window.addEventListener("popstate", handlePopState);
-
+    
     return () => {
       window.removeEventListener("popstate", handlePopState);
-
+      
       // 3. 수동으로 닫힌 경우 (X 버튼 등), 가짜 히스토리 원복
       if (!isPopStateRef.current) {
         if (window.history.state?.propertyViewOpen) {
@@ -158,7 +164,7 @@ export default function PropertyViewModal({
         }
       }
     };
-  }, [open, onClose]);
+  }, [open]); // onClose를 의존성에서 제거하여 리렌더링 시 히스토리 꼬임 방지
 
   const [editInitial, setEditInitial] = useState<any | null>(null);
   const [lastEditPayload, setLastEditPayload] = useState<any | null>(null);

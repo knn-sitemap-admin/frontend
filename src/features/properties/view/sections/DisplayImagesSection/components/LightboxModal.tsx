@@ -155,6 +155,11 @@ export default function LightboxModal({
 
   // --- 모바일 뒤로가기 제어 (History API) ---
   const isPopStateRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -166,7 +171,7 @@ export default function LightboxModal({
     // 2. 뒤로가기(popstate) 발생 시 핸들러
     const handlePopState = () => {
       isPopStateRef.current = true;
-      onClose();
+      onCloseRef.current();
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -183,7 +188,7 @@ export default function LightboxModal({
         }
       }
     };
-  }, [open, onClose]);
+  }, [open]); // onClose 제거
 
   useEffect(() => {
     if (!open) return;
