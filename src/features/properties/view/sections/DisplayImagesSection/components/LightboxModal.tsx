@@ -385,7 +385,7 @@ export default function LightboxModal({
                         )}
                       </div>
                     ) : (
-                      <>
+                      <div className="relative group">
                         <ProtectedImage
                           src={src!}
                           alt={`Image ${i + 1}`}
@@ -396,14 +396,20 @@ export default function LightboxModal({
                           }`}
                           disablePointerEvents={false}
                         />
+                        {/* 🛡️ 물리적 보호 레이어 (롱프레스 메뉴 차단용) */}
+                        <div 
+                          className="absolute inset-0 z-10 touch-none select-none"
+                          onContextMenu={(e) => e.preventDefault()}
+                        />
+                        
                         {i === index && scale === 1 && (img.caption || img.name) && (
-                          <div className="absolute -bottom-12 left-0 right-0 text-center animate-in slide-in-from-bottom-2 duration-500">
+                          <div className="absolute -bottom-12 left-0 right-0 text-center animate-in slide-in-from-bottom-2 duration-500 z-20">
                             <p className="text-white text-xs sm:text-sm font-medium bg-black/40 backdrop-blur-md inline-block px-4 py-1.5 rounded-full border border-white/10">
                               {img.caption || img.name}
                             </p>
                           </div>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -459,11 +465,14 @@ export default function LightboxModal({
                       </svg>
                     </div>
                   ) : (
-                    <ProtectedImage
-                      src={s!}
-                      alt={`Thumb ${i + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="relative w-full h-full">
+                      <ProtectedImage
+                        src={s!}
+                        alt={`Thumb ${i + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 z-10" onContextMenu={(e) => e.preventDefault()} />
+                    </div>
                   )}
                 </button>
               );

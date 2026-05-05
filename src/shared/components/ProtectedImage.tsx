@@ -28,28 +28,50 @@ export function ProtectedImage({
 }: ProtectedImageProps) {
   const { isPrivileged } = useMeRole();
 
-  // 관리자나 매니저는 제한 없이 이용 가능
+  // 공통 보호 스타일
+  const protectionStyle: React.CSSProperties = {
+    WebkitTouchCallout: "none",
+    WebkitUserSelect: "none",
+    KhtmlUserSelect: "none",
+    MozUserSelect: "none",
+    msUserSelect: "none",
+    userSelect: "none",
+    WebkitUserDrag: "none",
+    touchAction: "manipulation", // 핀치 줌 등은 허용하되 롱프레스 메뉴 방해 최소화
+  };
+
+  const commonProps = {
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+    onDragStart: (e: React.DragEvent) => e.preventDefault(),
+    draggable: false,
+  };
+
+  // 관리자나 매니저는 제한 없이 이용 가능 (단, 브라우저 기본 메뉴는 UX를 위해 차단)
   if (isPrivileged) {
     return (
       <img 
         src={src} 
         alt={alt} 
         className={className} 
+        {...commonProps}
+        style={{
+          ...protectionStyle,
+          ...props.style,
+        }}
         {...props} 
       />
     );
   }
 
-  // 일반 사용자는 저장 및 다운로드 기능 차단
+  // 일반 사용자는 추가로 포인터 이벤트 제어 가능
   return (
     <img
       src={src}
       alt={alt}
       className={cn(className, "select-none")}
-      onContextMenu={(e) => e.preventDefault()}
-      onDragStart={(e) => e.preventDefault()}
+      {...commonProps}
       style={{
-        WebkitTouchCallout: "none",
+        ...protectionStyle,
         pointerEvents: disablePointerEvents ? "none" : "auto",
         ...props.style,
       }}
