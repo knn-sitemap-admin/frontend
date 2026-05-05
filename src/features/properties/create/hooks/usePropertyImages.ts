@@ -214,6 +214,22 @@ export function usePropertyImages(opts?: SeedOpts) {
     },
   ];
 
+  /** ✅ 가로 폴더 순서 변경 (모달용) */
+  const reorderFolder = (folderIdx: number, nextItems: ImageItem[]) => {
+    setImageFolders((prev) => {
+      if (folderIdx < 0 || folderIdx >= prev.length) return prev;
+      const next = prev.map((arr, i) =>
+        i === folderIdx ? ([...nextItems] as UploaderImageItem[]) : [...arr]
+      );
+      return next;
+    });
+  };
+
+  /** ✅ 세로 폴더 순서 변경 (모달용) */
+  const reorderVerticalFolder = (nextItems: ImageItem[]) => {
+    setFileItems([...nextItems] as UploaderImageItem[]);
+  };
+
   /**
    * 🔹 제목 큐잉
    * - 가로 폴더: id = "folder-{idx}"
@@ -279,6 +295,10 @@ export function usePropertyImages(opts?: SeedOpts) {
     // ✅ 폴더 제목용 메타 + 액션
     groups,
     queueGroupTitle,
+
+    // ✅ 순서 조정
+    reorderFolder,
+    reorderVerticalFolder,
 
     // 필요하면 바깥에서 직접 세로 제목도 볼 수 있게
     verticalFolderTitle,

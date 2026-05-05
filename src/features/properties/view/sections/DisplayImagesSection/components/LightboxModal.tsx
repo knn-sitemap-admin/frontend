@@ -3,6 +3,8 @@
 import { X, ChevronLeft, ChevronRight, RotateCw, ZoomIn, ZoomOut, RotateCcw, RefreshCcw } from "lucide-react";
 import type { ImageItem } from "@/features/properties/types/media";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ProtectedImage } from "@/shared/components/ProtectedImage";
+import { useMeRole } from "@/features/auth/hooks/useMeRole";
 
 type Props = {
   open: boolean;
@@ -23,6 +25,9 @@ export default function LightboxModal({
   withThumbnails = false,
   title,
 }: Props) {
+  /* ---------- 권한 ---------- */
+  const { isPrivileged } = useMeRole();
+
   /* ---------- 상태 ---------- */
   const len = Array.isArray(images) ? images.length : 0;
   const hasImages = len > 0;
@@ -279,9 +284,9 @@ export default function LightboxModal({
         {/* 이미지/문서 컨테이너 */}
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden touch-none">
           <div 
-            className={`flex h-full w-full ${scale === 1 && !isSwiping ? 'transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''}`}
+            className={`flex h-full w-full ${!isSwiping ? 'transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''}`}
             style={{ 
-              transform: scale === 1 ? `translateX(calc(-${index * 100}% + ${swipeOffset}px))` : 'none',
+              transform: `translateX(calc(-${index * 100}% + ${swipeOffset}px))`,
               willChange: isSwiping ? 'transform' : 'auto',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden'
@@ -330,30 +335,29 @@ export default function LightboxModal({
                           <p className="text-sm text-emerald-400 font-bold uppercase tracking-widest">{src?.split(".").pop()} DOCUMENT</p>
                           {img.caption && <p className="text-slate-400 text-sm mt-2 line-clamp-3 leading-relaxed">{img.caption}</p>}
                         </div>
-                        <a
-                          href={src}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-4 flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-bold text-black hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
-                        >
-                          다운로드 하기
-                        </a>
+                        {isPrivileged && (
+                          <a
+                            href={src}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-4 flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-bold text-black hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                          >
+                            다운로드 하기
+                          </a>
+                        )}
                       </div>
                     ) : (
                       <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={src}
+                        <ProtectedImage
+                          src={src!}
                           alt={`Image ${i + 1}`}
                           className={`block max-h-[75vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 transform-gpu ${
                             isCurrent 
                               ? 'opacity-100 scale-100' 
                               : `opacity-40 scale-95 ${!isSwiping ? 'blur-sm' : ''}`
                           }`}
-                          draggable={false}
-                          loading="lazy"
-                          decoding="async"
+                          disablePointerEvents={false}
                         />
                         {i === index && scale === 1 && (img.caption || img.name) && (
                           <div className="absolute -bottom-12 left-0 right-0 text-center animate-in slide-in-from-bottom-2 duration-500">
@@ -418,9 +422,8 @@ export default function LightboxModal({
                       </svg>
                     </div>
                   ) : (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={s}
+                    <ProtectedImage
+                      src={s!}
                       alt={`Thumb ${i + 1}`}
                       className="w-full h-full object-cover"
                     />

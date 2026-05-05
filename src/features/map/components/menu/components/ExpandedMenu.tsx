@@ -241,38 +241,39 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
     return (
       <div
         className={cn(
-          "fixed z-[220] pointer-events-auto bg-white border border-gray-200 shadow-xl",
-          // 📱 모바일: 바텀시트 (아래에서 올라오는 패널)
+          "fixed z-[220] pointer-events-auto bg-white shadow-2xl overscroll-none",
+          // 📱 모바일: 바텀시트 (아래에서 올라오는 패널) - 사이드바 스타일과 통일
           "max-md:left-0 max-md:right-0 max-md:bottom-0 max-md:top-auto max-md:w-full",
-          "max-md:rounded-t-2xl max-md:rounded-b-none max-md:border-x-0 max-md:border-t",
+          "max-md:rounded-t-[32px] max-md:rounded-b-none max-md:border-t max-md:border-t-white/40 max-md:bg-white/70 max-md:backdrop-blur-xl",
           // 🖥 PC: 기존처럼 우측 상단 카드
           "md:right-4 md:top-[65px] md:bottom-auto md:left-auto",
-          "md:w-[318px] md:max-w-[calc(100vw-2rem)] md:rounded-md"
+          "md:w-[318px] md:max-w-[calc(100vw-2rem)] md:rounded-2xl md:border md:border-gray-200 md:bg-white",
+          "touch-none"
         )}
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
           transition: isDragging ? "none" : "transform 0.18s ease-out",
+          overscrollBehavior: "none",
         }}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         role="region"
         aria-label="지도 도구 및 주변시설"
       >
-        {/* 📱 모바일 전용 드래그바 헤더 */}
+        {/* 📱 모바일 전용 드래그바 헤더 - 디자인 통일 */}
         <div
           ref={dragHandleRef}
-          className="max-md:flex md:hidden items-center justify-center px-4 pt-2 pb-1 border-b"
+          className="max-md:flex md:hidden items-center justify-center px-4 pt-5 pb-4 cursor-row-resize touch-none active:bg-gray-100/30 transition-colors"
           onMouseDown={handleDragStart}
           onMouseMove={handleDragMove}
           onMouseUp={handleDragEnd}
           onMouseLeave={handleDragEnd}
-          // onTouchStart, onTouchMove 등은 useEffect에서 수동 등록 (passive: false를 위해)
         >
-          <div className="h-1 w-10 rounded-full bg-gray-300" />
+          <div className="h-1.5 w-14 rounded-full bg-gray-400/30" />
         </div>
 
         {/* 안쪽 스크롤 영역 (모바일에서 70vh 정도만 보이게) */}
-        <div className="max-md:max-h-[70vh] max-md:overflow-y-auto p-2 md:p-3">
+        <div className="max-md:max-h-[70vh] max-md:overflow-y-auto p-2 md:p-3 overscroll-contain">
           <FilterSection
             active={active}
             activeSubmenu={activeSubmenu}
@@ -294,13 +295,19 @@ export const ExpandedMenu: React.FC<ExpandedMenuProps> = React.memo(
 
               <RadiusMeasureToggleButton
                 pressed={radiusMeasureVisible}
-                onPress={onToggleRadiusMeasure}
+                onPress={() => {
+                  onToggleRadiusMeasure();
+                  if (!radiusMeasureVisible) onToggle?.(); // 켤 때만 메뉴 닫기
+                }}
                 showLabel
               />
 
               <DistanceMeasureToggleButton
                 pressed={distanceMeasureVisible}
-                onPress={onToggleDistanceMeasure}
+                onPress={() => {
+                  onToggleDistanceMeasure();
+                  if (!distanceMeasureVisible) onToggle?.(); // 켤 때만 메뉴 닫기
+                }}
                 showLabel
               />
             </div>

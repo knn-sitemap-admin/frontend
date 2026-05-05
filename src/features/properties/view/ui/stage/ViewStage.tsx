@@ -406,14 +406,21 @@ export default function ViewStage({
 
 
   const positionedPanelClass = cn(
-    "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+    "absolute left-1/2 top-1/2",
     panelClass,
   );
+
+  const panelStyles: React.CSSProperties = {
+    transform: "translate3d(-50%, -50%, 0)",
+    backfaceVisibility: "hidden",
+    WebkitBackfaceVisibility: "hidden",
+  };
 
   if (loading && !hasData) {
     const panel = (
       <div
         className={asInner ? panelClass : positionedPanelClass}
+        style={!asInner ? panelStyles : undefined}
         {...(!asInner && {
           onMouseDown: stopBubble,
           onPointerDown: stopBubble,
@@ -453,6 +460,7 @@ export default function ViewStage({
   const panel = (
     <div
       className={asInner ? panelClass : positionedPanelClass}
+      style={!asInner ? panelStyles : undefined}
       {...(!asInner && {
         onMouseDown: stopBubble,
         onPointerDown: stopBubble,

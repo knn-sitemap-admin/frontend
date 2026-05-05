@@ -4,9 +4,10 @@ import type React from "react";
 import { ArrowLeftRight, ChevronLeft, ChevronRight, Upload, X } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { cn } from "@/lib/cn";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useMemo, useCallback } from "react";
 import type { ImageItem } from "@/features/properties/types/media";
 import type { ImageCarouselUploadProps } from "./types";
+import { ProtectedImage } from "@/shared/components/ProtectedImage";
 
 export default function ImageCarouselUpload({
   items,
@@ -36,62 +37,139 @@ export default function ImageCarouselUpload({
   const count = items?.length ?? 0;
 
   const [current, setCurrent] = useState(0);
-  const [imgError, setImgError] = useState(false);
+  const [imgErrorMap, setImgErrorMap] = useState<Record<number, boolean>>({});
 
-  // ✅ 폴더 제목 로컬 상태 (부모에서 안 넘겨줘도 입력 가능하게)
+  // ✅ 폴더 제목 로컬 상태
   const [folderTitleLocal, setFolderTitleLocal] = useState(folderTitle ?? "");
 
-  // props로 넘어오는 folderTitle이 바뀌면 로컬 상태 동기화
   useEffect(() => {
     setFolderTitleLocal(folderTitle ?? "");
   }, [folderTitle]);
 
-  // 로컬 캡션 폴백(사진별 캡션 모드에서만 사용)
+  // 로컬 캡션 폴백
   const [localCaptions, setLocalCaptions] = useState<string[]>(() =>
     items.map((it) => (typeof it?.caption === "string" ? it.caption! : ""))
   );
 
   useEffect(() => {
-    // 순서 조정 등으로 items 자체가 변경되면 (정렬 포함)
-    // 사용자에게 바뀐 순서의 처음부터 보여주기 위해 0번으로 리셋
-    setCurrent(0);
-    setImgError(false);
-
-    // 캡션 동기화 보장
     setLocalCaptions(
       items.map((it) => (typeof it?.caption === "string" ? it.caption! : ""))
     );
   }, [items]);
 
+  // items가 바뀔 때 current 인덱스 보정
   useEffect(() => {
     if (count === 0) {
       setCurrent(0);
     } else if (current >= count) {
       setCurrent(count - 1);
     }
-    setImgError(false);
+  }, [count, current]);
+
+  const goPrev = useCallback(() => {
+    if (count <= 1) return;
+    setCurrent((c) => (c - 1 + count) % count);
   }, [count]);
 
-  const goPrev = () => count > 0 && setCurrent((c) => (c - 1 + count) % count);
-  const goNext = () => count > 0 && setCurrent((c) => (c + 1) % count);
+  const goNext = useCallback(() => {
+    if (count <= 1) return;
+    setCurrent((c) => (c + 1) % count);
+  }, [count]);
 
-  // 드래그/스와이프
-  const dragX = useRef<number | null>(null);
+  // ✅ 최적화된 Object URL 관리
+  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
+  const fileUrlsRef = useRef<Record<string, string>>({});
+
+  const makeKey = useCallback((it: ImageItem, idx: number) => {
+    const anyIt: any = it;
+    return (
+      anyIt.id ??
+      anyIt.photoId ??
+      anyIt.serverId ??
+      anyIt.idbKey ??
+      `${anyIt.name ?? "file"}_${(anyIt.file as File | undefined)?.size ?? ""}_${idx}`
+    ).toString();
+  }, []);
+
+  useEffect(() => {
+    const prevMap = fileUrlsRef.current;
+    const nextMap: Record<string, string> = {};
+    const keysInUse = new Set<string>();
+
+    items.forEach((it, idx) => {
+      const anyIt: any = it;
+      const f = anyIt.file instanceof File ? anyIt.file : undefined;
+      if (!f) return;
+
+      const key = makeKey(it, idx);
+      keysInUse.add(key);
+
+      if (prevMap[key]) {
+        nextMap[key] = prevMap[key];
+      } else {
+        nextMap[key] = URL.createObjectURL(f);
+      }
+    });
+
+    // 사용되지 않는 URL 정리
+    Object.entries(prevMap).forEach(([key, url]) => {
+      if (!keysInUse.has(key) && url.startsWith("blob:")) {
+        URL.revokeObjectURL(url);
+      }
+    });
+
+    fileUrlsRef.current = nextMap;
+    setFileUrls(nextMap);
+  }, [items, makeKey]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(fileUrlsRef.current).forEach((url) => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
+    };
+  }, []);
+
+  // 드래그/스와이프 가시적 피드백을 위한 상태
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragStartX = useRef<number | null>(null);
+  const isDragging = useRef(false);
+
   const onPointerDown = (e: React.PointerEvent) => {
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    dragX.current = e.clientX;
+    if (count <= 1) return;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragStartX.current = e.clientX;
+    isDragging.current = true;
   };
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (dragX.current == null) return;
-    const dx = e.clientX - dragX.current;
-    if (dx > 40) goPrev();
-    if (dx < -40) goNext();
-    dragX.current = null;
-  };
-  const onPointerCancel = () => (dragX.current = null);
 
-  // 키보드
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!isDragging.current || dragStartX.current === null) return;
+    const delta = e.clientX - dragStartX.current;
+    setDragOffset(delta);
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!isDragging.current || dragStartX.current === null) return;
+    const delta = e.clientX - dragStartX.current;
+    const threshold = 50;
+
+    if (delta > threshold) {
+      goPrev();
+    } else if (delta < -threshold) {
+      goNext();
+    }
+
+    setDragOffset(0);
+    dragStartX.current = null;
+    isDragging.current = false;
+  };
+
+  const onPointerCancel = () => {
+    setDragOffset(0);
+    dragStartX.current = null;
+    isDragging.current = false;
+  };
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "ArrowLeft") {
       e.preventDefault();
@@ -103,85 +181,18 @@ export default function ImageCarouselUpload({
     }
   };
 
-  const cur = count > 0 ? items[current] : null;
-  const fit = objectFit ?? (layout === "wide" ? "cover" : "contain");
-
-  // ✅ 미리보기용 objectURL 캐시 (file용)
-  type UrlMap = Record<string, string>;
-  const [fileUrls, setFileUrls] = useState<UrlMap>({});
-  const fileUrlsRef = useRef<UrlMap>({});
-
-  // 각 아이템을 구분할 키 (서버 id 우선, 없으면 name+size+index)
-  const makeKey = (it: ImageItem, idx: number) => {
-    const anyIt: any = it;
-    return (
-      anyIt.id ??
-      anyIt.photoId ??
-      anyIt.serverId ??
-      anyIt.idbKey ??
-      `${anyIt.name ?? "file"}_${
-        (anyIt.file as File | undefined)?.size ?? ""
-      }_${idx}`
-    ).toString();
-  };
-
-  // items가 바뀔 때마다 file → objectURL 생성 & 이전 URL 정리
-  useEffect(() => {
-    const nextMap: UrlMap = {};
-
-    items.forEach((it, idx) => {
-      const anyIt: any = it;
-      const f: File | undefined =
-        anyIt.file instanceof File ? anyIt.file : undefined;
-      if (!f) return;
-      const key = makeKey(it, idx);
-      const url = URL.createObjectURL(f);
-      nextMap[key] = url;
-    });
-
-    Object.entries(fileUrlsRef.current).forEach(([key, url]) => {
-      if (!nextMap[key] && url.startsWith("blob:")) {
-        try {
-          URL.revokeObjectURL(url);
-        } catch {}
-      }
-    });
-
-    fileUrlsRef.current = nextMap;
-    setFileUrls(nextMap);
-  }, [items]);
-
-  // 언마운트 시 전체 정리
-  useEffect(
-    () => () => {
-      Object.values(fileUrlsRef.current).forEach((url) => {
-        if (url.startsWith("blob:")) {
-          try {
-            URL.revokeObjectURL(url);
-          } catch {}
-        }
-      });
-      fileUrlsRef.current = {};
-    },
-    []
-  );
-
-  // ✅ 인풋 값 결정: 폴더제목 모드면 로컬 상태 사용
   const currentCaption = captionAsFolderTitle
     ? folderTitleLocal
-    : cur?.caption ??
+    : items[current]?.caption ??
       (useLocalCaptionFallback ? localCaptions[current] : "") ??
       "";
 
   const handleCaptionChange = (text: string) => {
     if (captionAsFolderTitle) {
-      // 폴더 제목 모드: 로컬 상태 업데이트 + 필요하면 부모 콜백 호출
       setFolderTitleLocal(text);
       onChangeFolderTitle?.(text);
       return;
     }
-
-    // 사진별 캡션 모드
     if (onChangeCaption) {
       onChangeCaption(current, text);
     } else if (useLocalCaptionFallback) {
@@ -193,7 +204,6 @@ export default function ImageCarouselUpload({
     }
   };
 
-  // 파일 선택 후 value 초기화(같은 파일 재선택 허용)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChangeFiles?.(e.target.files);
     e.currentTarget.value = "";
@@ -205,29 +215,21 @@ export default function ImageCarouselUpload({
     if (!captionAsFolderTitle) {
       setLocalCaptions((prev) => prev.filter((_, i) => i !== current));
     }
-    setCurrent((c) => Math.max(0, Math.min(c, count - 2)));
-    setImgError(false);
     onRemoveImage(current);
   };
 
-  // 안전한 src (file → objectURL, 없으면 dataUrl/url)
-  const toSafeSrc = (raw?: string | null) => {
-    const s = (raw ?? "").trim();
-    return s.length > 0 ? s : undefined;
-  };
-
-  let safeSrc: string | undefined;
-  if (cur) {
-    const key = makeKey(cur, current);
+  const getSafeSrc = useCallback((it: ImageItem, idx: number) => {
+    if (!it) return undefined;
+    const key = makeKey(it, idx);
     const fromFile = fileUrls[key];
-    safeSrc = toSafeSrc(fromFile ?? cur.dataUrl ?? cur.url);
-  }
+    const src = (fromFile ?? it.dataUrl ?? it.url ?? "").trim();
+    return src.length > 0 ? src : undefined;
+  }, [fileUrls, makeKey]);
 
-  const showFallback = count === 0 || !safeSrc || imgError;
+  const fit = objectFit ?? (layout === "wide" ? "cover" : "contain");
 
   return (
     <div
-      ref={containerRef}
       role="group"
       aria-label="이미지 업로드 및 미리보기"
       tabIndex={0}
@@ -243,6 +245,7 @@ export default function ImageCarouselUpload({
           layout === "wide" ? wideAspectClass : tallHeightClass
         )}
         onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
@@ -251,30 +254,51 @@ export default function ImageCarouselUpload({
             이미지를 업로드하세요
             {typeof maxCount === "number" ? ` (최대 ${maxCount}장)` : ""}
           </div>
-        ) : showFallback ? (
-          <div className="absolute inset-0 grid place-items-center bg-muted text-xs text-gray-500">
-            이미지 로드 실패
-          </div>
         ) : (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              key={`img-${current}`}
-              src={safeSrc}
-              alt={cur?.name ?? `image-${current + 1}`}
-              className={cn(
-                "w-full h-full",
-                fit === "cover" ? "object-cover" : "object-contain"
-              )}
-              draggable={false}
-              loading="lazy"
-              decoding="async"
-              onError={() => setImgError(true)}
-            />
+            {/* 슬라이더 컨테이너 */}
+            <div
+              className="absolute inset-0 flex transition-transform duration-300 ease-out transform-gpu"
+              style={{
+                transform: `translateX(calc(-${current * 100}% + ${dragOffset}px))`,
+                transition: isDragging.current ? "none" : "transform 0.3s ease-out",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
+                willChange: "transform"
+              }}
+            >
+              {items.map((it, idx) => {
+                const src = getSafeSrc(it, idx);
+                const isError = imgErrorMap[idx];
+                const isVisible = Math.abs(idx - current) <= 1; // 현재 및 인접 이미지면 렌더링
 
+                return (
+                  <div key={makeKey(it, idx)} className="w-full h-full flex-shrink-0 relative bg-white">
+                    {isVisible && src && !isError ? (
+                      <ProtectedImage
+                        src={src}
+                        alt={it.name ?? `image-${idx + 1}`}
+                        className={cn(
+                          "w-full h-full",
+                          fit === "cover" ? "object-cover" : "object-contain"
+                        )}
+                        disablePointerEvents={false}
+                        loading={Math.abs(idx - current) === 0 ? "eager" : "lazy"}
+                        onError={() => setImgErrorMap(prev => ({ ...prev, [idx]: true }))}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs">
+                        {isError ? "이미지 로드 실패" : "대기 중..."}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 컨트롤 오버레이 */}
             {count > 0 && onRemoveImage && (
-              <div className="absolute top-2 right-2 flex items-center gap-1.5 z-20">
-                {/* 삭제 버튼 */}
+              <div className="absolute top-2 right-2 z-20">
                 <button
                   type="button"
                   onClick={handleRemove}
@@ -290,16 +314,16 @@ export default function ImageCarouselUpload({
               <>
                 <button
                   type="button"
-                  onClick={goPrev}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full bg-black/40 hover:bg-black/55 text-white p-2"
+                  onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 inline-flex items-center justify-center rounded-full bg-black/40 hover:bg-black/55 text-white p-2"
                   aria-label="이전"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
-                  onClick={goNext}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-full bg-black/40 hover:bg-black/55 text-white p-2"
+                  onClick={(e) => { e.stopPropagation(); goNext(); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 inline-flex items-center justify-center rounded-full bg-black/40 hover:bg-black/55 text-white p-2"
                   aria-label="다음"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -307,18 +331,16 @@ export default function ImageCarouselUpload({
               </>
             )}
 
-            <div className="absolute bottom-2 right-2 rounded-md bg-black/55 text-white text-xs px-2 py-0.5">
+            <div className="absolute bottom-2 right-2 z-20 rounded-md bg-black/55 text-white text-xs px-2 py-0.5">
               {current + 1} / {count}
             </div>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex gap-1">
               {items.map((_, i) => (
                 <button
                   key={i}
                   type="button"
-                  onClick={() => {
-                    setCurrent(i);
-                    setImgError(false);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
                     i === current ? "bg-white" : "bg-white/50 hover:bg-white/80"
@@ -328,16 +350,15 @@ export default function ImageCarouselUpload({
               ))}
             </div>
 
-            {cur?.name && (
-              <div className="absolute top-2 left-2 max-w-[75%] rounded bg-black/40 text-white text-[11px] px-2 py-0.5 truncate">
-                {cur.name}
+            {items[current]?.name && (
+              <div className="absolute top-2 left-2 z-20 max-w-[75%] rounded bg-black/40 text-white text-[11px] px-2 py-0.5 truncate">
+                {items[current].name}
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* 하단 입력: 폴더제목 모드면 folderTitleLocal 사용 */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <input
           type="text"

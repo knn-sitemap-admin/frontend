@@ -190,7 +190,14 @@ export default function PropertyCreateModalBody({
         onClick={onClose}
         aria-hidden
       />
-      <div className="absolute left-1/2 top-1/2 w-[1100px] max-w-[95vw] max-h-[92vh] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-xl overflow-hidden flex flex-col">
+      <div 
+        className="absolute left-1/2 top-1/2 w-[1100px] max-w-[95vw] max-h-[92vh] rounded-2xl bg-white shadow-xl overflow-hidden flex flex-col transform-gpu"
+        style={{
+          transform: "translate3d(-50%, -50%, 0)",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+        }}
+      >
         {content}
       </div>
     </div>

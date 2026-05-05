@@ -161,18 +161,24 @@ export function MapDistanceMeasure({
   }, [deleteClickLine, deleteCircleDot, deleteDistance]);
 
   // --- Effects (이벤트 리스너 등록) ---
+  
+  // 거리 재기는 지도를 옮기며 찍는 경우가 많으므로 드래그를 허용함
+  useEffect(() => {
+    if (mapInstance) mapInstance.setDraggable(true);
+  }, [mapInstance, visible]);
 
-  // 클릭: 그리기 시작 또는 점 추가
   useEffect(() => {
     if (!visible || !kakaoSDK || !mapInstance) return;
     const ev = kakaoSDK.maps?.event ?? (globalThis as any)?.kakao?.maps?.event;
     if (!ev?.addListener) return;
 
-    const handler = (e: any) => {
-      const clickPosition = e?.latLng;
-      if (!clickPosition) return;
+    // 클릭 시 지점 추가
+    const onClick = (e: any) => {
+      const pos = e?.latLng;
+      if (!pos) return;
 
       if (!drawingFlag) {
+        // 처음 시작
         setDrawingFlag(true);
         setShowIntro(false);
         deleteClickLine();
@@ -181,7 +187,7 @@ export function MapDistanceMeasure({
 
         const line = new kakaoSDK.maps.Polyline({
           map: mapInstance,
-          path: [clickPosition],
+          path: [pos],
           strokeWeight: 3,
           strokeColor: STROKE_COLOR,
           strokeOpacity: 1,
@@ -197,29 +203,25 @@ export function MapDistanceMeasure({
         });
         moveLineRef.current = moveLine;
 
-        displayCircleDot(clickPosition, 0);
+        displayCircleDot(pos, 0);
       } else {
+        // 지점 추가
         const path = clickLineRef.current.getPath();
-        path.push(clickPosition);
+        const lastPoint = path[path.length - 1];
+        
+        // 중복 클릭 방지
+        const tempLine = new kakaoSDK.maps.Polyline({ path: [lastPoint, pos] });
+        if (tempLine.getLength() < 5) return;
+
+        path.push(pos);
         clickLineRef.current.setPath(path);
         const distance = Math.round(clickLineRef.current.getLength());
-        displayCircleDot(clickPosition, distance);
+        displayCircleDot(pos, distance);
       }
     };
 
-    ev.addListener(mapInstance, "click", handler);
-    return () => {
-      ev.removeListener(mapInstance, "click", handler);
-    };
-  }, [visible, kakaoSDK, mapInstance, drawingFlag, deleteClickLine, deleteDistance, deleteCircleDot, displayCircleDot]);
-
-  // 마우스 무브: 그리는 중일 때 미리보기 선 + 총거리 표시
-  useEffect(() => {
-    if (!visible || !kakaoSDK || !mapInstance) return;
-    const ev = kakaoSDK.maps?.event ?? (globalThis as any)?.kakao?.maps?.event;
-    if (!ev?.addListener) return;
-
-    const handler = (e: any) => {
+    // 마우스 이동 시 미리보기 선
+    const onMouseMove = (e: any) => {
       if (!drawingFlag || !clickLineRef.current || !moveLineRef.current) return;
       const mousePosition = e?.latLng;
       if (!mousePosition) return;
@@ -236,23 +238,16 @@ export function MapDistanceMeasure({
       showDistance(content, mousePosition);
     };
 
-    ev.addListener(mapInstance, "mousemove", handler);
-    return () => {
-      ev.removeListener(mapInstance, "mousemove", handler);
-    };
-  }, [visible, kakaoSDK, mapInstance, drawingFlag, showDistance]);
-
-  // 오른쪽 클릭: 그리기 종료
-  useEffect(() => {
-    if (!visible || !kakaoSDK || !mapInstance) return;
-    const ev = kakaoSDK.maps?.event ?? (globalThis as any)?.kakao?.maps?.event;
-    if (!ev?.addListener) return;
-
+    ev.addListener(mapInstance, "click", onClick);
+    ev.addListener(mapInstance, "mousemove", onMouseMove);
     ev.addListener(mapInstance, "rightclick", finishDrawing);
+
     return () => {
+      ev.removeListener(mapInstance, "click", onClick);
+      ev.removeListener(mapInstance, "mousemove", onMouseMove);
       ev.removeListener(mapInstance, "rightclick", finishDrawing);
     };
-  }, [visible, kakaoSDK, mapInstance, finishDrawing]);
+  }, [visible, kakaoSDK, mapInstance, drawingFlag, deleteClickLine, deleteDistance, deleteCircleDot, displayCircleDot, showDistance, finishDrawing]);
 
   // 비활성 시 전부 제거
   useEffect(() => {

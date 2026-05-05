@@ -122,7 +122,9 @@ export function Sidebar({
     const delta = y - startYRef.current;
 
     if (delta > 0) {
-      setDragY(delta); // 아래로만
+      // 아래로 드래그 시 브라우저 새로고침 방지
+      if (e.cancelable) e.preventDefault();
+      setDragY(delta);
     } else {
       setDragY(0);
     }
@@ -130,16 +132,13 @@ export function Sidebar({
 
   const handleTouchEnd = () => {
     if (!isDragging) return;
-    const threshold = 80; // 이 이상 내려가면 닫기
+    const threshold = 60; // 판정 기준 완화 (더 둔감하지 않게)
 
     if (dragY > threshold) {
       onToggleSidebar?.();
-      setDragY(0);
-    } else {
-      // 원위치로 부드럽게 복귀
-      setDragY(0);
     }
-
+    
+    setDragY(0);
     setIsDragging(false);
     startYRef.current = null;
   };
@@ -160,9 +159,10 @@ export function Sidebar({
   if (!isSidebarOn) return null;
 
   const rootClass = cn(
-    "fixed z-[80] bg-white/60 backdrop-blur-xl shadow-2xl border border-white/60 overflow-hidden",
+    "fixed z-[80] bg-white/70 backdrop-blur-xl shadow-2xl border border-white/60 overflow-hidden",
     // 📱 모바일: 바텀시트
     "max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:rounded-t-[32px] max-md:rounded-b-none max-md:border-x-0 max-md:border-t-white/40",
+    "max-md:overscroll-none", // 새로고침 방지
     // 🖥 데스크탑: 기존 위치 유지
     "md:top-16 md:right-4 md:bottom-auto md:left-auto md:w-80 md:rounded-[32px]"
   );
@@ -173,6 +173,7 @@ export function Sidebar({
       style={{
         transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
         transition: isDragging ? "none" : "transform 0.18s ease-out",
+        overscrollBehavior: "none",
       }}
     >
       <style jsx>{`
@@ -181,14 +182,14 @@ export function Sidebar({
         }
       `}</style>
 
-      {/* 📱 드래그 핸들 (모바일 전용) */}
+      {/* 📱 드래그 핸들 (모바일 전용) - 터치 영역 및 디자인 통일 */}
       <div
-        className="max-md:block hidden pt-3 pb-1"
+        className="max-md:flex hidden pt-5 pb-4 items-center justify-center cursor-row-resize touch-none active:bg-gray-100/30 transition-colors"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-300/50" />
+        <div className="h-1.5 w-14 rounded-full bg-gray-400/30" />
       </div>
 
       {/* 내용 스크롤 영역 */}

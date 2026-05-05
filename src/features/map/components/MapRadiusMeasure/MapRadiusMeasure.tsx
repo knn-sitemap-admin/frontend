@@ -25,6 +25,9 @@ export function MapRadiusMeasure({
   const distanceOverlayRef = useRef<any>(null);
   const radiusRef = useRef<number>(0);
 
+  const isDraggingRef = useRef(false);
+  const hasMovedRef = useRef(false);
+
   // --- 유틸리티 함수들 ---
 
   const clearDrawing = useCallback(() => {
@@ -111,80 +114,128 @@ export function MapRadiusMeasure({
   }, [clearDrawing]);
 
   // --- Effects ---
+  
+  // 측정 도구가 활성화되면 지도의 드래그를 막아 드래그 측정이 가능하게 함
+  useEffect(() => {
+    if (!mapInstance) return;
+    if (visible) {
+      mapInstance.setDraggable(false);
+    } else {
+      mapInstance.setDraggable(true);
+    }
+    return () => {
+      if (mapInstance) mapInstance.setDraggable(true);
+    };
+  }, [visible, mapInstance]);
 
   useEffect(() => {
     if (!visible || !kakaoSDK || !mapInstance) return;
-    const ev = kakaoSDK.maps?.event ?? (globalThis as any)?.kakao?.maps?.event;
-    if (!ev?.addListener) return;
 
-    const onClick = (e: any) => {
-      const position = e?.latLng;
-      if (!position) return;
+    const container = mapInstance.getNode();
+    const projection = mapInstance.getProjection();
 
-      if (!drawingFlag) {
-        // 그리기 시작 (원점 지정)
-        clearDrawing();
-        setDrawingFlag(true);
-        setShowIntro(false);
-        centerPointRef.current = position;
-
-        const circle = new kakaoSDK.maps.Circle({
-          center: position,
-          radius: 0,
-          strokeWeight: 2,
-          strokeColor: STROKE_COLOR,
-          strokeOpacity: 0.8,
-          strokeStyle: "solid",
-          fillColor: FILL_COLOR,
-          fillOpacity: 0.2,
-        });
-        circle.setMap(mapInstance);
-        circleRef.current = circle;
-
-        const polyline = new kakaoSDK.maps.Polyline({
-          path: [position, position],
-          strokeWeight: 2,
-          strokeColor: STROKE_COLOR,
-          strokeOpacity: 0.8,
-          strokeStyle: "dash",
-        });
-        polyline.setMap(mapInstance);
-        polylineRef.current = polyline;
+    const getLatLngFromEvent = (e: any) => {
+      const rect = container.getBoundingClientRect();
+      let clientX, clientY;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
       } else {
-        // 그리기 종료 (두 번째 클릭)
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      const point = new kakaoSDK.maps.Point(clientX - rect.left, clientY - rect.top);
+      return projection.coordsFromContainerPoint(point);
+    };
+
+    const onStart = (e: any) => {
+      if (drawingFlag) return;
+      const latLng = getLatLngFromEvent(e);
+      if (!latLng) return;
+
+      isDraggingRef.current = true;
+      hasMovedRef.current = false;
+      
+      clearDrawing();
+      setDrawingFlag(true);
+      setShowIntro(false);
+      centerPointRef.current = latLng;
+
+      const circle = new kakaoSDK.maps.Circle({
+        center: latLng,
+        radius: 0,
+        strokeWeight: 2,
+        strokeColor: STROKE_COLOR,
+        strokeOpacity: 0.8,
+        strokeStyle: "solid",
+        fillColor: FILL_COLOR,
+        fillOpacity: 0.2,
+      });
+      circle.setMap(mapInstance);
+      circleRef.current = circle;
+
+      const polyline = new kakaoSDK.maps.Polyline({
+        path: [latLng, latLng],
+        strokeWeight: 2,
+        strokeColor: STROKE_COLOR,
+        strokeOpacity: 0.8,
+        strokeStyle: "dash",
+      });
+      polyline.setMap(mapInstance);
+      polylineRef.current = polyline;
+    };
+
+    const onMove = (e: any) => {
+      if (!drawingFlag || !centerPointRef.current || !circleRef.current) return;
+      const latLng = getLatLngFromEvent(e);
+      if (!latLng) return;
+
+      hasMovedRef.current = true;
+
+      // 거리 계산을 위한 임시 폴리라인
+      const tempPolyline = new kakaoSDK.maps.Polyline({
+        path: [centerPointRef.current, latLng],
+      });
+      const radius = tempPolyline.getLength();
+      radiusRef.current = radius;
+
+      circleRef.current.setRadius(radius);
+      polylineRef.current.setPath([centerPointRef.current, latLng]);
+      
+      showRadius(radius, latLng);
+      
+      if (isDraggingRef.current && e.cancelable) {
+        e.preventDefault();
+      }
+    };
+
+    const onEnd = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      
+      if (drawingFlag && centerPointRef.current) {
         finishDrawing();
       }
     };
 
-    const onMouseMove = (e: any) => {
-      if (!drawingFlag || !centerPointRef.current || !circleRef.current) return;
-      const mousePosition = e?.latLng;
-      if (!mousePosition) return;
-
-      const polyline = new kakaoSDK.maps.Polyline({
-        path: [centerPointRef.current, mousePosition],
-      });
-      const radius = polyline.getLength();
-      radiusRef.current = radius;
-
-      circleRef.current.setRadius(radius);
-      polylineRef.current.setPath([centerPointRef.current, mousePosition]);
-      
-      showRadius(radius, mousePosition);
-    };
-
-    const onRightClick = () => {
-      if (drawingFlag) finishDrawing();
-    };
-
-    ev.addListener(mapInstance, "click", onClick);
-    ev.addListener(mapInstance, "mousemove", onMouseMove);
-    ev.addListener(mapInstance, "rightclick", onRightClick);
+    // 네이티브 이벤트 등록
+    container.addEventListener("touchstart", onStart, { passive: false });
+    container.addEventListener("touchmove", onMove, { passive: false });
+    container.addEventListener("touchend", onEnd);
+    container.addEventListener("mousedown", onStart);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onEnd);
 
     return () => {
-      ev.removeListener(mapInstance, "click", onClick);
-      ev.removeListener(mapInstance, "mousemove", onMouseMove);
-      ev.removeListener(mapInstance, "rightclick", onRightClick);
+      container.removeEventListener("touchstart", onStart);
+      container.removeEventListener("touchmove", onMove);
+      container.removeEventListener("touchend", onEnd);
+      container.removeEventListener("mousedown", onStart);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onEnd);
     };
   }, [visible, kakaoSDK, mapInstance, drawingFlag, clearDrawing, finishDrawing, showRadius]);
 

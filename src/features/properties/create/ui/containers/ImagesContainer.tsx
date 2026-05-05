@@ -55,6 +55,10 @@ export default function ImagesContainer({
     /** 제한값 (없으면 기본값) */
     maxPerCard?: number;
     maxFiles?: number;
+
+    /** ✅ 순서 교체 */
+    onReorderFolder?: (folderIdx: number, nextItems: ImageItem[]) => void;
+    onReorderVerticalFolder?: (nextItems: ImageItem[]) => void;
   };
 }) {
   /** 1) 카드 이미지 정규화 */
@@ -170,6 +174,9 @@ export default function ImagesContainer({
         /** ✅ 세로 폴더 제목 & 변경 핸들러 */
         verticalFolderTitle={verticalFolderTitle}
         onChangeVerticalFolderTitle={handleChangeVerticalFolderTitle}
+        /** ✅ 순서 교체 */
+        onReorderFolder={images.onReorderFolder}
+        onReorderVerticalFolder={images.onReorderVerticalFolder}
       />
     </div>
   );

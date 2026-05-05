@@ -168,7 +168,14 @@ export function ModalRestrictionLayout({
         aria-hidden
       />
       {/* 안내 전용 패널 */}
-      <div className="absolute left-1/2 top-1/2 z-[1001] w-[420px] max-w-[95vw] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-xl flex flex-col pointer-events-auto overflow-hidden">
+      <div 
+        className="absolute left-1/2 top-1/2 z-[1001] w-[420px] max-w-[95vw] rounded-2xl bg-white shadow-xl flex flex-col pointer-events-auto overflow-hidden transform-gpu"
+        style={{
+          transform: "translate3d(-50%, -50%, 0)",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+        }}
+      >
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <h2 className="text-base font-semibold">매물정보 수정 제한</h2>
           <button
@@ -236,7 +243,14 @@ export function ModalEditLayout({
         aria-hidden
       />
       {/* 모달 컨텐츠 */}
-      <div className="absolute left-1/2 top-1/2 z-[1001] w-[1100px] max-w-[95vw] max-h-[92vh] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-xl flex flex-col pointer-events-auto overflow-hidden">
+      <div 
+        className="absolute left-1/2 top-1/2 z-[1001] w-[1100px] max-w-[95vw] max-h-[92vh] rounded-2xl bg-white shadow-xl flex flex-col pointer-events-auto overflow-hidden transform-gpu"
+        style={{
+          transform: "translate3d(-50%, -50%, 0)",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+        }}
+      >
         <HeaderContainer form={headerForm as any} onClose={onClose} />
 
         {/* embedded 버전과 동일하게 + ref 연결 */}

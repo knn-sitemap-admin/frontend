@@ -32,6 +32,10 @@ type ImageHandlers = {
   handleRemoveFileItem: ReturnType<
     typeof usePropertyImages
   >["handleRemoveFileItem"];
+  reorderFolder: ReturnType<typeof usePropertyImages>["reorderFolder"];
+  reorderVerticalFolder: ReturnType<
+    typeof usePropertyImages
+  >["reorderVerticalFolder"];
 };
 
 const isUploadable = (u?: string) =>
@@ -53,6 +57,8 @@ export function useCreateMedia() {
     handleRemoveFileItem,
     groups,
     queueGroupTitle,
+    reorderFolder,
+    reorderVerticalFolder,
   } = usePropertyImages();
 
   /** ✅ 제목 + 사진이 있는 가로 폴더가 최소 1개라도 있는지 */
@@ -132,7 +138,6 @@ export function useCreateMedia() {
     [registerImageInputRaw]
   );
 
-  /** ───── 이미지 핸들러 안정 래퍼 ───── */
   const handlersRef = useRef<ImageHandlers>({
     openImagePicker,
     onPickFilesToFolder,
@@ -143,8 +148,11 @@ export function useCreateMedia() {
     onAddFiles,
     onChangeFileItemCaption,
     handleRemoveFileItem,
+    reorderFolder,
+    reorderVerticalFolder,
   });
 
+  // ✅ 이미지 핸들러가 변경될 때마다 ref 업데이트 (stable 래퍼들이 항상 최신 상태를 참조하게 함)
   useEffect(() => {
     handlersRef.current = {
       openImagePicker,
@@ -156,6 +164,8 @@ export function useCreateMedia() {
       onAddFiles,
       onChangeFileItemCaption,
       handleRemoveFileItem,
+      reorderFolder,
+      reorderVerticalFolder,
     };
   }, [
     openImagePicker,
@@ -167,6 +177,8 @@ export function useCreateMedia() {
     onAddFiles,
     onChangeFileItemCaption,
     handleRemoveFileItem,
+    reorderFolder,
+    reorderVerticalFolder,
   ]);
 
   const stable_openImagePicker = useCallback(
@@ -212,6 +224,16 @@ export function useCreateMedia() {
   const stable_handleRemoveFileItem = useCallback(
     (...args: Parameters<ImageHandlers["handleRemoveFileItem"]>) =>
       handlersRef.current.handleRemoveFileItem(...args),
+    []
+  );
+  const stable_reorderFolder = useCallback(
+    (...args: Parameters<ImageHandlers["reorderFolder"]>) =>
+      handlersRef.current.reorderFolder(...args),
+    []
+  );
+  const stable_reorderVerticalFolder = useCallback(
+    (...args: Parameters<ImageHandlers["reorderVerticalFolder"]>) =>
+      handlersRef.current.reorderVerticalFolder(...args),
     []
   );
 
@@ -377,6 +399,8 @@ export function useCreateMedia() {
       handleRemoveFileItem: stable_handleRemoveFileItem,
       groups,
       queueGroupTitle,
+      onReorderFolder: stable_reorderFolder,
+      onReorderVerticalFolder: stable_reorderVerticalFolder,
     }),
     [
       imageFolders,
@@ -391,6 +415,8 @@ export function useCreateMedia() {
       stable_onAddFiles,
       stable_onChangeFileItemCaption,
       stable_handleRemoveFileItem,
+      stable_reorderFolder,
+      stable_reorderVerticalFolder,
       groups,
       queueGroupTitle,
     ]
