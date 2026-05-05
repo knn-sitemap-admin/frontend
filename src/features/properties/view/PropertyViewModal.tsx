@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import type { PropertyViewDetails } from "./types";
@@ -130,6 +130,36 @@ export default function PropertyViewModal({
   // useBodyScrollLock(open && !asInner); // 상위 PropertyCreateViewHost에서 일괄 관리
 
 
+  // --- 모바일 뒤로가기 제어 (History API) ---
+  const isPopStateRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    // 1. 모달이 열릴 때 히스토리에 가짜 상태 추가
+    isPopStateRef.current = false;
+    window.history.pushState({ propertyViewOpen: true }, "");
+
+    // 2. 뒤로가기(popstate) 발생 시 핸들러
+    const handlePopState = () => {
+      isPopStateRef.current = true;
+      onClose();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+
+      // 3. 수동으로 닫힌 경우 (X 버튼 등), 가짜 히스토리 원복
+      if (!isPopStateRef.current) {
+        if (window.history.state?.propertyViewOpen) {
+          window.history.back();
+        }
+      }
+    };
+  }, [open, onClose]);
+
   const [editInitial, setEditInitial] = useState<any | null>(null);
   const [lastEditPayload, setLastEditPayload] = useState<any | null>(null);
 
@@ -147,27 +177,27 @@ export default function PropertyViewModal({
     const debug = {
       raw: raw
         ? {
-            buildingType: raw.buildingType ?? null,
-            propertyType: raw.propertyType ?? null,
-            type: raw.type ?? null,
-            registry: raw.registry ?? null,
-            registryOne: raw.registryOne ?? null,
-            registrationType: raw.registrationType ?? null,
-            registrationTypeName: raw.registrationTypeName ?? null,
-            registrationTypeId: raw.registrationTypeId ?? null,
-          }
+          buildingType: raw.buildingType ?? null,
+          propertyType: raw.propertyType ?? null,
+          type: raw.type ?? null,
+          registry: raw.registry ?? null,
+          registryOne: raw.registryOne ?? null,
+          registrationType: raw.registrationType ?? null,
+          registrationTypeName: raw.registrationTypeName ?? null,
+          registrationTypeId: raw.registrationTypeId ?? null,
+        }
         : null,
       view: view
         ? {
-            buildingType: view.buildingType ?? null,
-            propertyType: view.propertyType ?? null,
-            type: view.type ?? null,
-            registry: view.registry ?? null,
-            registryOne: view.registryOne ?? null,
-            registrationType: view.registrationType ?? null,
-            registrationTypeName: view.registrationTypeName ?? null,
-            registrationTypeId: view.registrationTypeId ?? null,
-          }
+          buildingType: view.buildingType ?? null,
+          propertyType: view.propertyType ?? null,
+          type: view.type ?? null,
+          registry: view.registry ?? null,
+          registryOne: view.registryOne ?? null,
+          registrationType: view.registrationType ?? null,
+          registrationTypeName: view.registrationTypeName ?? null,
+          registrationTypeId: view.registrationTypeId ?? null,
+        }
         : null,
     };
   }, [q.data]);
@@ -269,11 +299,11 @@ export default function PropertyViewModal({
       <EditStage
         key={`edit-${String(
           (editInitial as any)?.raw?.id ??
-            (editInitial as any)?.view?.id ??
-            (initialForEdit as any)?.raw?.id ??
-            (initialForEdit as any)?.view?.id ??
-            idForActions ??
-            ""
+          (editInitial as any)?.view?.id ??
+          (initialForEdit as any)?.raw?.id ??
+          (initialForEdit as any)?.view?.id ??
+          idForActions ??
+          ""
         )}`}
         initialData={editInitial ?? initialForEdit}
         onClose={onEditClose}

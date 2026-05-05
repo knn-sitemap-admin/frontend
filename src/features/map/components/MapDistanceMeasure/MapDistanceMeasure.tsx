@@ -270,30 +270,29 @@ export function MapDistanceMeasure({
     <>
       {showIntro && !drawingFlag && (
         <div
-          className="fixed left-1/2 bottom-20 z-[100] -translate-x-1/2 px-4 py-2 rounded-lg bg-gray-800/90 text-white shadow-lg pointer-events-none text-center"
+          className="hidden md:block fixed left-1/2 top-24 z-[100] -translate-x-1/2 px-5 py-3 rounded-2xl bg-gray-900/90 text-white shadow-2xl pointer-events-none text-center border border-white/10 backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-500"
           aria-live="polite"
         >
-          <span className="text-sm">지도를 클릭해 거리 측정 구간을 찍어 주세요.</span>
-          <br />
-          <em className="text-[11px] opacity-90 block">
-            클릭으로 선 그리기, 완료 버튼이나 우클릭으로 종료
-          </em>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-sm font-bold">지도를 클릭해 거리 측정 구간을 정하세요</span>
+            <span className="text-[11px] opacity-80">마지막 지점에서 한 번 더 클릭하거나 완료를 누르세요</span>
+          </div>
         </div>
       )}
 
       {drawingFlag && (
-        <div className="fixed left-1/2 bottom-20 z-[100] -translate-x-1/2 flex items-center gap-2">
+        <div className="fixed left-1/2 bottom-24 z-[100] -translate-x-1/2 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <button
             type="button"
             onClick={finishDrawing}
-            className="px-3 py-2.5 rounded-full bg-blue-600 text-white shadow-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition"
+            className="px-6 py-3 rounded-full bg-blue-600 text-white shadow-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition flex items-center gap-2"
           >
             측정 완료
           </button>
           <button
             type="button"
             onClick={cancelDrawing}
-            className="px-5 py-2.5 rounded-full bg-gray-700 text-white shadow-lg font-bold text-sm hover:bg-gray-800 active:scale-95 transition"
+            className="px-6 py-3 rounded-full bg-gray-800 text-white shadow-lg font-bold text-sm hover:bg-gray-900 active:scale-95 transition"
           >
             취소
           </button>

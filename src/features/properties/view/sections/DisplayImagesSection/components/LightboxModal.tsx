@@ -153,6 +153,38 @@ export default function LightboxModal({
     }
   };
 
+  // --- 모바일 뒤로가기 제어 (History API) ---
+  const isPopStateRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    // 1. 모달이 열릴 때 히스토리에 가짜 상태 추가
+    isPopStateRef.current = false;
+    window.history.pushState({ lightboxOpen: true }, "");
+
+    // 2. 뒤로가기(popstate) 발생 시 핸들러
+    const handlePopState = () => {
+      isPopStateRef.current = true;
+      onClose();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      
+      // 3. 만약 뒤로가기가 아니라 'X' 버튼이나 배경 클릭으로 수동으로 닫힌 경우라면, 
+      //    쌓아두었던 가짜 히스토리를 수동으로 제거해줌 (원복)
+      if (!isPopStateRef.current) {
+        // 히스토리 상태가 우리가 넣은 것인지 확인 후 뒤로가기 실행
+        if (window.history.state?.lightboxOpen) {
+          window.history.back();
+        }
+      }
+    };
+  }, [open, onClose]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {

@@ -155,25 +155,26 @@ export function Sidebar({
     setOpenSection((prev) => (prev === "favorites" ? null : "favorites"));
   };
 
-  // 3) 조기 리턴 (모든 훅 정의 후)
-  if (!isSidebarOn) return null;
-
   const rootClass = cn(
-    "fixed z-[80] bg-white/70 backdrop-blur-xl shadow-2xl border border-white/60 overflow-hidden",
+    "fixed z-[80] bg-white/70 backdrop-blur-xl shadow-2xl border border-white/60 overflow-hidden transform-gpu transition-all duration-300 ease-in-out",
     // 📱 모바일: 바텀시트
     "max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:w-full max-md:rounded-t-[32px] max-md:rounded-b-none max-md:border-x-0 max-md:border-t-white/40",
     "max-md:overscroll-none", // 새로고침 방지
     // 🖥 데스크탑: 기존 위치 유지
-    "md:top-16 md:right-4 md:bottom-auto md:left-auto md:w-80 md:rounded-[32px]"
+    "md:top-16 md:right-4 md:bottom-auto md:left-auto md:w-80 md:rounded-[32px]",
+    // ✨ 가시성 제어 (깜빡임 방지)
+    isSidebarOn ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-4 pointer-events-none"
   );
 
   return (
     <div
       className={rootClass}
       style={{
-        transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
-        transition: isDragging ? "none" : "transform 0.18s ease-out",
+        transform: dragY > 0 ? `translateY(${dragY}px) translate3d(0,0,0)` : `translate3d(0, ${isSidebarOn ? '0' : '10px'}, 0)`,
+        transition: isDragging ? "none" : "transform 0.18s ease-out, opacity 0.3s ease-out",
         overscrollBehavior: "none",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
       }}
     >
       <style jsx>{`

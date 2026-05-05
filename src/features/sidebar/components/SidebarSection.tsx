@@ -177,9 +177,15 @@ export function SidebarSection(props: SidebarSectionProps) {
         role="region"
         aria-labelledby={headerId}
         className={cn(
-          "grid transition-[grid-template-rows,opacity,padding] duration-300 ease-in-out",
-          isExpanded ? "grid-rows-[1fr] opacity-100 pb-3" : "grid-rows-[0fr] opacity-0 pb-0"
+          "grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-in-out",
+          isExpanded ? "grid-rows-[1fr] opacity-100 visible pb-3" : "grid-rows-[0fr] opacity-0 invisible pb-0"
         )}
+        style={{ 
+          willChange: "grid-template-rows, opacity",
+          transform: "translate3d(0, 0, 0)",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden"
+        }}
       >
         <div className="overflow-hidden">
           <div className="space-y-1 pt-1">

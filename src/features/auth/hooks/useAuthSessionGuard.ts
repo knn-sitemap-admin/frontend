@@ -37,25 +37,35 @@ export function useAuthSessionGuard(options: Options = {}) {
     const checkSession = async (isInitial = false) => {
       if (isChecking || destroyed) return;
 
-      // 🔹 [iPhone PWA 대응] 새로고침 직후에는 환경(localStorage, 등)이 안정화될 때까지 약간 대기
+      // 🔹 [iPhone PWA 대응] 새로고침 직후에는 환경이 안정화될 때까지 대기
       if (isInitial) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        const isPWA = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+        // PWA면 조금 더 넉넉하게 대기 (아이폰 쿠키 로딩 지연 대응)
+        await new Promise((resolve) => setTimeout(resolve, isPWA ? 1200 : 500));
       }
 
       isChecking = true;
       try {
         await api.get("/auth/me"); // 200 이면 OK
       } catch (e: any) {
-        // 🔹 [보안/안정화] 401 에러가 났더라도, 로컬에 토큰이 있다면 즉시 로그아웃 시키지 않고 
-        // 인터셉터의 재시도 로직이 끝날 때까지 기다리거나 한 번 더 기회를 줍니다.
         const hasToken = !!localStorage.getItem("notemap_token");
+        const isPWA = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+
+        // 🔹 [PWA 특화] 1차 실패 시, 토큰이 있다면 2초 후 딱 한 번만 더 시도 (최후의 보루)
+        if (isInitial && isPWA && hasToken) {
+          console.warn("[AuthSessionGuard] Initial check failed in PWA. Retrying once more in 2s...");
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            await api.get("/auth/me");
+            return; // 2차 시도 성공
+          } catch (e2) {
+            console.error("[AuthSessionGuard] Double failure. Proceeding to logout check.");
+          }
+        }
         
         if (!hasToken) {
           handleForceLogout();
         } else {
-          // 토큰은 있는데 401인 경우: 인터셉터가 이미 처리 중일 수 있으므로 
-          // 여기서 즉시 로그아웃 시키는 것은 위험합니다. 
-          // 정말 만료된 거라면 인터셉터가 결국 /login으로 보낼 것입니다.
           console.warn("[AuthSessionGuard] 401 detected but token exists. Letting interceptor handle it.");
         }
       } finally {
