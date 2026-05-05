@@ -29,7 +29,8 @@ export type MeData = {
   accountId?: number;
   credentialId?: string;
   username?: string;
-  role?: UserRole; // 🔥 여기로 'admin' 등 직급/권한 문자열이 들어옴
+  name?: string | null;       // 실제 직원 한국어 이름 (accounts.name)
+  role?: UserRole;
   deviceType?: string;
   canDownloadImage?: boolean;
 } | null;

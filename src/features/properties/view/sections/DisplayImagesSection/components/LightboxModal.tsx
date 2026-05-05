@@ -1,7 +1,8 @@
-import { X, ChevronLeft, ChevronRight, RotateCw, ZoomIn, ZoomOut, RotateCcw, RefreshCcw, Download } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, RotateCw, ZoomIn, ZoomOut, RotateCcw, RefreshCcw, Download, Presentation, EyeOff } from "lucide-react";
 import type { ImageItem } from "@/features/properties/types/media";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProtectedImage } from "@/shared/components/ProtectedImage";
+import { WatermarkedImage } from "@/shared/components/WatermarkedImage";
 import { useMeRole } from "@/features/auth/hooks/useMeRole";
 import { isMobile } from "@/lib/utils";
 import { API_BASE } from "@/shared/api/api";
@@ -28,6 +29,11 @@ export default function LightboxModal({
   /* ---------- 권한 ---------- */
   const { isPrivileged, canDownloadImage } = useMeRole();
   const hasDownloadAccess = isPrivileged || canDownloadImage;
+  const showWatermark = !hasDownloadAccess; // 다운로드 권한 없을 때만 워터마크 표시
+
+  /* ---------- 고객 제시 모드 ---------- */
+  // 워터마크를 일시적으로 숨기고 깨끗한 이미지를 고객에게 보여주는 모드
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
 
   /* ---------- 상태 ---------- */
   const len = Array.isArray(images) ? images.length : 0;
@@ -268,14 +274,14 @@ export default function LightboxModal({
   const albumTitle = (title && title.trim()) || currentImage?.caption?.trim?.() || currentImage?.name?.trim?.() || "";
   const fitClass = objectFit === "cover" ? "object-cover" : "object-contain";
 
-  // 🔄 [성능 최적화] 앞뒤 이미지 미리 로드
+  // 🔄 [성능 최적화] 앞뒤 이미지 미리 로드 (중복 인덱스 제거)
   const preloadedIndices = useMemo(() => {
-    const indices = [];
+    const set = new Set<number>();
     if (len > 1) {
-      indices.push((index + 1) % len); // 다음 이미지
-      indices.push((index - 1 + len) % len); // 이전 이미지
+      set.add((index + 1) % len);        // 다음 이미지
+      set.add((index - 1 + len) % len);  // 이전 이미지
     }
-    return indices;
+    return [...set];
   }, [index, len]);
 
   return (
@@ -291,6 +297,14 @@ export default function LightboxModal({
           <img key={i} src={images[i].dataUrl ?? images[i].url} alt="preload" />
         ))}
       </div>
+
+      {/* 🎯 고객 제시 모드 활성화 배지 */}
+      {isPresentationMode && (
+        <div className="flex items-center justify-center gap-2 px-4 py-1.5 bg-amber-500/95 text-black text-[11px] font-bold tracking-wide z-30 animate-in slide-in-from-top-1 duration-200">
+          <Presentation size={13} />
+          <span>고객 제시 모드 — 워터마크가 숨겨져 있습니다</span>
+        </div>
+      )}
 
       {/* 고정 상단 바 */}
       <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 z-20 bg-gradient-to-b from-black/90 to-transparent gap-2">
@@ -356,6 +370,21 @@ export default function LightboxModal({
                   className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-emerald-500/80 hover:bg-emerald-500 text-white transition-all active:scale-90 shrink-0"
                 >
                   <Download size={16} />
+                </button>
+              )}
+
+              {/* 🎯 고객 제시 모드 토글 (워터마크가 표시되는 사용자만 노출) */}
+              {showWatermark && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsPresentationMode(p => !p); }}
+                  className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full transition-all active:scale-90 shrink-0 ${
+                    isPresentationMode
+                      ? 'bg-amber-500/90 hover:bg-amber-500 text-black'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                  title={isPresentationMode ? '고객 제시 모드 해제' : '고객 제시 모드'}
+                >
+                  {isPresentationMode ? <EyeOff size={16} /> : <Presentation size={16} />}
                 </button>
               )}
 
@@ -464,16 +493,32 @@ export default function LightboxModal({
                       </div>
                     ) : (
                       <div className="relative group">
-                        <ProtectedImage
-                          src={src!}
-                          alt={`Image ${i + 1}`}
-                          className={`block max-h-[70vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 transform-gpu ${
-                            isCurrent 
-                              ? 'opacity-100 scale-100' 
-                              : `opacity-40 scale-95 ${!isSwiping ? 'blur-sm' : ''}`
-                          }`}
-                          disablePointerEvents={false}
-                        />
+                        {hasDownloadAccess || isPresentationMode ? (
+                          // ✅ 권한자 또는 고객 제시 모드: 깨끗한 이미지
+                          <ProtectedImage
+                            src={src!}
+                            alt={`Image ${i + 1}`}
+                            className={`block max-h-[70vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 transform-gpu ${
+                              isCurrent 
+                                ? 'opacity-100 scale-100' 
+                                : `opacity-40 scale-95 ${!isSwiping ? 'blur-sm' : ''}`
+                            }`}
+                            disablePointerEvents={false}
+                          />
+                        ) : (
+                          // 🛡️ 일반 직원: 유저 정보가 새겨진 워터마크 이미지
+                          <WatermarkedImage
+                            src={src!}
+                            alt={`Image ${i + 1}`}
+                            className={`block max-h-[70vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 transform-gpu ${
+                              isCurrent 
+                                ? 'opacity-100 scale-100' 
+                                : `opacity-40 scale-95 ${!isSwiping ? 'blur-sm' : ''}`
+                            }`}
+                            disablePointerEvents={true}
+                            opacity={0.13}
+                          />
+                        )}
                         <div 
                           className="absolute inset-0 z-10 touch-none select-none"
                           onContextMenu={(e) => e.preventDefault()}

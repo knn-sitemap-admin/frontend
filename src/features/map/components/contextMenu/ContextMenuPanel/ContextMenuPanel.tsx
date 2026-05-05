@@ -96,7 +96,12 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     >
       {/* ---------------- 헤더 ---------------- */}
       <div className="flex items-start justify-between gap-3">
-        <div id={headingId} className="min-w-0 flex-1">
+        <div 
+          id={headingId} 
+          className="min-w-0 flex-1 select-text cursor-text"
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center gap-2 min-w-0 flex-wrap">
             <div className="font-semibold text-base truncate min-w-0">
               {headerTitle}
@@ -147,7 +152,11 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
       </div>
 
       {(jibunAddress || roadAddress || officePhone) && (
-        <div className="mt-2 mb-3">
+        <div 
+          className="mt-2 mb-3 select-text cursor-text"
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
           {/* 구주소(지번) */}
           {jibunAddress && (
             <div className="text-[13px] text-gray-700 leading-snug">
