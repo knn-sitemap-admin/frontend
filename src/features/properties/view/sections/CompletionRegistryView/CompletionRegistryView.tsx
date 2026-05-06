@@ -77,7 +77,7 @@ export default function CompletionRegistryView({
       </div>
 
       {/* 준공일 / 등기 */}
-      <div className="grid grid-cols-2 items-center">
+      <div className="grid grid-cols-1 gap-y-3 sm:grid-cols-2 items-center">
         <Field label="준공일" align="center">
           <div className="h-9 flex items-center text-sm">{ymd ?? "-"}</div>
         </Field>

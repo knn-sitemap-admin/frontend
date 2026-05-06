@@ -29,10 +29,10 @@ export default function ParkingView({
       : parkingType?.trim() || "-";
 
   const pillClass =
-    "inline-flex h-8 items-center rounded-lg px-3 text-sm border bg-blue-50 text-blue-700";
+    "inline-flex min-h-[32px] py-1 items-center rounded-lg px-3 text-sm border bg-blue-50 text-blue-700 whitespace-normal break-all";
 
   return (
-    <div className="grid grid-cols-2 items-center">
+    <div className="grid grid-cols-1 gap-y-3 sm:grid-cols-2 items-center">
       <Field label="주차 유형">
         <span className={pillClass}>{typeText}</span>
       </Field>
