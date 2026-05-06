@@ -77,12 +77,8 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
   const [displayTitle, setDisplayTitle] = useState(
     (propertyTitle ?? "").trim()
   );
-  const [displayOfficePhone, setDisplayOfficePhone] = useState<string>(
-    props.officePhone ?? ""
-  );
-  const [displayParkingGrade, setDisplayParkingGrade] = useState<number>(
-    props.parkingGrade ?? 0
-  );
+  const [displayOfficePhone, setDisplayOfficePhone] = useState<string>("");
+  const [displayParkingGrade, setDisplayParkingGrade] = useState<number>(0);
   const [displayRoadAddress, setDisplayRoadAddress] = useState<string>(
     roadAddress ?? ""
   );
@@ -101,18 +97,6 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
   useEffect(() => {
     setDisplayTitle((propertyTitle ?? "").trim());
   }, [propertyTitle]);
-
-  useEffect(() => {
-    if (props.officePhone !== undefined) {
-      setDisplayOfficePhone(props.officePhone ?? "");
-    }
-  }, [props.officePhone]);
-
-  useEffect(() => {
-    if (props.parkingGrade !== undefined) {
-      setDisplayParkingGrade(props.parkingGrade ?? 0);
-    }
-  }, [props.parkingGrade]);
 
   /** 파생 상태: reserved > planned > draft > normal */
   const panelState = useMemo(
@@ -161,7 +145,6 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
    *  ⚙️ React Query 캐시/페치 사용 → StrictMode 에서도 네트워크는 1번만
    */
   useEffect(() => {
-    if (displayTitle) return;
     if (!canView) return;
     if (!propertyId) return;
 

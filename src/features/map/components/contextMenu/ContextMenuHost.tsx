@@ -107,8 +107,6 @@ export default function ContextMenuHost(props: ContextMenuHostProps) {
             ? (favById as any)[effectiveTarget.id]
             : (effectiveTarget.marker as any)?.isFav
         ),
-        parkingGrade: effectiveTarget.marker.parkingGrade,
-        contactMainPhone: effectiveTarget.marker.contactMainPhone,
       }
     : {
         id: "__draft__",

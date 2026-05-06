@@ -61,8 +61,6 @@ function pinPointToMarker(
     pinDraftId: p.draftId ?? p.pin_draft_id ?? undefined,
     posKey: toPosKey(lat, lng),
     isNew: p.isNew ?? p.ageType === "NEW",
-    parkingGrade: p.parkingGrade ?? null,
-    contactMainPhone: p.contactMainPhone ?? null,
   };
 }
 

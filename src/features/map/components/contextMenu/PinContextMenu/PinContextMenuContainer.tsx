@@ -515,8 +515,6 @@ export default function PinContextMenuContainer(props: Props) {
               propertyId={propertyIdClean}
               propertyTitle={derivedPropertyTitle || null}
               draftState={draftStateForPanel}
-              officePhone={(pin as any)?.contactMainPhone ?? (pin as any)?.officePhone ?? null}
-              parkingGrade={(pin as any)?.parkingGrade ?? null}
               onClose={props.onClose}
               onView={handleView}
               onCreate={handleCreateClick}
