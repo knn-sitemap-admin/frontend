@@ -188,10 +188,26 @@ export default function PropertyViewModal({
     // 데이터 로드 완료 후 추가 처리가 필요하면 여기에 작성
   }, [q.data]);
 
+  const prevViewDataRef = useRef<PropertyViewDetails | null>(null);
   const viewData: PropertyViewDetails | null = useMemo(() => {
     const v = (q.data as any)?.view as PropertyViewDetails | undefined;
-    if (v) return v;
-    return (data as PropertyViewDetails) ?? null;
+    const next = v ?? (data as PropertyViewDetails) ?? null;
+
+    // 같은 매물 id에 대한 데이터 참조 변경이면, 내용이 실질적으로 달라졌을 때만 교체
+    const prevId = (prevViewDataRef.current as any)?.id;
+    const nextId = (next as any)?.id;
+    if (prevViewDataRef.current && prevId && nextId && String(prevId) === String(nextId)) {
+      // 쿼리 데이터(v)가 새로 도착했으면 업데이트 (prop fallback → query enriched)
+      if (v) {
+        prevViewDataRef.current = next;
+        return next;
+      }
+      // 아니면 기존 참조 유지 (불필요한 리렌더 방지)
+      return prevViewDataRef.current;
+    }
+
+    prevViewDataRef.current = next;
+    return next;
   }, [q.data, data]);
 
   const metaDetails = useMemo(

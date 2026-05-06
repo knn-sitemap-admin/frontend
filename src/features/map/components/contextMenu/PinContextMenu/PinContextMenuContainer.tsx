@@ -287,10 +287,6 @@ export default function PinContextMenuContainer(props: Props) {
       onCreate,
     });
 
-  const xAnchor = 0.5;
-  const yAnchor = 1;
-
-  const offsetPx = isSearchDraft ? 56 : 56;
   const MENU_Z = Math.max(zIndex ?? 0, 1_000_000);
 
   /** 컨텍스트 메뉴 패널에 넘길 propertyId */
@@ -421,8 +417,8 @@ export default function PinContextMenuContainer(props: Props) {
   }, [propertyIdClean, onChangeHideLabelForId, position]);
 
   const overlayKey = useMemo(
-    () => `ctx:${version}:${posK}:${derivedPropertyTitle || ""}`,
-    [version, posK, derivedPropertyTitle]
+    () => `ctx:${version}:${posK}`,
+    [version, posK]
   );
 
   const handleDelete = useCallback(async () => {
@@ -494,6 +490,10 @@ export default function PinContextMenuContainer(props: Props) {
       /* 내부에서 에러 토스트 처리 가능하니 여기서는 무시 */
     }
   }, [handleReserveClick, toast]);
+
+  const yAnchor = 1;
+  const xAnchor = 0.5;
+  const offsetPx = 54; // 핀 헤드까지의 거리
 
   return (
     <CustomOverlay

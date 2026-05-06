@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { hydrateRefsToMedia } from "@/lib/media/refs";
 
@@ -30,6 +30,7 @@ export function useViewImagesHydration({
   /* 1) refs 있으면 IndexedDB 등에서 재-하이드레이션 */
   const [_cardsFromRefs, setCardsFromRefs] = useState<ImagesGroup[]>([]);
   const [_filesFromRefs, setFilesFromRefs] = useState<ImagesGroup[]>([]);
+  const prevPinIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,9 +38,16 @@ export function useViewImagesHydration({
     const cardRefs = data?.view?._imageCardRefs ?? data?._imageCardRefs ?? null;
     const fileRefs = data?.view?._fileItemRefs ?? data?._fileItemRefs ?? null;
 
+    // pinId가 바뀌었을 때만 이미지 상태를 초기화 (같은 매물 내 data 참조 변경 시에는 건너뜀)
+    const pinChanged = prevPinIdRef.current !== null && String(prevPinIdRef.current) !== String(pinId ?? "");
+    prevPinIdRef.current = pinId;
+
     if (!cardRefs && !fileRefs) {
-      setCardsFromRefs([]);
-      setFilesFromRefs([]);
+      // refs가 없어도, 같은 매물이면 기존 상태 유지 (서버 사진 그룹이 대신 표시됨)
+      if (pinChanged) {
+        setCardsFromRefs([]);
+        setFilesFromRefs([]);
+      }
       return;
     }
 

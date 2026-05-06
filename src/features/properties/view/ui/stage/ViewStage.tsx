@@ -411,8 +411,7 @@ export default function ViewStage({
   const panelClass = cn(
     "bg-white shadow-xl flex flex-col isolate",
     "w-full h-full max-w-none max-h-none rounded-none",
-    "lg:w-[1100px] lg:max-w-[95vw] lg:max-h-[92vh] lg:rounded-2xl",
-    "transform-gpu contain-paint" // ✅ 모바일 PWA 지도 깜빡임(Flicker) 방지를 위한 강력한 GPU 레이어 격리
+    "lg:w-[1100px] lg:max-w-[95vw] lg:max-h-[92vh] lg:rounded-2xl"
   );
 
 
@@ -621,14 +620,9 @@ export default function ViewStage({
 
   return (
     <div
-      className="fixed inset-0 z-[99999] isolate transform-gpu"
+      className="fixed inset-0 z-[99999] isolate"
       style={{
-        transform: "translateZ(0)",
         overscrollBehavior: "none",
-        backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden",
-        willChange: "transform",
-        contain: "strict",
       }}
       role="dialog"
       aria-modal="true"

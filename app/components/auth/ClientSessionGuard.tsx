@@ -29,10 +29,23 @@ type Props = {
 
 let inFlightSessionCheck: Promise<boolean> | null = null;
 
-async function fetchSessionValid(): Promise<boolean> {
+async function fetchSessionValid(isRetry = false): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, {
+    const isPWA = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+    if (!isRetry && isPWA) {
+      // PWA 환경에서는 로컬스토리지/쿠키 로딩 지연 가능성이 있으므로 대기
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+
+    const token = window.localStorage.getItem("notemap_token");
+    const headers: HeadersInit = {};
+    if (token && token !== "undefined" && token !== "null") {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/auth/me?_t=${Date.now()}`, {
       method: "GET",
+      headers,
       credentials: "include",
       cache: "no-store",
     });
@@ -41,7 +54,12 @@ async function fetchSessionValid(): Promise<boolean> {
       res.status === 401 || res.status === 419 || res.status === 440;
 
     if (!res.ok) {
-      return !isAuthErrorStatus; // 5xx 같은 건 "모르겠음" 취급할 수도 있지만, 여기서는 false 로
+      if (!isRetry && isPWA && token) {
+        console.warn("[ClientSessionGuard] 1st check failed on PWA. Retrying in 1.5s...");
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return fetchSessionValid(true);
+      }
+      return !isAuthErrorStatus; 
     }
 
     const json = await res.json().catch(() => null);
@@ -110,6 +128,16 @@ export default function ClientSessionGuard({
       if (!mounted || destroyed) return;
 
       if (!ok) {
+        // 토큰이 남아있는데도 실패한 경우를 위해 한 번 더블체크
+        const hasToken = !!window.localStorage.getItem("notemap_token");
+        const isPWA = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+        
+        if (isPWA && hasToken) {
+          console.warn("[ClientSessionGuard] Proceeding as ready despite failure due to PWA persistent token.");
+          setReady(true);
+          return;
+        }
+
         await handleForceLogout(true); // 이미 로그아웃된 상태라면 API 호출을 건너뛰고 리다이렉트
         return;
       }
