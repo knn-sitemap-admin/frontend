@@ -623,6 +623,9 @@ export default function ViewStage({
       className="fixed inset-0 z-[99999] isolate"
       style={{
         overscrollBehavior: "none",
+        transform: "translate3d(0,0,0)",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
       }}
       role="dialog"
       aria-modal="true"
