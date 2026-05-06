@@ -52,7 +52,7 @@ export type ContextMenuHostProps = {
     source?: "draft";
     kind?: string;
   }) => void;
-  refreshViewportPins?: (bounds: {
+  refreshViewportPins?: (bounds?: {
     sw: LatLng;
     ne: LatLng;
   }) => Promise<void> | void;

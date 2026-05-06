@@ -94,12 +94,11 @@ export function useContextMenuAnchor({
   /** 3) effective target: 클릭된 핀 있으면 그것, 없으면 underlying 등록핀, 없으면 draft */
   const effectiveTarget: EffectiveTarget = useMemo(() => {
     // 1) 내가 명시적으로 클릭한 대상이 검색이 아닌 어떤 "존재하는" 핀(실매물 혹은 답사예정 "__visit__")이라면 그걸 그대로 쓴다.
-    // __draft__ (그냥 빈 지도 클릭) 이나 __search__ (검색핀) 인 경우에만 
-    // 주변(20m 이내)에 진짜 실매물이 있는지(underlyingMarker) 찾아보고 스냅해준다.
-    if (menuTargetId && targetPin) {
+    // 데이터 로딩 전이라 targetPin이 아직 없더라도, ID를 유지해야 순간적으로 '답사예정지 등록' 모달로 렌더링되는 깜빡임을 방지함.
+    if (menuTargetId) {
       const idStr = String(menuTargetId);
       if (idStr !== "__draft__" && idStr !== "__search__") {
-        return { id: idStr, marker: targetPin as MapMarker };
+        return { id: idStr, marker: targetPin as MapMarker | undefined };
       }
     }
 
@@ -109,8 +108,8 @@ export function useContextMenuAnchor({
     }
 
     // 3) 스냅할 대상도 없으면 당초 클릭했던 핀(예: __draft__, __search__) 유지
-    if (menuTargetId && targetPin) {
-      return { id: String(menuTargetId), marker: targetPin as MapMarker };
+    if (menuTargetId) {
+      return { id: String(menuTargetId), marker: targetPin as MapMarker | undefined };
     }
 
     return { id: "__new__", marker: undefined };

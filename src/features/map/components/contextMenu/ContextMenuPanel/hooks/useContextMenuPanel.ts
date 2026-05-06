@@ -77,8 +77,12 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
   const [displayTitle, setDisplayTitle] = useState(
     (propertyTitle ?? "").trim()
   );
-  const [displayOfficePhone, setDisplayOfficePhone] = useState<string>("");
-  const [displayParkingGrade, setDisplayParkingGrade] = useState<number>(0);
+  const [displayOfficePhone, setDisplayOfficePhone] = useState<string>(
+    props.officePhone ?? ""
+  );
+  const [displayParkingGrade, setDisplayParkingGrade] = useState<number>(
+    props.parkingGrade ?? 0
+  );
   const [displayRoadAddress, setDisplayRoadAddress] = useState<string>(
     roadAddress ?? ""
   );
@@ -97,6 +101,18 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
   useEffect(() => {
     setDisplayTitle((propertyTitle ?? "").trim());
   }, [propertyTitle]);
+
+  useEffect(() => {
+    if (props.officePhone !== undefined) {
+      setDisplayOfficePhone(props.officePhone ?? "");
+    }
+  }, [props.officePhone]);
+
+  useEffect(() => {
+    if (props.parkingGrade !== undefined) {
+      setDisplayParkingGrade(props.parkingGrade ?? 0);
+    }
+  }, [props.parkingGrade]);
 
   /** 파생 상태: reserved > planned > draft > normal */
   const panelState = useMemo(
@@ -208,7 +224,7 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
     return () => {
       cancelled = true;
     };
-  }, [displayTitle, canView, propertyId, qc]);
+  }, [canView, propertyId, qc]);
 
   /** 답사예정/답사지예약(임시핀)일 때 pin-drafts 기반으로 제목 채우기 */
   useEffect(() => {

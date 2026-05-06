@@ -56,6 +56,10 @@ export type ContextMenuPanelProps = {
   /** 서버 드래프트 상태(raw) */
   draftState?: string;
 
+  /** 전화번호 및 주차등급 (딜레이 없는 렌더링용) */
+  officePhone?: string | null;
+  parkingGrade?: number | null;
+
   /**
    * 핀 상태 플래그
    * - isDraftPin: 지도에서 막 찍은 임시(답사예정候補)

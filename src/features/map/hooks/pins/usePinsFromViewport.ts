@@ -57,11 +57,12 @@ function pinPointToMarker(
     name: displayName,
     title: displayName,
     address: p.addressLine ?? p.address ?? undefined,
-    kind: (p.pinKind ?? (source === "draft" ? "question" : "1room")) as any,
     source,
     pinDraftId: p.draftId ?? p.pin_draft_id ?? undefined,
     posKey: toPosKey(lat, lng),
     isNew: p.isNew ?? p.ageType === "NEW",
+    parkingGrade: p.parkingGrade ?? null,
+    contactMainPhone: p.contactMainPhone ?? null,
   };
 }
 

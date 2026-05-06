@@ -125,6 +125,10 @@ export type PinContextMenuProps = {
 
   /** 합쳐진 마커 메타(근처 판정/override용) */
   mergedMeta?: MergedMarker[];
+
+  upsertDraftMarker?: (m: any) => void;
+  refreshViewportPins?: (bounds?: { sw: any; ne: any }) => Promise<void> | void;
+  onDeleteProperty?: (id: string) => Promise<void>;
 };
 
 /** 커스텀 오버레이 위치 계산 결과 */

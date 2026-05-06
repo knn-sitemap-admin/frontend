@@ -431,12 +431,9 @@ export default function LightboxModal({
         {/* 이미지/문서 컨테이너 */}
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden touch-none">
           <div 
-            className={`flex h-full w-full ${!isSwiping ? 'transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''}`}
+            className={`flex h-full w-full ${!isSwiping ? 'transition-transform duration-300 ease-out' : ''}`}
             style={{ 
               transform: `translate3d(calc(-${index * 100}% + ${swipeOffset}px), 0, 0)`,
-              willChange: 'transform',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden'
             }}
           >
             {images.map((img, i) => {
@@ -461,11 +458,10 @@ export default function LightboxModal({
                   style={{ cursor: isI && scale > 1 ? 'grab' : 'default' }}
                 >
                   <div 
-                    className="relative transition-transform duration-300 ease-out transform-gpu"
+                    className={`relative ${!isDraggingRef.current ? 'transition-transform duration-200' : ''}`}
                     style={{ 
                       transform: isCurrent && isI ? `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${scale}) rotate(${rotation}deg)` : 'none',
                       zIndex: isCurrent ? 10 : 0,
-                      willChange: isCurrent && (scale > 1 || rotation !== 0) ? 'transform' : 'auto'
                     }}
                   >
                     {!isI ? (
@@ -498,10 +494,8 @@ export default function LightboxModal({
                           <ProtectedImage
                             src={src!}
                             alt={`Image ${i + 1}`}
-                            className={`block max-h-[70vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 transform-gpu ${
-                              isCurrent 
-                                ? 'opacity-100 scale-100' 
-                                : `opacity-40 scale-95 ${!isSwiping ? 'blur-sm' : ''}`
+                            className={`block max-h-[70vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-opacity duration-300 ${
+                              isCurrent ? 'opacity-100' : 'opacity-40'
                             }`}
                             disablePointerEvents={false}
                           />
@@ -510,10 +504,8 @@ export default function LightboxModal({
                           <WatermarkedImage
                             src={src!}
                             alt={`Image ${i + 1}`}
-                            className={`block max-h-[70vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-all duration-500 transform-gpu ${
-                              isCurrent 
-                                ? 'opacity-100 scale-100' 
-                                : `opacity-40 scale-95 ${!isSwiping ? 'blur-sm' : ''}`
+                            className={`block max-h-[70vh] sm:max-h-[85vh] w-auto ${fitClass} rounded-lg shadow-2xl transition-opacity duration-300 ${
+                              isCurrent ? 'opacity-100' : 'opacity-40'
                             }`}
                             disablePointerEvents={true}
                             opacity={0.13}
