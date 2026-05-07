@@ -171,6 +171,10 @@ export function useSidebarState() {
       setNestedFavorites(convertedGroups);
     } catch (error: any) {
       console.error("즐겨찾기 로드 실패:", error);
+      // 🔹 세션 만료(401) 시에는 에러 팝업을 노출하지 않고 조용히 리턴합니다 (로그아웃 가드가 처리함)
+      if (error?.response?.status === 401 || error?.status === 401) {
+        return;
+      }
       toast({
         title: "즐겨찾기 로드 실패",
         description: "즐겨찾기 목록을 불러오는데 실패했습니다.",

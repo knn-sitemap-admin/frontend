@@ -63,11 +63,9 @@ export function useAuthSessionGuard(options: Options = {}) {
           }
         }
         
-        if (!hasToken) {
-          handleForceLogout();
-        } else {
-          console.warn("[AuthSessionGuard] 401 detected but token exists. Letting interceptor handle it.");
-        }
+        // 🔹 [인증 정밀화] 토큰이 있지만 실제 만료 또는 유효하지 않은 경우, 무한 대기하지 않고 로그아웃을 진행합니다.
+        localStorage.removeItem("notemap_token");
+        handleForceLogout();
       } finally {
         isChecking = false;
       }

@@ -356,23 +356,21 @@ api.interceptors.response.use(
         return api.request(config);
       } else {
         // ✅ 재시도 후에도 401/419인 경우: 세션 만료로 판단
-        if (typeof window !== "undefined" && !config.url?.includes("/signin")) {
-          // 📱 [PWA/iOS 특화] 토큰이 로컬에 살아있다면 즉시 쫓아내지 않고 버팁니다.
-          const isPWA = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+        if (typeof window !== "undefined" && !config.url?.includes("/signin") && !config.url?.includes("/login")) {
           const hasToken = !!localStorage.getItem("notemap_token");
 
-          if (isPWA && hasToken) {
-            console.warn("[API Auth] Persistent 401 in PWA, but token exists. Suppressing redirect to prevent logout loop.", config.url);
-            // 리다이렉트 하지 않고 에러만 던져서 앱이 죽지 않게 함
-            throw error;
-          }
+          // 🔹 실제 만료된 유효하지 않은 토큰 정리 (localStorage)
+          localStorage.removeItem("notemap_token");
 
-          console.error("[API Auth Error] Persistent 401/419 error. Redirecting to login.", {
-            url: config.url,
-            hasToken,
-            status: response?.status
-          });
-          window.location.href = "/login";
+          const isAlreadyOnLogin = window.location.pathname === "/login";
+          if (!isAlreadyOnLogin) {
+            console.error("[API Auth Error] Persistent 401/419 error. Redirecting to login.", {
+              url: config.url,
+              hasToken,
+              status: response?.status
+            });
+            window.location.href = "/login";
+          }
         }
       }
     }
