@@ -29,13 +29,23 @@ export async function ensureFolderGroupImpl(
   deps: EnsureDeps,
   pinId: IdLike,
   folderIdx: number,
-  preferredTitle?: string | null
+  preferredTitle?: string | null,
+  folderGroupId?: string | number | null,
+  isNewFolder?: boolean
 ): Promise<PinPhotoGroup> {
   const { groupsRef, setGroups, pendingGroupMap } = deps;
   const list = (groupsRef.current ?? []) as PinPhotoGroup[];
-  const horiz = getHorizGroupsSorted(list);
-  const existing = horiz[folderIdx];
-  if (existing) return existing;
+
+  if (!isNewFolder) {
+    if (folderGroupId != null) {
+      const existing = list.find((g) => String(g.id) === String(folderGroupId));
+      if (existing) return existing;
+    }
+
+    const horiz = getHorizGroupsSorted(list);
+    const existing = horiz[folderIdx];
+    if (existing) return existing;
+  }
 
   const fallback = `사진 폴더 ${folderIdx + 1}`;
 

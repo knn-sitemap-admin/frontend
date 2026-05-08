@@ -81,8 +81,8 @@ export async function reloadGroupsImpl({
             (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
             String(a.title ?? "").localeCompare(String(b.title ?? ""))
         )
-        .map((g) =>
-          (mapped[String(g.id)] ?? [])
+        .map((g) => {
+          const arr = (mapped[String(g.id)] ?? [])
             .slice()
             .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
             .map((p) => {
@@ -93,9 +93,12 @@ export async function reloadGroupsImpl({
                 url: p.url,
                 caption,
                 name: (p as any).name ?? "",
+                groupId: (p as any).groupId ?? g.id,
               } as ImageItem;
-            })
-        );
+            });
+          (arr as any).groupId = g.id;
+          return arr;
+        });
 
       const cleaned = dropEmptyCards(folders);
 

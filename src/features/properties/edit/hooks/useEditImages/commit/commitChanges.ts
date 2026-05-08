@@ -128,11 +128,26 @@ export async function commitImageChangesImpl(
         captions.find((c) => typeof c === "string" && c.trim().length > 0) ??
         null;
 
+      const folderItems = imageFoldersRef.current[folderIdx] ?? [];
+      let folderGroupId = (folderItems as any).groupId;
+      if (folderGroupId == null) {
+        for (const img of folderItems) {
+          if ((img as any).groupId != null) {
+            folderGroupId = (img as any).groupId;
+            break;
+          }
+        }
+      }
+
+      const hasServerPhotos = folderItems.some((img) => !!getServerPhotoId(img));
+
       const group = await ensureFolderGroupImpl(
         ensureDeps,
         propertyId,
         folderIdx,
-        firstCaption
+        firstCaption,
+        folderGroupId,
+        !hasServerPhotos
       );
 
       const created = await uploadToGroupImpl(

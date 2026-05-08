@@ -8,6 +8,15 @@ import ImageCarouselUpload from "@/components/organisms/ImageCarouselUpload/Imag
 import { ImageItem, ResolvedFileItem } from "@/features/properties/types/media";
 import ImageReorderModal from "@/components/organisms/ImageCarouselUpload/components/ImageReorderModal";
 import { useState } from "react";
+import { useMe } from "@/shared/api/auth/auth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/atoms/Dialog/Dialog";
 
 export type PhotoFolder = {
   id: string;
@@ -87,14 +96,83 @@ export default function ImagesSection({
   }, [hasFolders, onAddFolder]);
 
   // ✅ 순서 변경 대상 상태
+  const { data: me } = useMe();
+  const isManager = me?.role === "admin" || me?.role === "manager";
+
   const [reorderIdx, setReorderIdx] = useState<number | "vertical" | null>(null);
+
+  // ✅ 커스텀 알림 모달 상태
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
+  const showAlert = (message: string) => {
+    setAlertMessage(message);
+    setAlertOpen(true);
+  };
+
+  // ✅ 속지/파일 폴더 노출 상태 (기존 파일이 있거나 사용자가 추가를 명시적으로 클릭한 경우)
+  const [showVerticalFolder, setShowVerticalFolder] = useState(() => fileItems.length > 0);
+
+  useEffect(() => {
+    if (fileItems.length > 0) {
+      setShowVerticalFolder(true);
+    }
+  }, [fileItems.length]);
+
+  const handleRemoveVerticalAll = () => {
+    if (!onRemoveFileItem) return;
+
+    // 기존에 저장된 속지/첨부파일이 포함되어 있다면 삭제 제약
+    const hasServerFiles = fileItems.some((it) => (it as any).id != null);
+    if (hasServerFiles && !isManager) {
+      showAlert("기존에 저장된 속지/첨부파일은 관리자(Manager) 이상만 삭제할 수 있습니다.");
+      return;
+    }
+
+    // 역순으로 지워 인덱스 꼬임 방지
+    for (let i = fileItems.length - 1; i >= 0; i--) {
+      onRemoveFileItem(i);
+    }
+    setShowVerticalFolder(false);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const item = fileItems[index];
+    const isServerPhoto = (item as any)?.id != null;
+
+    if (isServerPhoto && !isManager) {
+      showAlert("기존에 저장된 속지 이미지는 관리자(Manager) 이상만 삭제할 수 있습니다.");
+      return;
+    }
+    onRemoveFileItem?.(index);
+  };
 
   const renderFolders: PhotoFolder[] = hasFolders
     ? folders
     : [{ id: "__placeholder__", title: "", items: [] }];
 
   const handleRemove = (folderIdx: number, imageIdx: number) => {
+    const folder = folders[folderIdx];
+    const item = folder?.items?.[imageIdx];
+    const isServerPhoto = (item as any)?.id != null;
+
+    if (isServerPhoto && !isManager) {
+      showAlert("기존에 저장된 매물 사진은 관리자만 삭제할 수 있습니다.\n관리자에게 문의 해주세요");
+      return;
+    }
     onRemoveImage?.(folderIdx, imageIdx);
+  };
+
+  const handleRemoveFolder = (folderIdx: number) => {
+    const folder = folders[folderIdx];
+    const isServerFolder = folder && !String(folder.id).startsWith("folder-");
+    const hasServerPhotos = folder?.items?.some((it) => (it as any).id != null);
+
+    if ((isServerFolder || hasServerPhotos) && !isManager) {
+      showAlert("기존에 저장된 매물 사진 폴더는 관리자만 삭제할 수 있습니다.\n관리자에게 문의 해주세요");
+      return;
+    }
+    onRemoveFolder?.(folderIdx);
   };
 
   /* 가로 폴더 input refs (ImageCarouselUpload 에 넘길 RefObject) */
@@ -136,7 +214,7 @@ export default function ImagesSection({
                   type="button"
                   variant="outline"
                   className="h-8 px-2 text-xs"
-                  onClick={() => onRemoveFolder?.(idx)}
+                  onClick={() => handleRemoveFolder(idx)}
                 >
                   폴더 삭제
                 </Button>
@@ -165,40 +243,70 @@ export default function ImagesSection({
         );
       })}
 
-      {/* 세로 폴더 */}
-      <div className="image-card">
-        <ImageCarouselUpload
-          items={fileItems}
-          maxCount={maxFiles}
-          layout="tall"
-          tallHeightClass="h-80"
-          objectFit="cover"
-          captionAsFolderTitle
-          folderTitle={verticalFolderTitle ?? ""}
-          onChangeFolderTitle={(text) => onChangeVerticalFolderTitle?.(text)}
-          onRemoveImage={onRemoveFileItem}
-          onOpenPicker={() => fileInputRef.current?.click()}
-          inputRef={fileInputRef}
-          onChangeFiles={(files) => {
-            onAddFiles(files);
-          }}
-          onChangeCaption={(index, text) =>
-            onChangeFileItemCaption?.(index, text)
-          }
-          onOpenReorder={() => setReorderIdx("vertical")}
-        />
+      {/* 추가 버튼 그룹 (사진 폴더 및 속지/파일 폴더 개별 추가) */}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 flex-1 justify-center gap-2 border-dashed bg-slate-50/50 hover:bg-slate-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-800 transition-all duration-200"
+          onClick={onAddFolder}
+        >
+          <FolderPlus className="h-4 w-4 text-blue-500" />
+          <span className="text-xs font-semibold text-slate-700 dark:text-zinc-200">사진 폴더 추가</span>
+        </Button>
+
+        {!showVerticalFolder && (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 flex-1 justify-center gap-2 border-dashed bg-slate-50/50 hover:bg-slate-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-800 transition-all duration-200 animate-in fade-in zoom-in-95 duration-150"
+            onClick={() => setShowVerticalFolder(true)}
+          >
+            <FolderPlus className="h-4 w-4 text-emerald-500" />
+            <span className="text-xs font-semibold text-slate-700 dark:text-zinc-200">속지 폴더 추가</span>
+          </Button>
+        )}
       </div>
 
-      {/* 새 폴더 추가 버튼 */}
-      <Button
-        type="button"
-        variant="ghost"
-        className="h-10 w-full justify-start gap-2"
-        onClick={onAddFolder}
-      >
-        <FolderPlus className="h-4 w-4" />
-        사진 폴더 추가
-      </Button>
+      {/* 세로 폴더 (속지 이미지) */}
+      {showVerticalFolder && (
+        <div className="image-card rounded-xl border p-3 animate-in fade-in slide-in-from-bottom-2 duration-250">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              속지 폴더
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-7 px-2 text-[11px] text-rose-500 border-rose-200 hover:bg-rose-50 dark:border-rose-900/30 dark:hover:bg-rose-950/20"
+              onClick={handleRemoveVerticalAll}
+            >
+              폴더 삭제
+            </Button>
+          </div>
+
+          <ImageCarouselUpload
+            items={fileItems}
+            maxCount={maxFiles}
+            layout="tall"
+            tallHeightClass="h-80"
+            objectFit="cover"
+            captionAsFolderTitle
+            folderTitle={verticalFolderTitle ?? ""}
+            onChangeFolderTitle={(text) => onChangeVerticalFolderTitle?.(text)}
+            onRemoveImage={handleRemoveFile}
+            onOpenPicker={() => fileInputRef.current?.click()}
+            inputRef={fileInputRef}
+            onChangeFiles={(files) => {
+              onAddFiles(files);
+            }}
+            onChangeCaption={(index, text) =>
+              onChangeFileItemCaption?.(index, text)
+            }
+            onOpenReorder={() => setReorderIdx("vertical")}
+          />
+        </div>
+      )}
 
       {/* ✅ 순서 조정 모달 */}
       <ImageReorderModal
@@ -223,6 +331,29 @@ export default function ImagesSection({
           }
         }}
       />
+
+      {/* 권한 경고 커스텀 다이얼로그 */}
+      <Dialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>권한 제한</DialogTitle>
+            <DialogDescription asChild>
+              <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+                {alertMessage}
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setAlertOpen(false)}
+              className="rounded-lg px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-all duration-150"
+            >
+              확인
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
