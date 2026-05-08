@@ -373,7 +373,7 @@ api.interceptors.response.use(
               hasToken,
               status: response?.status
             });
-            window.location.href = "/login";
+            window.location.href = "/login?reason=expired";
           }
         }
       }

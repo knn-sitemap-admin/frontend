@@ -31,17 +31,21 @@ let inFlightSessionCheck: Promise<boolean> | null = null;
 
 async function fetchSessionValid(isRetry = false): Promise<boolean> {
   try {
+    const token = typeof window !== "undefined" ? window.localStorage.getItem("notemap_token") : null;
     const isPWA = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
-    if (!isRetry && isPWA) {
-      // PWA 환경에서는 로컬스토리지/쿠키 로딩 지연 가능성이 있으므로 대기
-      await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // 1. 토큰이 아예 없다면 검증 요청을 보낼 필요 없이 즉시 실패 처리 (시간 단축)
+    if (!token || token === "undefined" || token === "null") {
+      return false;
     }
 
-    const token = window.localStorage.getItem("notemap_token");
-    const headers: HeadersInit = {};
-    if (token && token !== "undefined" && token !== "null") {
-      headers["Authorization"] = `Bearer ${token}`;
+    // 2. PWA 지연 대기시간 축소 (800ms -> 300ms) 및 토큰이 있을 때만 작동
+    if (!isRetry && isPWA) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
+
+    const headers: HeadersInit = {};
+    headers["Authorization"] = `Bearer ${token}`;
 
     const res = await fetch(`${API_BASE}/auth/me?_t=${Date.now()}`, {
       method: "GET",
@@ -54,15 +58,19 @@ async function fetchSessionValid(isRetry = false): Promise<boolean> {
       res.status === 401 || res.status === 419 || res.status === 440;
 
     if (!res.ok) {
-      if (!isRetry && isPWA && token) {
-        console.warn("[ClientSessionGuard] 1st check failed on PWA. Retrying in 1.5s...");
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        return fetchSessionValid(true);
-      }
+      // 3. 실제 401/419/440 만료 오류인 경우, 대기 시간 없이 즉시 토큰을 지우고 복귀 (1500ms 절약!)
       if (isAuthErrorStatus) {
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("notemap_token");
         }
+        return false;
+      }
+
+      // 그 외 일반 에러(서버 다운 등)일 때만 네트워크 유예용 재시도 적용
+      if (!isRetry && isPWA) {
+        console.warn("[ClientSessionGuard] 1st check failed on PWA. Retrying in 1.5s...");
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return fetchSessionValid(true);
       }
       return !isAuthErrorStatus; 
     }
@@ -127,7 +135,8 @@ export default function ClientSessionGuard({
       }
 
       setReady(false);
-      window.location.assign(redirectTo);
+      const redirectUrl = skipApiCall ? `${redirectTo}?reason=expired` : redirectTo;
+      window.location.assign(redirectUrl);
     };
 
     const checkSession = async () => {
