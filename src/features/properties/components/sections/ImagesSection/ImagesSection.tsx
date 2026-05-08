@@ -202,7 +202,7 @@ export default function ImagesSection({
 
         return (
           <div
-            key={folder.id ?? idx}
+            key={`${folder.id ?? "folder"}-${idx}`}
             className="image-card rounded-xl border p-3"
           >
             <div className="mb-2 flex items-center justify-between gap-2">
