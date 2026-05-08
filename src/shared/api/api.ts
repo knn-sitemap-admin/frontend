@@ -349,7 +349,11 @@ api.interceptors.response.use(
         if (typeof window !== "undefined") {
           const token = localStorage.getItem("notemap_token");
           if (token) {
-            config.headers.set("Authorization", `Bearer ${token}`);
+            if (config.headers.set) {
+              config.headers.set("Authorization", `Bearer ${token}`);
+            } else {
+              (config.headers as any)["Authorization"] = `Bearer ${token}`;
+            }
           }
         }
         

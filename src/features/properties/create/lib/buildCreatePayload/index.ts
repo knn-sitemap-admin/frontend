@@ -6,7 +6,7 @@ import type {
   CreatePayload,
   StarStr,
 } from "@/features/properties/types/property-dto";
-import { todayYmdKST } from "@/shared/date/todayYmdKST";
+
 import { buildAreaGroups } from "@/features/properties/lib/area";
 import type { CreatePinAreaGroupDto } from "@/features/properties/types/area-group-dto";
 import { PinKind } from "@/features/pins/types";
@@ -90,7 +90,7 @@ export function buildCreatePayload(args: BuildArgs) {
     Array.isArray(extraAreaSetsRaw) ? extraAreaSetsRaw : []
   ).map(toStrictAreaSet);
 
-  const effectiveCompletionDate = s(completionDate) || todayYmdKST();
+  const effectiveCompletionDate = s(completionDate) || undefined;
 
   /* 2) 향/방향 필드 */
   const { orientations, aspect, aspectNo, aspect1, aspect2, aspect3 } =

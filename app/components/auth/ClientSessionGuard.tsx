@@ -7,12 +7,12 @@ import {
 } from "@/shared/api/auth/authChannel";
 import { Logger } from "@/shared/utils/logger";
 
+import { API_BASE as SHARED_API_BASE } from "@/shared/api/api";
+
 /**
  * 백엔드 API base (마지막 슬래시 제거해서 안전하게 사용)
  */
-const API_BASE = (
-  process.env.NEXT_PUBLIC_IS_DEV === "true" ? "http://localhost:3050" : (process.env.NEXT_PUBLIC_API_BASE || "")
-).replace(/\/+$/, "");
+const API_BASE = SHARED_API_BASE.replace(/\/+$/, "");
 
 /** 세션 백업 폴링 주기 (ms) — 포커스 이벤트가 메인, 이건 서브 */
 const DEFAULT_POLL_INTERVAL_MS = 10 * 60 * 1000; // 10분

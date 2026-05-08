@@ -1,7 +1,7 @@
 "use client";
 
 import { BuildingGrade } from "@/features/properties/types/building-grade";
-import { todayYmdKST } from "@/shared/date/todayYmdKST";
+
 import { useEffect, useMemo, useState } from "react";
 
 export function useBasicInfo({ initialAddress }: { initialAddress?: string }) {
@@ -23,8 +23,8 @@ export function useBasicInfo({ initialAddress }: { initialAddress?: string }) {
   /** ✅ 건물유형 다중 선택 — buildingTypes: ["APT", "OP"] */
   const [buildingTypes, setBuildingTypes] = useState<string[]>([]);
 
-  /** ✅ 준공일 기본값: 오늘(KST, YYYY-MM-DD) — 비워두는 정책이 아니라면 유지 */
-  const [completionDate, setCompletionDate] = useState<string>(todayYmdKST());
+  /** ✅ 준공일 기본값: 비워둠 (미입력시 하이픈 대체) */
+  const [completionDate, setCompletionDate] = useState<string>("");
 
   /** ✅ 신축/구옥: 기본값 제거 → 처음엔 미선택(null) */
   const [buildingGrade, setBuildingGrade] = useState<BuildingGrade | null>(
