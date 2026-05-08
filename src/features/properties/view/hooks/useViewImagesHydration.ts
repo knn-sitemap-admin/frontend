@@ -24,8 +24,9 @@ export function useViewImagesHydration({
   /** 명시적 pinId가 있으면 사용, 없으면 data에서 추정 */
   pinId?: number | string;
 }) {
-  /* 0) pinId 추정 — 뷰 데이터에서 가져오거나 props 우선 */
-  const pinId = pinIdArg ?? data?.pinId ?? data?.id ?? null;
+  /* 0) pinId 추정 — 뷰 데이터에서 가져오거나 props 우선 (string 타입으로 일관되게 정규화하여 React Query 캐시 불일치 해결) */
+  const pinIdRaw = pinIdArg ?? data?.pinId ?? data?.id ?? null;
+  const pinId = pinIdRaw != null && pinIdRaw !== "" ? String(pinIdRaw) : null;
 
   /* 1) refs 있으면 IndexedDB 등에서 재-하이드레이션 */
   const [_cardsFromRefs, setCardsFromRefs] = useState<ImagesGroup[]>([]);
@@ -108,7 +109,7 @@ export function useViewImagesHydration({
       return res ?? [];
     },
     enabled: open && !!pinId,
-    staleTime: 60_000,
+    staleTime: 0, // 실시간 확인 보장을 위해 staleTime 0으로 변경 (캐시가 즉시 만료되어 모달 오픈 시 최신 정보 조회)
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
   });
@@ -126,7 +127,7 @@ export function useViewImagesHydration({
       );
     },
     enabled: open && !!pinId && !!groups && groups.length > 0,
-    staleTime: 60_000,
+    staleTime: 0, // 실시간 확인 보장을 위해 staleTime 0으로 변경
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
   });
