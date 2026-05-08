@@ -105,7 +105,10 @@ export default function ImagesContainer({ images }: { images: any }) {
           return [base];
         });
 
-        const g = horizGroups[idx] as any | undefined;
+        const folderGroupId = (folder as any).groupId;
+        const g = folderGroupId != null
+          ? horizGroups.find((hg) => String(hg.id) === String(folderGroupId))
+          : horizGroups[idx];
         const rawTitle =
           typeof g?.title === "string" ? (g.title as string) : "";
 
@@ -154,11 +157,12 @@ export default function ImagesContainer({ images }: { images: any }) {
   // 가로 폴더 제목 수정 → 해당 그룹 title 큐잉
   const onChangeFolderTitle = (folderIdx: number, title: string) => {
     const normalized = title?.trim() || null;
-    const g = horizGroups[folderIdx];
+    const folderUI = folders[folderIdx];
+    const folderId = folderUI?.id;
 
-    if (g) {
+    if (folderId && !folderId.startsWith("folder-")) {
       // 이미 서버에 있는 그룹 → 진짜 id로 패치 큐잉
-      queueGroupTitle(g.id, normalized);
+      queueGroupTitle(Number(folderId), normalized);
     } else {
       // 아직 서버 그룹 없는 새 폴더 → 가짜 키로 제목만 미리 저장
       queueGroupTitle(`folder-${folderIdx}` as any, normalized);
