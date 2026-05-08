@@ -444,7 +444,7 @@ export default function PropertyEditModalBody({
   }, [onLabelChanged, f.title, f.pinKind, buildingGrade]);
 
   /** 저장 로직 훅으로 분리 */
-  const { save, canSaveNow } = useEditSave({
+  const { save, canSaveNow, isSaving } = useEditSave({
     form: f,
     bridgedInitial,
     propertyId,
@@ -513,6 +513,16 @@ export default function PropertyEditModalBody({
   return (
     <>
       {content}
+      {isSaving && (
+        <div className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-black/40 backdrop-blur-[3px] transition-all duration-300">
+          <div className="flex flex-col items-center gap-4 rounded-2xl bg-white/95 p-8 shadow-2xl dark:bg-zinc-900/95 border border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in duration-200">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              매물 정보를 저장하고 있습니다...
+            </p>
+          </div>
+        </div>
+      )}
       <EditAlertDialog
         open={alertOpen}
         onOpenChange={setAlertOpen}

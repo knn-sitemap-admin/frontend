@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { updatePin, type UpdatePinDto } from "@/shared/api/pins";
@@ -79,6 +79,7 @@ export function useEditSave({
   onLabelChanged,
 }: UseEditSaveArgs) {
   const queryClient = useQueryClient();
+  const [isSaving, setIsSaving] = useState(false);
 
   /** 저장 가능 여부: 폼 변경 or 이미지 변경 */
   const canSaveNow = useMemo<boolean>(
@@ -139,6 +140,7 @@ export function useEditSave({
       }
     }
 
+    setIsSaving(true);
     let dto: UpdatePinDto | null = null;
     let hasFormChanges = false;
 
@@ -283,6 +285,7 @@ export function useEditSave({
     } catch (e: any) {
       console.error("[toPinPatch] 실패:", e);
       showAlert(e?.message || "변경 사항 계산 중 오류가 발생했습니다.");
+      setIsSaving(false);
       return;
     }
 
@@ -301,6 +304,7 @@ export function useEditSave({
     } catch (e: any) {
       console.error("[images.commit] 실패:", e);
       showAlert(e?.message || "이미지 변경사항 반영에 실패했습니다.");
+      setIsSaving(false);
       return;
     }
 
@@ -328,27 +332,24 @@ export function useEditSave({
       } catch (e: any) {
         console.error("[PATCH /pins/:id] 실패:", e);
         showAlert(e?.message || "핀 수정 중 오류가 발생했습니다.");
+        setIsSaving(false);
         return;
       }
     }
 
     // 저장 버튼을 눌렀다면 항상 쿼리 무효화 및 refetch하여 화면 리렌더링
-    // staleTime 때문에 무효화만으로는 부족하므로 명시적으로 refetch 필요
-    // 1) 쿼리 무효화 및 refetch (staleTime 무시하고 즉시 갱신)
+    // EditStage가 언마운트된 상태(inactive)에서도 캐시 무효화가 작동하도록 refetchType/type 제한을 해제합니다.
     const idStr = String(propertyId);
 
     await Promise.all([
       queryClient.invalidateQueries({
         queryKey: pinDetailKey(idStr),
-        refetchType: "active",
       }),
       queryClient.invalidateQueries({
         queryKey: ["photoGroupsByPin", idStr],
-        refetchType: "active",
       }),
       queryClient.invalidateQueries({
         queryKey: ["groupPhotosByPin", idStr],
-        refetchType: "active",
       }),
     ]);
 
@@ -356,15 +357,12 @@ export function useEditSave({
     await Promise.all([
       queryClient.refetchQueries({
         queryKey: pinDetailKey(idStr),
-        type: "active",
       }),
       queryClient.refetchQueries({
         queryKey: ["photoGroupsByPin", idStr],
-        type: "active",
       }),
       queryClient.refetchQueries({
         queryKey: ["groupPhotosByPin", idStr],
-        type: "active",
       }),
     ]);
 
@@ -485,6 +483,7 @@ export function useEditSave({
         "화면 갱신 중 오류가 발생했지만,\n서버에는 변경 사항이 저장되었습니다."
       );
     } finally {
+      setIsSaving(false);
       onClose();
     }
   }, [
@@ -507,5 +506,5 @@ export function useEditSave({
     queryClient,
   ]);
 
-  return { save, canSaveNow };
+  return { save, canSaveNow, isSaving };
 }
