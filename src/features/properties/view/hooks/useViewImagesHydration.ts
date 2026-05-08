@@ -116,7 +116,7 @@ export function useViewImagesHydration({
 
   // 2-2) 각 그룹별 사진 목록: /photos/:groupId
   const { data: photosList = [] } = useQuery({
-    queryKey: ["groupPhotosByPin", pinId],
+    queryKey: ["groupPhotosByPin", pinId, (groups as any[]).map((g: any) => g.id).join(",")],
     queryFn: async () => {
       if (!pinId) return [];
       if (!groups || !groups.length) return [];
