@@ -59,13 +59,23 @@ async function fetchSessionValid(isRetry = false): Promise<boolean> {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         return fetchSessionValid(true);
       }
+      if (isAuthErrorStatus) {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem("notemap_token");
+        }
+      }
       return !isAuthErrorStatus; 
     }
 
     const json = await res.json().catch(() => null);
     const hasUser = !!json?.data;
 
-    if (isAuthErrorStatus || !hasUser) return false;
+    if (isAuthErrorStatus || !hasUser) {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("notemap_token");
+      }
+      return false;
+    }
     return true;
   } catch (error: any) {
     // 네트워크 에러 (백엔드 서버가 실행되지 않았거나 연결 불가)

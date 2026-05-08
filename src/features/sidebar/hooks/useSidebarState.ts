@@ -171,8 +171,16 @@ export function useSidebarState() {
       setNestedFavorites(convertedGroups);
     } catch (error: any) {
       console.error("즐겨찾기 로드 실패:", error);
-      // 🔹 세션 만료(401) 시에는 에러 팝업을 노출하지 않고 조용히 리턴합니다 (로그아웃 가드가 처리함)
-      if (error?.response?.status === 401 || error?.status === 401) {
+      // 🔹 세션 만료(401) 또는 토큰이 없는 상태인 경우 에러 팝업을 노출하지 않고 조용히 리턴합니다 (로그아웃 가드가 처리함)
+      const hasToken = typeof window !== "undefined" && !!localStorage.getItem("notemap_token");
+      const isAuthError =
+        error?.response?.status === 401 ||
+        error?.status === 401 ||
+        String(error?.message).includes("401") ||
+        String(error?.response?.data?.message).includes("로그인") ||
+        String(error?.message).includes("Unauthorized");
+
+      if (!hasToken || isAuthError) {
         return;
       }
       toast({
