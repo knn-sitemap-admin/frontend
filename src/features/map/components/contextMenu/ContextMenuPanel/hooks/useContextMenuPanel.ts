@@ -218,14 +218,6 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
       return;
     }
 
-    if (
-      displayTitle &&
-      displayTitle !== "답사예정" &&
-      displayTitle !== "답사지예약"
-    ) {
-      return;
-    }
-
     let draftId = extractDraftIdFromPropertyId(propertyId);
 
     if (draftId == null) {
@@ -268,7 +260,7 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
     return () => {
       alive = false;
     };
-  }, [propertyId, planned, reserved, displayTitle]);
+  }, [propertyId, planned, reserved]);
 
   /** 최종 헤더 타이틀 (도메인 규칙은 types.ts로 위임) */
   const headerTitle = useMemo(

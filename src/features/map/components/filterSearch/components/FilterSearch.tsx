@@ -141,7 +141,9 @@ export default function FilterSearch({
         <div
           className="
             pointer-events-auto
-            mt-0 w-screen h-screen flex flex-col bg-white overflow-hidden
+            mt-0 w-screen h-[100dvh] flex flex-col bg-white overflow-hidden
+            pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]
+            sm:pt-0 sm:pb-0
             sm:mt-0 sm:mb-4 sm:ml-4
             sm:h-auto sm:w-96 sm:max-w-[calc(100vw-2rem)] sm:min-w-[384px]
             sm:rounded-lg sm:border sm:border-gray-200 sm:shadow-xl

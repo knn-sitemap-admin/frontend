@@ -35,9 +35,12 @@ export function buildPinSearchParams(ui: FilterState): PinSearchParams {
   }
 
   // 3) 실입주금 (사용자 입력값을 단위 변환 없이 그대로 전달 — DB와 동일 단위)
-  const depositAmount = toInt(ui.deposit);
-  if (Number.isFinite(depositAmount) && depositAmount > 0) {
-    params.minRealMoveInCostMax = depositAmount;
+  const depositStr = (ui.deposit ?? "").trim();
+  if (depositStr !== "") {
+    const depositAmount = toInt(depositStr);
+    if (Number.isFinite(depositAmount) && depositAmount >= 0) {
+      params.minRealMoveInCostMax = depositAmount;
+    }
   }
 
   // 4) 매매가 (사용자 입력: 백만원 단위 → DB도 백만원 단위이므로 그대로 전달)
