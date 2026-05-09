@@ -112,7 +112,7 @@ export default function RoadviewHost({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 z-[120010] inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/60"
+          className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] z-[120010] inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/60"
           aria-label="닫기"
           title="닫기 (Esc)"
         >
@@ -120,7 +120,7 @@ export default function RoadviewHost({
         </button>
 
         {/* Kakao Roadview 컨테이너: 화면 꽉 채움 */}
-        <div ref={containerRef} className="h-screen w-screen bg-black" />
+        <div ref={containerRef} className="h-[100dvh] w-full bg-black" />
 
         {/* 미니맵: 좌측 하단 */}
         {open && (
