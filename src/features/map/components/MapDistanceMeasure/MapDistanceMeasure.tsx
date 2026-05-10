@@ -20,6 +20,7 @@ export function MapDistanceMeasure({
 }: MapDistanceMeasureProps) {
   const [drawingFlag, setDrawingFlag] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
+  const [currentDistance, setCurrentDistance] = useState<number | null>(null);
 
   const clickLineRef = useRef<any>(null);
   const moveLineRef = useRef<any>(null);
@@ -40,6 +41,7 @@ export function MapDistanceMeasure({
       distanceOverlayRef.current.setMap(null);
       distanceOverlayRef.current = null;
     }
+    setCurrentDistance(null);
   }, []);
 
   const deleteCircleDot = useCallback(() => {
@@ -51,24 +53,10 @@ export function MapDistanceMeasure({
   }, []);
 
   const showDistance = useCallback(
-    (content: string, position: any) => {
-      if (!kakaoSDK || !mapInstance) return;
-      if (distanceOverlayRef.current) {
-        distanceOverlayRef.current.setPosition(position);
-        distanceOverlayRef.current.setContent(content);
-      } else {
-        const overlay = new kakaoSDK.maps.CustomOverlay({
-          map: mapInstance,
-          content,
-          position,
-          xAnchor: 0,
-          yAnchor: 0,
-          zIndex: 3,
-        });
-        distanceOverlayRef.current = overlay;
-      }
+    (distance: number) => {
+      setCurrentDistance(distance);
     },
-    [kakaoSDK, mapInstance]
+    []
   );
 
   const displayCircleDot = useCallback(
@@ -99,27 +87,7 @@ export function MapDistanceMeasure({
     [kakaoSDK, mapInstance]
   );
 
-  const getTimeHTML = useCallback((distance: number) => {
-    const walkkTime = Math.floor(distance / 67);
-    let walkHour = "";
-    const walkMin = `${walkkTime % 60}분`;
-    if (walkkTime > 60) {
-      walkHour = `${Math.floor(walkkTime / 60)}시간 `;
-    }
-    const bycicleTime = Math.floor(distance / 227);
-    let bycicleHour = "";
-    const bycicleMin = `${bycicleTime % 60}분`;
-    if (bycicleTime > 60) {
-      bycicleHour = `${Math.floor(bycicleTime / 60)}시간 `;
-    }
-    return `
-      <ul style="position:relative;top:5px;left:5px;list-style:none;margin:0;padding:6px 10px;background:#fff;border-radius:6px;box-shadow:0 1px 2px #888;font-size:12px">
-        <li><span style="display:inline-block;width:50px">총거리</span><span style="font-weight:bold;color:#2563eb">${distance}</span>m</li>
-        <li><span style="display:inline-block;width:50px">도보</span>${walkHour}${walkMin}</li>
-        <li><span style="display:inline-block;width:50px">자전거</span>${bycicleHour}${bycicleMin}</li>
-      </ul>
-    `;
-  }, []);
+
 
   // --- 비즈니스 로직 함수들 ---
 
@@ -139,8 +107,7 @@ export function MapDistanceMeasure({
         lastDot.distance = null;
       }
       const distance = Math.round(clickLineRef.current.getLength());
-      const content = getTimeHTML(distance);
-      showDistance(content, path[path.length - 1]);
+      showDistance(distance);
     } else {
       deleteClickLine();
       deleteCircleDot();
@@ -237,8 +204,7 @@ export function MapDistanceMeasure({
       const distance = Math.round(
         clickLineRef.current.getLength() + moveLineRef.current.getLength()
       );
-      const content = `<div style="position:relative;top:5px;left:5px;padding:4px 8px;background:#fff;border-radius:6px;box-shadow:0 1px 2px #888;font-size:12px">총거리 <span style="font-weight:bold;color:#2563eb">${distance}</span>m</div>`;
-      showDistance(content, mousePosition);
+      showDistance(distance);
     };
 
     ev.addListener(mapInstance, "click", onClick);
@@ -267,10 +233,53 @@ export function MapDistanceMeasure({
     }
   }, [visible, deleteClickLine, deleteDistance, deleteCircleDot]);
 
+  // --- 측정 결과 포맷팅 ---
+  const hasCurrentDistance = currentDistance != null && currentDistance > 0;
+  let displayDist = "";
+  let walkDisplay = "";
+  let cycleDisplay = "";
+
+  if (hasCurrentDistance) {
+    const dist = currentDistance!;
+    displayDist = dist >= 1000 ? `${(dist / 1000).toFixed(2)}km` : `${dist}m`;
+
+    // 도보: 분당 67m 가정
+    const walkTimeTotal = Math.floor(dist / 67);
+    const wH = Math.floor(walkTimeTotal / 60);
+    const wM = walkTimeTotal % 60;
+    walkDisplay = wH > 0 ? `${wH}시간 ${wM}분` : `${Math.max(1, wM)}분`;
+
+    // 자전거: 분당 227m 가정
+    const cycleTimeTotal = Math.floor(dist / 227);
+    const cH = Math.floor(cycleTimeTotal / 60);
+    const cM = cycleTimeTotal % 60;
+    cycleDisplay = cH > 0 ? `${cH}시간 ${cM}분` : `${Math.max(1, cM)}분`;
+  }
+
   if (!visible) return null;
 
   return (
     <>
+      {/* 📱 모바일 고정 측정 결과 패널 (화면 중앙 배치) */}
+      {hasCurrentDistance && (
+        <div className="fixed left-1/2 top-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 px-4 py-3 rounded-2xl bg-white shadow-2xl flex items-center gap-4 min-w-[240px] border border-gray-100 animate-in fade-in zoom-in-95 duration-300 pointer-events-none">
+          <div className="flex flex-col border-r border-gray-100 pr-4">
+            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">이동거리</span>
+            <span className="text-lg font-bold text-blue-600 tracking-tight leading-tight">{displayDist}</span>
+          </div>
+          <div className="flex flex-col gap-0.5 text-xs text-gray-600">
+            <div className="flex items-center gap-2">
+              <span className="opacity-60">🚶 도보</span>
+              <span className="font-semibold text-gray-900">{walkDisplay}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="opacity-60">🚲 자전거</span>
+              <span className="font-semibold text-gray-900">{cycleDisplay}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showIntro && !drawingFlag && (
         <div
           className="hidden md:block fixed left-1/2 top-24 z-[100] -translate-x-1/2 px-5 py-3 rounded-2xl bg-gray-900/90 text-white shadow-2xl pointer-events-none text-center border border-white/10 backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-500"
