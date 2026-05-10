@@ -144,6 +144,10 @@ type Normalized = {
 
   /** 리베이트(만원 단위 텍스트) */
   rebateText: string;
+
+  /** 좌표 */
+  lat: string;
+  lng: string;
 };
 
 /* ───────── 메인 Normalizer ───────── */
@@ -434,5 +438,9 @@ export function normalizeInitialData(initialData: any | null): Normalized {
 
     // 리베이트
     rebateText,
+
+    // 좌표
+    lat: asStr(d.lat),
+    lng: asStr(d.lng),
   };
 }

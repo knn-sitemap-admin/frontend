@@ -102,6 +102,8 @@ export function useInjectInitialData({
     api.setPinKind(normalized.pinKind);
     api.setTitle(normalized.title);
     api.setAddress(normalized.address);
+    api.setLat?.(normalized.lat);
+    api.setLng?.(normalized.lng);
     api.setOfficePhone(normalized.officePhone);
     api.setOfficePhone2(normalized.officePhone2);
     api.setOfficeName(normalized.officeName);
@@ -389,6 +391,9 @@ export function useInjectInitialData({
         (sourceData as any)?.title ??
         (sourceData as any)?.name ??
         "",
+      lat: normalized.lat ?? "",
+      lng: normalized.lng ?? "",
+      addressLine: normalized.address ?? "",
 
       // ✅ buildUpdatePayload 가 직접 참조하는 키
       hasElevator: initialHasElevator,

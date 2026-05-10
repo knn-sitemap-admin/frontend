@@ -30,6 +30,8 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
   const [pinKind, setPinKind] = useState<PinKind>("1room");
   const [title, setTitle] = useState("");
   const [address, setAddress] = useState<string>("");
+  const [lat, setLat] = useState<number | string | null>(null);
+  const [lng, setLng] = useState<number | string | null>(null);
   const [officePhone, setOfficePhone] = useState<string>("");
   const [officePhone2, setOfficePhone2] = useState<string>("");
   const [officeName, setOfficeName] = useState("");
@@ -313,6 +315,8 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       pinKind,
       title,
       address,
+      lat,
+      lng,
       officePhone,
       officePhone2,
       officeName,
@@ -362,6 +366,8 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       pinKind,
       title,
       address,
+      lat,
+      lng,
       officePhone,
       officePhone2,
       officeName,
@@ -412,6 +418,8 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       setPinKind,
       setTitle,
       setAddress,
+      setLat,
+      setLng,
       setOfficePhone,
       setOfficePhone2,
       setOfficeName,

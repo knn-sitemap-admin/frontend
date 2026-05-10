@@ -60,6 +60,9 @@ export default function PropertyCreateModalBody({
   // useCreateForm 내부 memoization이나 wrapper 객체 전파로 인한 상태 유실 원천 차단
   const [localShowValidationErrors, setLocalShowValidationErrors] = useState(false);
 
+  const [currentLat, setCurrentLat] = useState(initialLat);
+  const [currentLng, setCurrentLng] = useState(initialLng);
+
   const media = useCreateMedia();
   const { imageFolders } = media;
 
@@ -89,8 +92,8 @@ export default function PropertyCreateModalBody({
 
   const { save, canSave, isSaving } = useCreateSave({
     form,
-    initialLat,
-    initialLng,
+    initialLat: currentLat,
+    initialLng: currentLng,
     pinDraftId,
     isVisitPlanPin,
     media,
@@ -152,7 +155,14 @@ export default function PropertyCreateModalBody({
           </fieldset>
 
           <div className="space-y-6 min-w-0">
-            <BasicInfoContainer form={form} showValidationErrors={localShowValidationErrors} />
+            <BasicInfoContainer
+              form={form}
+              showValidationErrors={localShowValidationErrors}
+              setCoords={(lat, lng) => {
+                setCurrentLat(lat);
+                setCurrentLng(lng);
+              }}
+            />
 
             <fieldset
               disabled={isVisitPlanPin}

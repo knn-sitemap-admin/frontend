@@ -401,10 +401,14 @@ export default function PropertyEditModalBody({
     label: string;
     pinKind: any;
     buildingGrade: any;
+    lat: any;
+    lng: any;
   }>({
     label: "",
     pinKind: null,
     buildingGrade: null,
+    lat: null,
+    lng: null,
   });
 
   useEffect(() => {
@@ -417,24 +421,32 @@ export default function PropertyEditModalBody({
       label: initialLabel,
       pinKind: initialPinKind ?? null,
       buildingGrade: initialBuildingGrade ?? null,
+      lat: src?.lat ?? null,
+      lng: src?.lng ?? null,
     };
   }, [bridgedInitial, initialBuildingGrade]);
 
-  /** ⭐ 저장 성공 시, title / pinKind / 신축구옥 변경 여부를 계산해서 상위로 올리는 래퍼 */
+  /** ⭐ 저장 성공 시, title / pinKind / 신축구옥 / 위치 변경 여부를 계산해서 상위로 올리는 래퍼 */
   const handleLabelChangedInternal = useCallback(() => {
     const prev = initialVisualRef.current;
     const nextLabel = (f.title ?? "").trim();
     const nextPinKind = f.pinKind;
     const nextBuildingGrade = buildingGrade;
+    const nextLat = f.lat;
+    const nextLng = f.lng;
 
     const labelChanged = prev.label !== nextLabel;
     const pinKindChanged =
       String(prev.pinKind ?? "") !== String(nextPinKind ?? "");
     const buildingGradeChanged = prev.buildingGrade !== nextBuildingGrade;
+    const positionChanged =
+      String(prev.lat ?? "") !== String(nextLat ?? "") ||
+      String(prev.lng ?? "") !== String(nextLng ?? "");
 
-    const changed = labelChanged || pinKindChanged || buildingGradeChanged;
+    const changed =
+      labelChanged || pinKindChanged || buildingGradeChanged || positionChanged;
 
-    // 🔥 실제로 시각적 정보(Label/Icon/Grade)가 바뀐 경우에만 상위(MapHomeUI) 리로드 실행
+    // 🔥 실제로 시각적 정보(Label/Icon/Grade/Pos)가 바뀐 경우에만 상위(MapHomeUI) 리로드 실행
     if (changed) {
       onLabelChanged?.();
       // 이후 비교를 위해 최신 스냅샷으로 갱신
@@ -442,9 +454,11 @@ export default function PropertyEditModalBody({
         label: nextLabel,
         pinKind: nextPinKind,
         buildingGrade: nextBuildingGrade,
+        lat: nextLat,
+        lng: nextLng,
       };
     }
-  }, [onLabelChanged, f.title, f.pinKind, buildingGrade]);
+  }, [onLabelChanged, f.title, f.pinKind, buildingGrade, f.lat, f.lng]);
 
   /** 저장 로직 훅으로 분리 */
   const { save, canSaveNow, isSaving } = useEditSave({

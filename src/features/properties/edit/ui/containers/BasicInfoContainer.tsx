@@ -17,6 +17,10 @@ export default function BasicInfoContainer({
       setOfficePhone={form.setOfficePhone}
       officePhone2={form.officePhone2}
       setOfficePhone2={form.setOfficePhone2}
+      setCoords={(lat, lng) => {
+        form.setLat?.(lat);
+        form.setLng?.(lng);
+      }}
       showValidationErrors={showValidationErrors}
     />
   );

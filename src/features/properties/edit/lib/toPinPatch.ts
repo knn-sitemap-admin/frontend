@@ -280,6 +280,26 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
   if (nowSubPhone !== undefined && !jsonEq2Local(initSubPhone, nowSubPhone))
     (patch as any).contactSubPhone = nowSubPhone;
 
+  // 📌 주소 및 좌표 변경 감지
+  const initAddr = (initial as any)?.addressLine ?? (initial as any)?.address ?? "";
+  const nowAddr = S2((f as any).address);
+  if (nowAddr !== undefined && !jsonEq2Local(initAddr, nowAddr))
+    (patch as any).addressLine = nowAddr;
+
+  const initLatStr = String((initial as any)?.lat ?? "").trim();
+  const nowLatStr = String((f as any)?.lat ?? "").trim();
+  if (nowLatStr !== "" && initLatStr !== nowLatStr) {
+    const val = Number(nowLatStr);
+    if (Number.isFinite(val)) (patch as any).lat = val;
+  }
+
+  const initLngStr = String((initial as any)?.lng ?? "").trim();
+  const nowLngStr = String((f as any)?.lng ?? "").trim();
+  if (nowLngStr !== "" && initLngStr !== nowLngStr) {
+    const val = Number(nowLngStr);
+    if (Number.isFinite(val)) (patch as any).lng = val;
+  }
+
   // 완공일
   if (
     !jsonEq2Local((initial as any)?.completionDate, (f as any).completionDate)

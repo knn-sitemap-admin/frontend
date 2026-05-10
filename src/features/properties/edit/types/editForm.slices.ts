@@ -66,6 +66,11 @@ export type BasicInfoFormSlice = {
 
   officePhone2?: string;
   setOfficePhone2: (v: string) => void;
+
+  lat?: number | string | null;
+  setLat?: (v: number | string | null) => void;
+  lng?: number | string | null;
+  setLng?: (v: number | string | null) => void;
 };
 
 /** ✅ registryOne 제거, buildingType + 신축/구옥 + 엘리베이터로 단순화 */

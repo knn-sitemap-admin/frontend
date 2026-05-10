@@ -22,11 +22,13 @@ export function MapRadiusMeasure({
   const [drawingFlag, setDrawingFlag] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [hasDrawing, setHasDrawing] = useState(false);
+  const [currentRadius, setCurrentRadius] = useState<number | null>(null);
 
   const centerPointRef = useRef<any>(null);
   const circleRef = useRef<any>(null);
   const polylineRef = useRef<any>(null); // 반경을 보여줄 선
   const distanceOverlayRef = useRef<any>(null);
+  const currentAnchorRef = useRef({ x: 0, y: 0 });
   const radiusRef = useRef<number>(0);
 
   const isDraggingRef = useRef(false);
@@ -50,59 +52,13 @@ export function MapRadiusMeasure({
     centerPointRef.current = null;
     radiusRef.current = 0;
     setHasDrawing(false);
+    setCurrentRadius(null);
   }, []);
 
   const showRadius = useCallback(
     (radius: number, position: any) => {
       if (!kakaoSDK || !mapInstance) return;
-
-      const formatTime = (totalMinutes: number) => {
-        if (totalMinutes <= 0) return "1분 미만";
-        const h = Math.floor(totalMinutes / 60);
-        const m = totalMinutes % 60;
-        if (h > 0) {
-          return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
-        }
-        return `${m}분`;
-      };
-
-      const walkDisplay = formatTime(Math.floor(radius / 67));
-      const cycleDisplay = formatTime(Math.floor(radius / 227));
-
-      const distDisplay = radius >= 1000 
-        ? `${(radius / 1000).toFixed(2)}km` 
-        : `${Math.round(radius)}m`;
-
-      const content = `
-        <div style="position:relative;top:5px;left:5px;padding:8px 12px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:12px;line-height:1.6;min-width:130px;border:1px solid #cbd5e1;z-index:100;font-family:sans-serif;">
-          <div style="margin-bottom:6px;border-bottom:1px solid #f1f5f9;padding-bottom:4px;font-weight:bold;color:#1e293b;font-size:13px;">
-            반경 <span style="color:#2563eb;">${distDisplay}</span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-            <span style="color:#64748b;font-size:11px;">🚶 도보</span>
-            <span style="font-weight:600;color:#334155;">${walkDisplay}</span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <span style="color:#64748b;font-size:11px;">🚲 자전거</span>
-            <span style="font-weight:600;color:#334155;">${cycleDisplay}</span>
-          </div>
-        </div>
-      `;
-      
-      if (distanceOverlayRef.current) {
-        distanceOverlayRef.current.setPosition(position);
-        distanceOverlayRef.current.setContent(content);
-      } else {
-        const overlay = new kakaoSDK.maps.CustomOverlay({
-          map: mapInstance,
-          content,
-          position,
-          xAnchor: 0,
-          yAnchor: 0,
-          zIndex: 3,
-        });
-        distanceOverlayRef.current = overlay;
-      }
+      setCurrentRadius(radius);
     },
     [kakaoSDK, mapInstance]
   );
@@ -201,15 +157,12 @@ export function MapRadiusMeasure({
 
       hasMovedRef.current = true;
 
-      // 거리 계산을 위한 임시 폴리라인
-      const tempPolyline = new kakaoSDK.maps.Polyline({
-        path: [centerPointRef.current, latLng],
-      });
-      const radius = tempPolyline.getLength();
+      // 실제 지도에 그려진 폴리라인 경로를 업데이트한 후 정확한 길이를 측정
+      polylineRef.current.setPath([centerPointRef.current, latLng]);
+      const radius = polylineRef.current.getLength();
       radiusRef.current = radius;
 
       circleRef.current.setRadius(radius);
-      polylineRef.current.setPath([centerPointRef.current, latLng]);
       
       showRadius(radius, latLng);
       
@@ -256,9 +209,50 @@ export function MapRadiusMeasure({
 
   if (!visible) return null;
 
+  // JSX 용 포맷팅 함수들
+  const formatTime = (totalMinutes: number) => {
+    if (totalMinutes <= 0) return "1분 미만";
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h > 0) {
+      return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+    }
+    return `${m}분`;
+  };
+
+  const hasCurrentRadius = typeof currentRadius === "number" && currentRadius > 0;
+  const displayDist = hasCurrentRadius
+    ? currentRadius >= 1000
+      ? `${(currentRadius / 1000).toFixed(2)}km`
+      : `${Math.round(currentRadius)}m`
+    : "";
+  
+  const walkDisplay = hasCurrentRadius ? formatTime(Math.floor(currentRadius / 67)) : "";
+  const cycleDisplay = hasCurrentRadius ? formatTime(Math.floor(currentRadius / 227)) : "";
+
   return (
     <>
-      {showIntro && !drawingFlag && (
+      {/* 📱 모바일 고정 측정 결과 패널 (화면 잘림 대응용 보조 UI) */}
+      {hasCurrentRadius && (
+        <div className="fixed left-1/2 top-20 md:top-24 z-[100] -translate-x-1/2 px-4 py-3 rounded-2xl bg-white shadow-xl flex items-center gap-4 min-w-[240px] border border-gray-100 animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex flex-col border-r border-gray-100 pr-4">
+            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">반경거리</span>
+            <span className="text-lg font-bold text-blue-600 tracking-tight leading-tight">{displayDist}</span>
+          </div>
+          <div className="flex flex-col gap-0.5 text-xs text-gray-600">
+            <div className="flex items-center gap-2">
+              <span className="opacity-60">🚶 도보</span>
+              <span className="font-semibold text-gray-900">{walkDisplay}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="opacity-60">🚲 자전거</span>
+              <span className="font-semibold text-gray-900">{cycleDisplay}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showIntro && !drawingFlag && !hasCurrentRadius && (
         <div
           className="hidden md:block fixed left-1/2 top-24 z-[100] -translate-x-1/2 px-5 py-3 rounded-2xl bg-gray-900/90 text-white shadow-2xl pointer-events-none text-center border border-white/10 backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-500"
           aria-live="polite"

@@ -108,23 +108,23 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
         role="region"
         aria-label="지도 상단 검색 및 토글"
       >
-        <div className="pointer-events-auto w-full md:w-auto">
+        <div className="pointer-events-auto w-fit">
           <SearchForm
             value={q}
             onChange={onChangeQ}
             onSubmit={onSubmitSearch}
             placeholder="장소, 주소, 버스 검색"
-            className="w-full md:max-w-[360px]"
+            className="w-[80vw] md:w-[360px] max-w-[360px]"
           />
         </div>
 
-        <div className="pointer-events-auto w-full md:w-auto">
+        <div className="pointer-events-auto w-fit">
           <SearchForm
             value={qSale}
             onChange={onChangeQSale}
             onSubmit={onSubmitSearchSale}
             placeholder="매물명 검색"
-            className="w-full md:max-w-[360px] bg-orange-50/95 ring-orange-200 focus-within:ring-orange-400"
+            className="w-[80vw] md:w-[360px] max-w-[360px] bg-orange-50/95 ring-orange-200 focus-within:ring-orange-400"
           />
         </div>
 
@@ -137,7 +137,7 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
         />
 
         {/* 🚀 퀵 필터 툴바 (전체, 신축, 구옥 등) */}
-        <div className="pointer-events-auto mt-1">
+        <div className="pointer-events-auto mt-1 w-fit">
           <MapQuickFilter
              active={activeMenu}
              onChange={onChangeFilter}

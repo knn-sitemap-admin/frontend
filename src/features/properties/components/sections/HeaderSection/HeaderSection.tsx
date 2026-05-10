@@ -145,43 +145,44 @@ export default function HeaderSection(
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b supports-[backdrop-filter]:bg-white/70">
       <div
         className={cn(
-          "flex flex-nowrap items-center gap-3 px-3 md:px-4 pt-2.5 min-w-0 overflow-x-auto scrollbar-hide transition-all duration-300",
-          hasHeaderError ? "pb-6" : "pb-2.5" // 에러 발생 시에만 하단 여백을 주어 absolute 텍스트가 잘리지 않도록 공간 확보
+          "flex flex-wrap md:flex-nowrap items-start md:items-center gap-x-2 gap-y-3.5 px-3 md:px-4 pt-2.5 pb-3 min-w-0 transition-all duration-300"
         )}
       >
         {/* 1) 신축/구옥 — 답사예정일 때만 비활성화 */}
         <div
           className={cn(
-            "order-1 flex-shrink-0 flex flex-col items-start relative",
+            "order-1 flex-shrink-0 flex flex-col items-start",
             buildingGradeDisabled && "pointer-events-none opacity-60"
           )}
         >
-          <div className="flex items-center gap-1 relative">
-            <BuildingGradeSegment value={uiValue} onChange={handleUiChange} />
-            <span className="text-red-500 font-bold text-base">*</span>
+          <div className="flex flex-col items-start">
+            <div className="flex items-center gap-1">
+              <BuildingGradeSegment value={uiValue} onChange={handleUiChange} />
+              <span className="text-red-500 font-bold text-base">*</span>
+            </div>
             
-            {/* 🔹 공간 확보 후 absolute로 하단 배치 */}
+            {/* 🔹 절대위치 대신 흐름에 따라 렌더링 (개행 시 겹침 방지) */}
             {buildingGradeError && (
-              <span className="absolute -bottom-4 left-0 text-red-500 text-[10px] font-bold whitespace-nowrap animate-pulse shrink-0">
+              <span className="mt-0.5 text-red-500 text-[10px] font-bold whitespace-nowrap animate-pulse shrink-0">
                 선택필수!
               </span>
             )}
           </div>
         </div>
 
-        {/* 2) 핀선택 — buildingGrade에 따라 아이콘 변경 */}
-        <div className="order-2 flex-shrink-0">
+        {/* 2) 핀선택 — 모바일에서는 2열의 첫 번째로 이동하여 폭 확보 */}
+        <div className="order-4 md:order-2 flex-shrink-0">
           <PinTypeSelect
             value={pinKind ?? null}
             onChange={(v) => setPinKind(v)}
-            className="h-9 w-[120px] md:w-[160px]"
+            className="h-9 w-[135px] md:w-[160px]"
             placeholder="핀선택"
             buildingGrade={buildingGradeForPinSelect}
           />
         </div>
 
-        {/* 3) 매물평점 + (모바일용) 리베이트: 전부 한 줄 */}
-        <div className="order-3 flex-shrink-0 flex items-center gap-1.5 min-w-0">
+        {/* 3) 매물평점 + (모바일용) 리베이트 — 모바일에서 1열의 우측으로 재배치 */}
+        <div className="order-2 md:order-3 flex-shrink-0 flex items-center gap-1.5 min-w-0">
           <span
             className={cn(
               "text-[15px] md:text-[16px] font-semibold whitespace-nowrap",
@@ -230,7 +231,7 @@ export default function HeaderSection(
             </div>
 
             {/* 🔹 모바일 전용 리베이트: 별점 바로 오른쪽 */}
-            <div className="flex flex-col items-end relative md:hidden">
+            <div className="flex flex-col items-start md:hidden">
               <div
                 className={cn(
                   "flex items-center gap-1 ml-1",
@@ -253,7 +254,7 @@ export default function HeaderSection(
                 />
               </div>
               {rebateError && (
-                <span className="absolute -bottom-4 right-0 text-red-500 text-[10px] font-bold animate-in slide-in-from-top-1 duration-200 whitespace-nowrap text-right">
+                <span className="mt-0.5 ml-1 text-red-500 text-[10px] font-bold animate-in slide-in-from-top-1 duration-200 whitespace-nowrap text-right">
                   R 입력필수
                 </span>
               )}
@@ -261,12 +262,15 @@ export default function HeaderSection(
           </div>
         </div>
 
-        {/* 4) 매물명 — 항상 입력 가능 */}
-        <div className="order-4 flex-shrink-0 flex items-center gap-1.5 min-w-0">
-          <span className="text-[15px] md:text-[16px] font-semibold text-gray-800 whitespace-nowrap shrink-0">
+        {/* 💡 모바일 2열 보장을 위한 강제 줄바꿈 요소 (order-3 위치에 배치되어 1열을 마감) */}
+        <div className="order-3 basis-full h-0 md:hidden" />
+
+        {/* 4) 매물명 — 2열의 두 번째 칸을 차지하여 핀선택창과 함께 2열 완성 */}
+        <div className="order-5 md:order-4 flex-1 flex md:w-auto items-start gap-1.5 min-w-0">
+          <span className="text-[15px] md:text-[16px] font-semibold text-gray-800 whitespace-nowrap shrink-0 pt-1.5">
             매물명<span className="text-red-500 font-bold">*</span>
           </span>
-          <div className="flex flex-col w-[150px] sm:w-[180px] relative">
+          <div className="flex flex-col flex-1 relative">
             <input
               value={asControlled(title)}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -281,17 +285,17 @@ export default function HeaderSection(
               )}
             />
             {titleError && (
-              <p className="absolute -bottom-4 left-1 text-red-500 text-[10px] font-bold animate-in slide-in-from-top-1 duration-200 whitespace-nowrap">
+              <p className="mt-0.5 ml-1 text-red-500 text-[10px] font-bold animate-in slide-in-from-top-1 duration-200 whitespace-nowrap">
                 매물명 필수
               </p>
             )}
           </div>
         </div>
 
-        {/* 5) 리베이트 R표시 — 답사예정일 때만 비활성화 (md 이상에서만) */}
+        {/* 5) 리베이트 R표시 — 데스크톱 전용 */}
         <div
           className={cn(
-            "order-5 hidden md:flex flex-col items-start shrink-0 relative",
+            "order-6 md:order-5 hidden md:flex flex-col items-start shrink-0 relative",
             rebateDisabled && "pointer-events-none opacity-60"
           )}
         >
@@ -312,7 +316,7 @@ export default function HeaderSection(
             />
           </div>
           {rebateError && (
-            <span className="absolute -bottom-4 right-0 text-red-500 text-[10px] font-bold animate-in slide-in-from-top-1 duration-200 whitespace-nowrap text-right w-full">
+            <span className="mt-0.5 text-red-500 text-[10px] font-bold animate-in slide-in-from-top-1 duration-200 whitespace-nowrap text-right w-full pr-1">
               입력 필수
             </span>
           )}
