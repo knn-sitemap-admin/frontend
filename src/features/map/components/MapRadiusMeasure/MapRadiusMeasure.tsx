@@ -232,9 +232,9 @@ export function MapRadiusMeasure({
 
   return (
     <>
-      {/* 📱 모바일 고정 측정 결과 패널 (화면 잘림 대응용 보조 UI) */}
+      {/* 📱 모바일 고정 측정 결과 패널 (화면 중앙 배치) */}
       {hasCurrentRadius && (
-        <div className="fixed left-1/2 top-20 md:top-24 z-[100] -translate-x-1/2 px-4 py-3 rounded-2xl bg-white shadow-xl flex items-center gap-4 min-w-[240px] border border-gray-100 animate-in fade-in zoom-in-95 duration-300">
+        <div className="fixed left-1/2 top-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 px-4 py-3 rounded-2xl bg-white shadow-2xl flex items-center gap-4 min-w-[240px] border border-gray-100 animate-in fade-in zoom-in-95 duration-300 pointer-events-none">
           <div className="flex flex-col border-r border-gray-100 pr-4">
             <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">반경거리</span>
             <span className="text-lg font-bold text-blue-600 tracking-tight leading-tight">{displayDist}</span>

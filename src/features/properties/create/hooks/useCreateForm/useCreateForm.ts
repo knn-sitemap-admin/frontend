@@ -13,6 +13,7 @@ import { useOptionsMemos } from "./slices/useOptionsMemos";
 import { useCreateValidation } from "../useCreateValidation";
 import { sanitizeAreaGroups } from "@/features/properties/lib/forms/dtoUtils";
 import { getPinDraftDetailOnce } from "@/shared/api/pins";
+import { BuildingGrade } from "@/features/properties/types/building-grade";
 
 type Args = {
   initialAddress?: string;
@@ -121,7 +122,7 @@ export function useCreateForm({
   // ─────────────────────────────────────────────────────────
   const isNew = (grades.state as any).isNew;
   const isOld = (grades.state as any).isOld;
-  const buildingGrade = isNew === true ? "new" : isOld === true ? "old" : null;
+  const buildingGrade = (isNew === true ? "new" : isOld === true ? "old" : null) as BuildingGrade | null;
 
   const noop = (() => {}) as any;
   const setIsNew =

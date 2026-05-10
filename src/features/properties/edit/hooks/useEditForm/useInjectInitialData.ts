@@ -27,6 +27,9 @@ export type InitialForPatch = {
   buildingType?: BuildingType | null;
   buildingTypes?: string[];
   parkingTypes?: string[];
+  lat?: any;
+  lng?: any;
+  addressLine?: string | null;
 
   /** ✅ 참고/디버깅용(초기 상태 보존) */
   initialHasElevator?: boolean | null;
