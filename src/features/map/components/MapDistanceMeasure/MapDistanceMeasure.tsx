@@ -116,7 +116,7 @@ export function MapDistanceMeasure({
 
     setDrawingFlag(false);
     setShowIntro(true);
-  }, [drawingFlag, getTimeHTML, showDistance, deleteClickLine, deleteCircleDot, deleteDistance]);
+  }, [drawingFlag, showDistance, deleteClickLine, deleteCircleDot, deleteDistance]);
 
   const cancelDrawing = useCallback(() => {
     if (moveLineRef.current) {
