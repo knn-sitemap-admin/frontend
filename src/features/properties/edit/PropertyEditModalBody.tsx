@@ -367,6 +367,9 @@ export default function PropertyEditModalBody({
     ]
   );
 
+  // 🚨 ULTIMATE FIX: 부모 컴포넌트 레벨로 에러 출력 토글 강제 리프팅
+  const [localShowValidationErrors, setLocalShowValidationErrors] = useState(false);
+
   // ParkingContainer 지연 마운트
   const [mountParking, setMountParking] = useState(false);
   useEffect(() => {
@@ -463,6 +466,8 @@ export default function PropertyEditModalBody({
     onClose,
     // ⭐ 여기서는 인자 없는 콜백만 넘김
     onLabelChanged: handleLabelChangedInternal,
+    // 🚨 다이렉트 주입
+    setShowValidationErrors: setLocalShowValidationErrors,
   });
 
   /* ───────── 레이아웃 분기 ───────── */
@@ -486,6 +491,7 @@ export default function PropertyEditModalBody({
           completionRegistryForm={completionRegistryForm}
           save={save}
           canSaveNow={canSaveNow}
+          showValidationErrors={localShowValidationErrors}
         />
       );
     }
@@ -505,6 +511,7 @@ export default function PropertyEditModalBody({
           completionRegistryForm={completionRegistryForm}
           save={save}
           canSaveNow={canSaveNow}
+          showValidationErrors={localShowValidationErrors}
         />
       );
     }

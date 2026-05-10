@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { X } from "lucide-react";
 
 export type MapRadiusMeasureProps = {
   visible: boolean;
   kakaoSDK: any;
   mapInstance: any;
+  onClose?: () => void;
 };
 
 const STROKE_COLOR = "#2563eb";
@@ -15,9 +17,11 @@ export function MapRadiusMeasure({
   visible,
   kakaoSDK,
   mapInstance,
+  onClose,
 }: MapRadiusMeasureProps) {
   const [drawingFlag, setDrawingFlag] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
+  const [hasDrawing, setHasDrawing] = useState(false);
 
   const centerPointRef = useRef<any>(null);
   const circleRef = useRef<any>(null);
@@ -45,6 +49,7 @@ export function MapRadiusMeasure({
     }
     centerPointRef.current = null;
     radiusRef.current = 0;
+    setHasDrawing(false);
   }, []);
 
   const showRadius = useCallback(
@@ -161,6 +166,7 @@ export function MapRadiusMeasure({
       
       clearDrawing();
       setDrawingFlag(true);
+      setHasDrawing(true);
       setShowIntro(false);
       centerPointRef.current = latLng;
 
@@ -264,24 +270,35 @@ export function MapRadiusMeasure({
         </div>
       )}
 
-      {drawingFlag && (
-        <div className="fixed left-1/2 bottom-24 z-[100] -translate-x-1/2 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="fixed left-1/2 bottom-24 z-[100] -translate-x-1/2 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {hasDrawing && !drawingFlag && (
           <button
             type="button"
-            onClick={finishDrawing}
-            className="px-6 py-3 rounded-full bg-blue-600 text-white shadow-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition flex items-center gap-2"
+            onClick={clearDrawing}
+            className="px-5 py-3 rounded-full bg-gray-800 text-white shadow-lg font-bold text-sm hover:bg-gray-900 active:scale-95 transition whitespace-nowrap"
           >
-            확정
+            초기화
           </button>
-          <button
-            type="button"
-            onClick={cancelDrawing}
-            className="px-6 py-3 rounded-full bg-gray-800 text-white shadow-lg font-bold text-sm hover:bg-gray-900 active:scale-95 transition"
-          >
-            취소
-          </button>
-        </div>
-      )}
+        )}
+
+        {!hasDrawing && !drawingFlag && (
+          <div className="md:hidden px-4 py-2 bg-gray-900/90 text-white text-xs font-semibold rounded-full backdrop-blur-md shadow-lg border border-white/10 mr-1 animate-pulse">
+            중심을 눌러 드래그하세요
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => {
+            clearDrawing();
+            onClose?.();
+          }}
+          className="px-5 py-3 rounded-full bg-rose-600 text-white shadow-xl font-bold text-sm hover:bg-rose-700 active:scale-95 transition flex items-center gap-1.5 whitespace-nowrap"
+        >
+          <X className="w-4 h-4" />
+          종료
+        </button>
+      </div>
     </>
   );
 }

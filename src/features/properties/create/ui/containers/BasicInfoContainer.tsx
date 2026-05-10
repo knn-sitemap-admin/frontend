@@ -4,6 +4,7 @@ import BasicInfoSection from "@/features/properties/components/sections/BasicInf
 
 export default function BasicInfoContainer({
   form,
+  showValidationErrors,
 }: {
   form: {
     address: string;
@@ -23,6 +24,7 @@ export default function BasicInfoContainer({
     structure: string;
     setStructure: (v: string) => void;
   };
+  showValidationErrors?: boolean;
 }) {
   return (
     <BasicInfoSection
@@ -32,6 +34,7 @@ export default function BasicInfoContainer({
       setOfficePhone={form.setOfficePhone}
       officePhone2={form.officePhone2}
       setOfficePhone2={form.setOfficePhone2}
+      showValidationErrors={showValidationErrors}
     />
   );
 }

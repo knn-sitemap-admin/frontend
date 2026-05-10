@@ -55,10 +55,12 @@ const clampYmdSetter = (set: (v: string) => void) => (v: string) => {
 export default function CompletionRegistryContainer({
   form,
   isVisitPlanPin,
+  showValidationErrors,
 }: {
   form: CRContainerForm;
   /** 답사예정 핀 여부 */
   isVisitPlanPin?: boolean;
+  showValidationErrors?: boolean;
 }) {
   const buildingTypes = (form as any).buildingTypes ?? [];
   const setBuildingTypes = (form as any).setBuildingTypes;
@@ -108,6 +110,7 @@ export default function CompletionRegistryContainer({
       setElevator={setElevator}
       // ✅ 답사예정 모드 여부 (로컬 state 초기화용)
       isVisitPlanPin={isVisitPlanPin}
+      showValidationErrors={showValidationErrors}
     />
   );
 }

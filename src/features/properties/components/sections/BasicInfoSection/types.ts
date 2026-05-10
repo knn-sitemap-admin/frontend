@@ -5,4 +5,5 @@ export interface BasicInfoSectionProps {
   setOfficePhone: (v: string) => void;
   officePhone2?: string;
   setOfficePhone2: (v: string) => void;
+  showValidationErrors?: boolean;
 }

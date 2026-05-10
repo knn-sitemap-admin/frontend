@@ -617,12 +617,14 @@ export function MapHomeUI(props: MapHomeUIProps) {
         visible={distanceMeasureVisible}
         kakaoSDK={kakaoSDK}
         mapInstance={mapInstance}
+        onClose={onToggleDistanceMeasure}
       />
 
       <MapRadiusMeasure
         visible={radiusMeasureVisible}
         kakaoSDK={kakaoSDK}
         mapInstance={mapInstance}
+        onClose={onToggleRadiusMeasure}
       />
 
       <AddressModal

@@ -34,12 +34,14 @@ type HeaderContainerProps = {
   onClose: () => void;
   /** 답사예정핀(question) 여부 */
   isVisitPlanPin?: boolean;
+  showValidationErrors?: boolean;
 };
 
 export default function HeaderContainer({
   form,
   onClose,
   isVisitPlanPin,
+  showValidationErrors,
 }: HeaderContainerProps) {
   // ⭐ 답사예정일 때: 별점/엘리베이터/신축·구옥만 막고,
   //    핀 종류(pinKind)는 항상 변경 가능해야 한다.
@@ -86,6 +88,7 @@ export default function HeaderContainer({
         onClose={onClose}
         /** 별/리베이트/신축·구옥 비활성화용 플래그 */
         isVisitPlanPin={isVisitPlanPin}
+        showValidationErrors={showValidationErrors}
       />
     </div>
   );

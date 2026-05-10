@@ -25,6 +25,13 @@ type Args = {
   title: string;
   address: string;
   officePhone: string;
+  rebateRaw?: string;
+  elevator?: string | null;
+  buildingGrade?: string | null;
+  isNew?: boolean | null;
+  isOld?: boolean | null;
+  minRealMoveInCost?: string | number | null;
+
   parkingType?: string | null;
   parkingTypes?: string[];
   completionDate: string;
@@ -123,18 +130,38 @@ export function useCreateValidation(a: Args) {
   const gradeNum = a.parkingGrade ? Number(a.parkingGrade) : 0;
 
   const isSaveEnabled = useMemo(() => {
-    // 필수 필드: 이름, 주소, 분양실 전화번호 (좌표는 핀 생성 시 자동 입력)
-    const requiredOk =
+    // 필수 필드: 이름, 주소, 분양실 전화번호
+    const basicsOk =
       filled(a.title) &&
       filled(a.address) &&
       filled(a.officePhone);
 
-    // 나머지 필드는 모두 옵셔널
-    return requiredOk;
+    // 신축/구옥 필수
+    const hasBuildingGrade =
+      a.buildingGrade != null || a.isNew === true || a.isOld === true;
+
+    // 엘리베이터 필수
+    const elevatorOk = a.elevator === "O" || a.elevator === "X";
+
+    // 리베이트 필수 (숫자가 들어있어야 함)
+    const rebateClean = String(a.rebateRaw ?? "").replace(/[^\d]/g, "");
+    const rebateOk = rebateClean.length > 0;
+
+    // 최저실입 필수 (비어있지 않고 0보다 크거나 같은 숫자)
+    const minMoveIn = numOrNull(a.minRealMoveInCost);
+    const minMoveInOk = minMoveIn != null;
+
+    return basicsOk && hasBuildingGrade && elevatorOk && rebateOk && minMoveInOk;
   }, [
     a.title,
     a.address,
     a.officePhone,
+    a.buildingGrade,
+    a.isNew,
+    a.isOld,
+    a.elevator,
+    a.rebateRaw,
+    a.minRealMoveInCost,
   ]);
 
   return { isSaveEnabled };

@@ -19,8 +19,10 @@ const toStr = (v: unknown) =>
 
 export default function CompletionRegistryContainer({
   form,
+  showValidationErrors,
 }: {
   form: CompletionRegistryFormSlice; // ✅ 슬라이스 타입
+  showValidationErrors?: boolean;
 }) {
   const completionDate = toYmd(form.completionDate);
   const setCompletionDate = useMemo(
@@ -56,6 +58,7 @@ export default function CompletionRegistryContainer({
       /* ✅ 엘리베이터 */
       elevator={form.elevator}
       setElevator={form.setElevator}
+      showValidationErrors={showValidationErrors}
     />
   );
 }

@@ -32,10 +32,12 @@ export default function HeaderContainer({
   form,
   onClose,
   isVisitPlanPin,
+  showValidationErrors,
 }: {
   form: HeaderForm;
   onClose: () => void;
   isVisitPlanPin?: boolean;
+  showValidationErrors?: boolean;
 }) {
   // ✅ HeaderSection이 기대하는 시그니처로 맞춰주는 어댑터
   const handleSetRebate = (v: string | number | null) => {
@@ -60,6 +62,7 @@ export default function HeaderContainer({
       rebate={form.rebateRaw}
       setRebate={handleSetRebate}
       isVisitPlanPin={isVisitPlanPin}
+      showValidationErrors={showValidationErrors}
     />
   );
 }

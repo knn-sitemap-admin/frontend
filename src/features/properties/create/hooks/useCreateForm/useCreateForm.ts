@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback, useEffect, useState } from "react";
 import { useHeaderFields } from "./slices/useHeaderFields";
 import { useBasicInfo } from "./slices/useBasicInfo";
 import { useNumbers } from "./slices/useNumbers";
@@ -31,6 +31,7 @@ export function useCreateForm({
   pinDraftId,
   draftHeaderPrefill,
 }: Args) {
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
   const header = useHeaderFields();
   const basic = useBasicInfo({ initialAddress });
   const nums = useNumbers();
@@ -118,6 +119,39 @@ export function useCreateForm({
   // ─────────────────────────────────────────────────────────
   // ① 기본 저장 가능 여부 (전체 검증용)
   // ─────────────────────────────────────────────────────────
+  const isNew = (grades.state as any).isNew;
+  const isOld = (grades.state as any).isOld;
+  const buildingGrade = isNew === true ? "new" : isOld === true ? "old" : null;
+
+  const noop = (() => {}) as any;
+  const setIsNew =
+    (grades.actions as any)?.setIsNew ??
+    (grades.actions as any)?.set_isNew ??
+    noop;
+  const setIsOld =
+    (grades.actions as any)?.setIsOld ??
+    (grades.actions as any)?.set_isOld ??
+    noop;
+
+  const setBuildingGrade = useCallback(
+    (val: any) => {
+      if (val === "new") {
+        setIsNew(true);
+        setIsOld(false);
+      } else if (val === "old") {
+        setIsNew(false);
+        setIsOld(true);
+      } else {
+        setIsNew(null);
+        setIsOld(null);
+      }
+    },
+    [setIsNew, setIsOld]
+  );
+
+  // ─────────────────────────────────────────────────────────
+  // ① 기본 저장 가능 여부 (전체 검증용)
+  // ─────────────────────────────────────────────────────────
   const { isSaveEnabled: rawIsSaveEnabled } = useCreateValidation({
     ...header.state,
     ...basic.state,
@@ -128,6 +162,10 @@ export function useCreateForm({
     ...areas.state,
     ...units.state,
     ...opts.state,
+    // 🔹 명시적으로 합성된 필드를 최종값으로 전달하여 중복 프로퍼티 병합 문제 원천 차단
+    buildingGrade,
+    isNew,
+    isOld,
   });
 
   const areaSetsCombined = useMemo(() => {
@@ -146,15 +184,6 @@ export function useCreateForm({
     [areaSetsCombined]
   );
 
-  const noop = (() => {}) as any;
-  const setIsNew =
-    (grades.actions as any)?.setIsNew ??
-    (grades.actions as any)?.set_isNew ??
-    noop;
-  const setIsOld =
-    (grades.actions as any)?.setIsOld ??
-    (grades.actions as any)?.set_isOld ??
-    noop;
 
   const selectNew = useCallback(() => {
     setIsNew(true);
@@ -212,6 +241,10 @@ export function useCreateForm({
       registrationTypeId,
       setRegistrationTypeId,
 
+      // 🔹 합성된 필드 추가
+      buildingGrade,
+      setBuildingGrade,
+
       areaSetsCombined,
       areaGroups,
       getAreaGroups,
@@ -220,6 +253,8 @@ export function useCreateForm({
       selectOld,
 
       isSaveEnabled,
+      showValidationErrors,
+      setShowValidationErrors,
     };
   }, [
     header,
@@ -236,5 +271,8 @@ export function useCreateForm({
     selectNew,
     selectOld,
     isSaveEnabled,
+    buildingGrade,
+    setBuildingGrade,
+    showValidationErrors,
   ]);
 }

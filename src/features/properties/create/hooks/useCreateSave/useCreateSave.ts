@@ -39,6 +39,7 @@ type Args = {
   onSubmit?: PropertyCreateModalProps["onSubmit"];
   onClose?: () => void;
   refetchPins?: () => void;
+  setShowValidationErrors?: (v: boolean) => void;
 };
 
 export function useCreateSave({
@@ -51,6 +52,7 @@ export function useCreateSave({
   onSubmit,
   onClose,
   refetchPins,
+  setShowValidationErrors,
 }: Args) {
   const { removeByPinDraftId: removeDraft } = useScheduledReservations();
 
@@ -84,8 +86,21 @@ export function useCreateSave({
 
     try {
 
-      if (!f.title.trim()) {
-        alert("매물명을 입력해 주세요.");
+      // ✨ 필수 필드 점검 - validation 위반 시 alert 대신 showValidationErrors 활성화
+      if (!f.isSaveEnabled) {
+        // 🚨 리프팅된 로컬 세터 직접 호출
+        setShowValidationErrors?.(true);
+
+        // 🎯 즉시 첫 번째 빨간색 에러 메시지가 위치한 곳으로 자동 스크롤 이동 (가시성 100% 확보)
+        setTimeout(() => {
+          const firstErr = document.querySelector(".text-red-500");
+          if (firstErr) {
+            firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+
+        setIsSaving(false);
+        isSavingRef.current = false;
         return;
       }
 
@@ -161,10 +176,6 @@ export function useCreateSave({
 
       // 핀 종류는 옵셔널
 
-      if (!f.isSaveEnabled) {
-        alert("필수 항목을 확인해 주세요.");
-        return;
-      }
 
       // 가격/면적 검증은 입력된 값이 있을 때만 체크 (옵셔널)
       const unitLinesArray = Array.isArray(f.unitLines) ? f.unitLines : [];
@@ -251,18 +262,7 @@ export function useCreateSave({
         anyForm.isNew === true ||
         anyForm.isOld === true;
 
-      if (!hasBuildingGrade) {
-        alert("신축/구옥을 선택해 주세요.");
-        return;
-      }
-      if (anyForm.elevator !== "O" && anyForm.elevator !== "X") {
-        alert("엘리베이터 유무를 선택해 주세요.");
-        return;
-      }
-      if (!rebateText) {
-        alert("리베이트를 입력해 주세요.");
-        return;
-      }
+      // ✨ f.isSaveEnabled에서 이미 상단에서 한꺼번에 체크했으므로 중복 alert 제거
 
       const grade = anyForm.buildingGrade as "new" | "old" | null | undefined;
 
@@ -444,6 +444,7 @@ export function useCreateSave({
     pinDraftId,
     removeDraft,
     refetchPins,
+    setShowValidationErrors,
   ]);
 
   return { save, canSave, isSaving };

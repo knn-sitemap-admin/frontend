@@ -117,6 +117,7 @@ export default function CompletionRegistrySection({
   setElevator,
   /** ✅ 답사예정 핀 여부 */
   isVisitPlanPin,
+  showValidationErrors,
 }: CompletionRegistrySectionProps & {
   minRealMoveInCost?: number | string | null;
   setMinRealMoveInCost?: (v: number | string | null) => void;
@@ -125,7 +126,7 @@ export default function CompletionRegistrySection({
   elevator?: "O" | "X" | null;
   setElevator?: (v: "O" | "X" | null) => void;
   isVisitPlanPin?: boolean;
-  // buildingType / setBuildingType 는 props 타입에서 이미 들어있다고 가정
+  showValidationErrors?: boolean;
 }) {
   /** ── 준공일 ── */
   const [localDate, setLocalDate] = useState<string>(toYmd(completionDate));
@@ -269,13 +270,20 @@ export default function CompletionRegistrySection({
           />
         </Field>
 
-        <Field label="엘리베이터" align="center" className="min-w-0">
-          <ElevatorSegment
-            value={elevator ?? null}
-            onChange={(next) => {
-              if (setElevator) setElevator(next);
-            }}
-          />
+        <Field label={<>엘리베이터 <span className="text-red-500 ml-0.5">*</span></>} align="center" className="min-w-0">
+          <div className="flex flex-col">
+            <ElevatorSegment
+              value={elevator ?? null}
+              onChange={(next) => {
+                if (setElevator) setElevator(next);
+              }}
+            />
+            {showValidationErrors && elevator === null && (
+              <p className="text-red-500 text-[11px] mt-1 font-medium animate-in slide-in-from-top-1 duration-200">
+                엘리베이터 선택 필수
+              </p>
+            )}
+          </div>
         </Field>
 
         <Field label="준공일" align="center">
@@ -360,18 +368,25 @@ export default function CompletionRegistrySection({
       </div>
 
       {/* 최저실입 */}
-      <Field label="최저실입" align="center">
-        <div className="flex items-center gap-3">
-          <Input
-            type="text"
-            inputMode="numeric"
-            value={localPrice}
-            onChange={(e) => onChangePrice(e.target.value)}
-            placeholder="예: 5000"
-            className="h-9 w-40"
-            aria-label="최저실입(만원)"
-          />
-          <span className="text-sm text-gray-500">만원</span>
+      <Field label={<>최저실입 <span className="text-red-500 ml-0.5">*</span></>} align="center">
+        <div className="flex flex-col flex-1">
+          <div className="flex items-center gap-3">
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={localPrice}
+              onChange={(e) => onChangePrice(e.target.value)}
+              placeholder="예: 5000"
+              className="h-9 w-40"
+              aria-label="최저실입(만원)"
+            />
+            <span className="text-sm text-gray-500">만원</span>
+          </div>
+          {showValidationErrors && !localPrice.trim() && (
+            <p className="text-red-500 text-[11px] mt-1 font-medium animate-in slide-in-from-top-1 duration-200">
+              최저실입 금액을 입력해 주세요.
+            </p>
+          )}
         </div>
       </Field>
     </div>

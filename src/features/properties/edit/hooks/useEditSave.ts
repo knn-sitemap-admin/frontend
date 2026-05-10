@@ -57,6 +57,9 @@ type UseEditSaveArgs = {
 
   /** 🔁 수정 저장 성공 시 지도용 GET(/map) 같이 호출할 콜백 */
   onLabelChanged?: () => void | Promise<void>;
+
+  /** 🚨 명시적으로 리프팅된 에러 상태 세터 */
+  setShowValidationErrors?: (v: boolean) => void;
 };
 
 export function useEditSave({
@@ -77,29 +80,37 @@ export function useEditSave({
   onSubmit,
   onClose,
   onLabelChanged,
+  setShowValidationErrors,
 }: UseEditSaveArgs) {
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
 
-  /** 저장 가능 여부: 폼 변경 or 이미지 변경 */
-  const canSaveNow = useMemo<boolean>(
-    () => !!(f.isSaveEnabled || hasImageChanges?.()),
-    [f.isSaveEnabled, hasImageChanges]
-  );
+  /** 저장 가능 여부: 폼 변경 or 이미지 변경 or 저장중이 아닐 때 상시 오픈 */
+  const canSaveNow = !isSaving;
 
   const save = useCallback(async () => {
-    if (!f.title.trim()) {
-      showAlert("이름(제목)을 입력하세요.");
+    // ✅ 필수 필드 통합 점검 - validation 위반 시 모달 대신 인라인 경고 활성화
+    if (!f.isSaveEnabled) {
+      setShowValidationErrors?.(true);
+
+      // 🎯 즉시 에러 발생한 곳으로 부드러운 자동 스크롤 수행
+      setTimeout(() => {
+        const firstErr = document.querySelector(".text-red-500");
+        if (firstErr) {
+          firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+
       return;
     }
 
-    // ✅ 전화번호 형식 검증
+    // ✅ 전화번호 형식 검증 (포맷 검증은 얼럿 유지)
     if (!isValidPhoneKR(f.officePhone)) {
-      showAlert("전화번호를 입력해주세요");
+      showAlert("전화번호 형식이 올바르지 않습니다.");
       return;
     }
     if ((f.officePhone2 ?? "").trim() && !isValidPhoneKR(f.officePhone2)) {
-      showAlert("전화번호를 입력해주세요");
+      showAlert("서브 전화번호 형식이 올바르지 않습니다.");
       return;
     }
 
@@ -504,6 +515,7 @@ export function useEditSave({
     onClose,
     onLabelChanged,
     queryClient,
+    setShowValidationErrors,
   ]);
 
   return { save, canSaveNow, isSaving };

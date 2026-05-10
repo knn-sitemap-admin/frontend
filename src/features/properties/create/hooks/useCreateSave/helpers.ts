@@ -49,12 +49,8 @@ export function computeCanSave({
     f.remainingHouseholds
   );
 
-  // 모든 추가 필드는 옵셔널 (이름, 주소, 분양실 전화번호만 필수)
-  const canSave = isVisitPlanPin
-    ? minimalForVisitPlan && !isSaving
-    : f.isSaveEnabled &&
-      !unitLinesPriceError &&
-      !isSaving;
+  // ⭐ 수정: 버튼은 항상 활성화하여 누를 때 inline validation이 뜨도록 유도
+  const canSave = !isSaving;
 
   return {
     canSave,

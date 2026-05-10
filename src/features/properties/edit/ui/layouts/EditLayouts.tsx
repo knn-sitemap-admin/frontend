@@ -98,6 +98,7 @@ export type EmbeddedEditLayoutProps = {
   completionRegistryForm: CompletionRegistryFormSlice;
   save: () => void;
   canSaveNow: boolean;
+  showValidationErrors?: boolean;
 };
 
 export function EmbeddedEditLayout({
@@ -111,10 +112,11 @@ export function EmbeddedEditLayout({
   completionRegistryForm,
   save,
   canSaveNow,
+  showValidationErrors,
 }: EmbeddedEditLayoutProps) {
   return (
     <div className="flex flex-col h-full">
-      <HeaderContainer form={headerForm as any} onClose={onClose} />
+      <HeaderContainer form={headerForm as any} onClose={onClose} showValidationErrors={showValidationErrors} />
 
       {/* ✅ 스크롤 컨테이너에 ref 연결 */}
       <div
@@ -123,10 +125,10 @@ export function EmbeddedEditLayout({
       >
         <ImagesContainer images={imagesProp} />
         <div className="space-y-4 lg:space-y-6 overflow-visible">
-          <BasicInfoContainer form={form} />
+          <BasicInfoContainer form={form} showValidationErrors={showValidationErrors} />
           <NumbersContainer form={form} />
           {mountParking && <ParkingContainer form={parkingForm as any} />}
-          <CompletionRegistryContainer form={completionRegistryForm} />
+          <CompletionRegistryContainer form={completionRegistryForm} showValidationErrors={showValidationErrors} />
           <AspectsContainer form={form} />
           <AreaSetsContainer form={form} />
           <StructureLinesContainer form={form} />
@@ -210,6 +212,7 @@ export type ModalEditLayoutProps = {
   completionRegistryForm: CompletionRegistryFormSlice;
   save: () => void;
   canSaveNow: boolean;
+  showValidationErrors?: boolean;
 };
 
 export function ModalEditLayout({
@@ -223,6 +226,7 @@ export function ModalEditLayout({
   completionRegistryForm,
   save,
   canSaveNow,
+  showValidationErrors,
 }: ModalEditLayoutProps) {
   return (
     <div
@@ -251,7 +255,7 @@ export function ModalEditLayout({
           WebkitBackfaceVisibility: "hidden",
         }}
       >
-        <HeaderContainer form={headerForm as any} onClose={onClose} />
+        <HeaderContainer form={headerForm as any} onClose={onClose} showValidationErrors={showValidationErrors} />
 
         {/* embedded 버전과 동일하게 + ref 연결 */}
         <div
@@ -265,10 +269,10 @@ export function ModalEditLayout({
 
           {/* 우측: 폼 */}
           <div className="relative z-[2] space-y-4 lg:space-y-6">
-            <BasicInfoContainer form={form} />
+            <BasicInfoContainer form={form} showValidationErrors={showValidationErrors} />
             <NumbersContainer form={form} />
             {mountParking && <ParkingContainer form={parkingForm as any} />}
-            <CompletionRegistryContainer form={completionRegistryForm} />
+            <CompletionRegistryContainer form={completionRegistryForm} showValidationErrors={showValidationErrors} />
             <AspectsContainer form={form} />
             <AreaSetsContainer form={form} />
             <StructureLinesContainer form={form} />

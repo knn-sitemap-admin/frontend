@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 
 import type { PropertyCreateModalProps } from "./lib/types";
 import type { AreaSet as StrictAreaSet } from "@/features/properties/components/sections/AreaSetsSection/types";
@@ -56,6 +56,10 @@ export default function PropertyCreateModalBody({
     draftHeaderPrefill,
   });
 
+  // 🚨 ULTIMATE FIX: 부모 컴포넌트 레벨로 에러 출력 토글 강제 리프팅
+  // useCreateForm 내부 memoization이나 wrapper 객체 전파로 인한 상태 유실 원천 차단
+  const [localShowValidationErrors, setLocalShowValidationErrors] = useState(false);
+
   const media = useCreateMedia();
   const { imageFolders } = media;
 
@@ -93,6 +97,8 @@ export default function PropertyCreateModalBody({
     onSubmit,
     onClose,
     refetchPins,
+    // 🚨 다이렉트 주입
+    setShowValidationErrors: setLocalShowValidationErrors,
   });
 
   // AreaSetsContainer용 어댑터
@@ -120,6 +126,8 @@ export default function PropertyCreateModalBody({
         form={form}
         onClose={onClose}
         isVisitPlanPin={isVisitPlanPin}
+        // 🚨 명시적 리프팅된 상태 주입
+        showValidationErrors={localShowValidationErrors}
       />
 
       <div
@@ -144,7 +152,7 @@ export default function PropertyCreateModalBody({
           </fieldset>
 
           <div className="space-y-6 min-w-0">
-            <BasicInfoContainer form={form} />
+            <BasicInfoContainer form={form} showValidationErrors={localShowValidationErrors} />
 
             <fieldset
               disabled={isVisitPlanPin}
@@ -156,6 +164,7 @@ export default function PropertyCreateModalBody({
                 <CompletionRegistryContainer
                   form={form}
                   isVisitPlanPin={isVisitPlanPin}
+                  showValidationErrors={localShowValidationErrors}
                 />
                 <AspectsContainer form={form} isVisitPlanPin={isVisitPlanPin} />
                 <AreaSetsContainer form={areaForm} />

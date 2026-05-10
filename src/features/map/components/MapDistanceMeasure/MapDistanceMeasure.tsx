@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { X } from "lucide-react";
 
 export type MapDistanceMeasureProps = {
   visible: boolean;
   kakaoSDK: any;
   mapInstance: any;
+  onClose?: () => void;
 };
 
 const STROKE_COLOR = "#2563eb";
@@ -14,6 +16,7 @@ export function MapDistanceMeasure({
   visible,
   kakaoSDK,
   mapInstance,
+  onClose,
 }: MapDistanceMeasureProps) {
   const [drawingFlag, setDrawingFlag] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
@@ -280,24 +283,38 @@ export function MapDistanceMeasure({
         </div>
       )}
 
-      {drawingFlag && (
-        <div className="fixed left-1/2 bottom-24 z-[100] -translate-x-1/2 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <button
-            type="button"
-            onClick={finishDrawing}
-            className="px-6 py-3 rounded-full bg-blue-600 text-white shadow-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition flex items-center gap-2"
-          >
-            측정 완료
-          </button>
-          <button
-            type="button"
-            onClick={cancelDrawing}
-            className="px-6 py-3 rounded-full bg-gray-800 text-white shadow-lg font-bold text-sm hover:bg-gray-900 active:scale-95 transition"
-          >
-            취소
-          </button>
-        </div>
-      )}
+      <div className="fixed left-1/2 bottom-24 z-[100] -translate-x-1/2 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {drawingFlag && (
+          <>
+            <button
+              type="button"
+              onClick={finishDrawing}
+              className="px-5 py-3 rounded-full bg-blue-600 text-white shadow-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition whitespace-nowrap"
+            >
+              측정 완료
+            </button>
+            <button
+              type="button"
+              onClick={cancelDrawing}
+              className="px-5 py-3 rounded-full bg-gray-800 text-white shadow-lg font-bold text-sm hover:bg-gray-900 active:scale-95 transition whitespace-nowrap"
+            >
+              초기화
+            </button>
+          </>
+        )}
+
+        <button
+          type="button"
+          onClick={() => {
+            cancelDrawing();
+            onClose?.();
+          }}
+          className="px-5 py-3 rounded-full bg-rose-600 text-white shadow-xl font-bold text-sm hover:bg-rose-700 active:scale-95 transition flex items-center gap-1.5 whitespace-nowrap"
+        >
+          <X className="w-4 h-4" />
+          종료
+        </button>
+      </div>
     </>
   );
 }

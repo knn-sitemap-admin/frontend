@@ -141,6 +141,9 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
   /** ✅ buildingTypes 다중 선택 */
   const [buildingTypes, setBuildingTypes] = useState<string[]>([]);
 
+  /** ✅ validation 위반 시 에러 텍스트 표시 여부 */
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+
   /* ========== reset ========== */
   const reset = useCallback(() => {
     aspectsTouchedRef.current = false;
@@ -279,9 +282,23 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
 
   const isSaveEnabled = useMemo<boolean>(() => {
     const hasTitle = filled(title);
+    const hasAddress = filled(address);
     const hasMainPhone = filled(officePhone);
-    return hasTitle && hasMainPhone;
-  }, [title, officePhone]);
+    const hasBuildingGrade = buildingGrade === "new" || buildingGrade === "old";
+    const hasElevator = elevator === "O" || elevator === "X";
+    const hasRebate = String(rebateText ?? "").replace(/[^\d]/g, "").length > 0;
+    const hasSalePrice = String(salePriceRaw ?? "").trim().length > 0;
+
+    return (
+      hasTitle &&
+      hasAddress &&
+      hasMainPhone &&
+      hasBuildingGrade &&
+      hasElevator &&
+      hasRebate &&
+      hasSalePrice
+    );
+  }, [title, address, officePhone, buildingGrade, elevator, rebateText, salePriceRaw]);
 
   /* ========== 저장 헬퍼 ========== */
   const getParkingGradeNumber = useCallback(() => {
@@ -337,6 +354,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       rebateText,
       areaSetsTouched,
       elevatorTouched, // ✅ 추가
+      showValidationErrors, // ✅ 추가
       // 🔥 HeaderForm에서 바로 쓸 수 있게 alias 제공
       rebateRaw: rebateText,
     }),
@@ -385,6 +403,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       rebateText,
       areaSetsTouched,
       elevatorTouched,
+      showValidationErrors,
     ]
   );
 
@@ -439,6 +458,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       setBuildingTypes,
       setBuildingGrade,
       setRebateText,
+      setShowValidationErrors, // ✅ 추가
       // 🔥 HeaderForm용 alias
       setRebateRaw: (v: string) => setRebateText(v),
     }),
