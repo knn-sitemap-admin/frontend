@@ -584,6 +584,11 @@ export function ScheduleModal({
                       className="h-12 border-gray-100 focus:border-emerald-500 rounded-xl font-bold"
                       disabled={!canEdit}
                     />
+                    {category === "재미팅" && (
+                      <p className="text-[10px] sm:text-[11px] text-amber-600 font-bold leading-tight px-1 animate-in fade-in duration-200">
+                        ⚠️ 통계 매칭을 위해 기존 신규 미팅의 연락처와 일치하는지 확인해 주세요.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
