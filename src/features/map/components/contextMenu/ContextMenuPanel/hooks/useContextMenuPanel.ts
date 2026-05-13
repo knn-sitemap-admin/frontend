@@ -86,17 +86,14 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
     jibunAddress ?? ""
   );
 
-  useEffect(() => {
-    if (roadAddress) setDisplayRoadAddress(roadAddress);
-  }, [roadAddress]);
-
-  useEffect(() => {
-    if (jibunAddress) setDisplayJibunAddress(jibunAddress);
-  }, [jibunAddress]);
-
+  // 🔄 propertyId가 변경될 때, 이전 핀의 정보가 남아 혼선이 생기지 않도록 로컬 상태 전체 초기화 (캐시 오염 및 잔상 방지)
   useEffect(() => {
     setDisplayTitle((propertyTitle ?? "").trim());
-  }, [propertyTitle]);
+    setDisplayOfficePhone("");
+    setDisplayParkingGrade(0);
+    setDisplayRoadAddress(roadAddress ?? "");
+    setDisplayJibunAddress(jibunAddress ?? "");
+  }, [propertyId, propertyTitle, roadAddress, jibunAddress]);
 
   /** 파생 상태: reserved > planned > draft > normal */
   const panelState = useMemo(
@@ -116,6 +113,9 @@ export function useContextMenuPanelLogic(props: ContextMenuPanelProps) {
 
   // 상세보기 가능 여부
   const canView = useMemo(() => {
+    // 🔥 중요: 임시핀/답사예정핀(draft/reserved/planned)인 경우, 실매물 ID와의 데이터 충돌(동일 숫자 ID 캐싱 충돌)을 방지하기 위해 무조건 false 처리
+    if (draft || reserved || planned) return false;
+
     const s = String(propertyId ?? "").trim();
     if (!s) return false;
 

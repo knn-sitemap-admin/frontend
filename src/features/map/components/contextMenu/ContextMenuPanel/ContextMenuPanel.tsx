@@ -18,6 +18,7 @@ import type React from "react";
 import { useContextMenuPanelLogic } from "./hooks/useContextMenuPanel";
 import type { ContextMenuPanelProps } from "./panel.types";
 import { openKakaoNavi } from "@/shared/utils/kakaoNavi";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ContextMenuPanel(props: ContextMenuPanelProps) {
   const {
@@ -67,6 +68,24 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
     handleReserveClick,
     handleHoverPrefetch,
   } = useContextMenuPanelLogic(props);
+
+  const { toast } = useToast();
+
+  const handleCopyPhone = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!officePhone) return;
+    try {
+      await navigator.clipboard.writeText(officePhone);
+      toast({
+        description: "전화번호가 복사되었습니다.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        description: "복사에 실패했습니다. 다시 시도해주세요.",
+      });
+    }
+  };
 
   const handleNaviClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -171,8 +190,25 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
           )}
           {/* 현장 대표번호 */}
           {officePhone && (
-            <div className="text-[12px] text-gray-500 mt-0.5 leading-snug">
-              현장 대표번호 {officePhone}
+            <div className="text-[12px] text-gray-500 mt-1 leading-none flex items-center gap-1.5 flex-wrap">
+              <span className="py-0.5">현장 대표번호 {officePhone}</span>
+              <div className="inline-flex items-center gap-1 select-none" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+                <a
+                  href={`tel:${officePhone.replace(/[^0-9+]/g, "")}`}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded border border-blue-100 text-blue-600 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 transition-colors text-[12px] leading-none font-medium cursor-pointer h-[22px]"
+                  title="전화걸기"
+                >
+                  전화걸기
+                </a>
+                <button
+                  type="button"
+                  onClick={handleCopyPhone}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded border border-gray-200 text-gray-600 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors text-[12px] leading-none font-medium cursor-pointer h-[22px]"
+                  title="전화번호 복사"
+                >
+                  복사
+                </button>
+              </div>
             </div>
           )}
         </div>
