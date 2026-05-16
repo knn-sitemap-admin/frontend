@@ -788,7 +788,7 @@ export default function ScheduleCalendar() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 auto-rows-auto min-h-full bg-white divide-x divide-y divide-gray-100/80 w-full">
+        <div className="grid grid-cols-7 auto-rows-auto min-h-full bg-white divide-x divide-y divide-gray-100/80 w-full pb-20 sm:pb-0">
           {days.map((day, i) => {
             const daySchedules = getDaySchedules(day);
             const holiday = getKoreanHoliday(day);
