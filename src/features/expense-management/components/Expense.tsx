@@ -255,15 +255,15 @@ export function Expense() {
           <CardWithTable
             title="상세 지출 내역"
             headerActions={
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <SearchBar
                   placeholder="품목명, 메모 검색..."
                   value={searchTerm}
                   onChange={setSearchTerm}
-                  className="w-64"
+                  className="w-full sm:w-64"
                 />
-                <Button onClick={() => { setEditingItem(null); setAddModalOpen(true); }}>
-                  <Plus className="h-4 w-4" /> 새로 만들기
+                <Button onClick={() => { setEditingItem(null); setAddModalOpen(true); }} className="shrink-0">
+                  <Plus className="h-4 w-4" /> <span className="hidden xs:inline">새로 만들기</span><span className="xs:hidden">추가</span>
                 </Button>
               </div>
             }

@@ -21,8 +21,10 @@ import {
   SelectValue,
 } from "@/components/atoms/Select/Select"; // Corrected import path
 import { Button } from "@/components/atoms/Button/Button"; // Import Button component
-import { Plus, List, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, List, Calendar as CalendarIcon, User, Phone as PhoneIcon, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { statusConfigMap, formatCurrency, formatDate } from "@/components/contract-management/utils/contractUtils";
+import { Pagination } from "@/features/table/components/Pagination";
 
 interface ContractListProps {
   title: string;
@@ -312,23 +314,108 @@ export function ContractList({
           </div>
         </div>
 
-        <Table
-          data={processedData}
-          columns={
-            salaryColumnLabel
-              ? contractTableColumns.map((col) =>
-                col.key === "salesPersonSalary"
-                  ? { ...col, label: salaryColumnLabel }
-                  : col
-              )
-              : contractTableColumns
-          }
-          pagination={pagination}
-          loading={isLoadingContracts}
-          emptyMessage={emptyMessage}
-          onPageChange={handlePageChange}
-          onRowClick={handleRowClick}
-        />
+        <div className="hidden sm:block">
+          <Table
+            data={processedData}
+            columns={
+              salaryColumnLabel
+                ? contractTableColumns.map((col) =>
+                  col.key === "salesPersonSalary"
+                    ? { ...col, label: salaryColumnLabel }
+                    : col
+                )
+                : contractTableColumns
+            }
+            pagination={pagination}
+            loading={isLoadingContracts}
+            emptyMessage={emptyMessage}
+            onPageChange={handlePageChange}
+            onRowClick={handleRowClick}
+          />
+        </div>
+
+        {/* 모바일 카드 레이아웃 */}
+        <div className="sm:hidden space-y-4">
+          {isLoadingContracts ? (
+            <div className="p-10 text-center text-gray-400">로딩 중...</div>
+          ) : processedData.length === 0 ? (
+            <div className="p-10 text-center text-gray-400 bg-white rounded-xl border">{emptyMessage}</div>
+          ) : (
+            <>
+              <div className="grid gap-4">
+                {processedData.map((contract) => {
+                  const statusConfig = statusConfigMap[contract.status as keyof typeof statusConfigMap];
+                  const isZeroStatus = contract.status === "rejected" || contract.status === "canceled";
+                  
+                  return (
+                    <div 
+                      key={contract.id} 
+                      onClick={() => handleRowClick(contract)}
+                      className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-black text-blue-600 tracking-wider uppercase">No. {contract.contractNumber}</div>
+                          <h3 className="text-base font-bold text-gray-900">{contract.customerName} 고객님</h3>
+                        </div>
+                        <span className={cn(
+                          "px-2.5 py-1 rounded-full text-[10px] font-bold",
+                          statusConfig.className
+                        )}>
+                          {statusConfig.label}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                            <User size={10} /> 담당자
+                          </div>
+                          <div className="text-sm font-bold text-gray-700">{contract.salesPerson}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                            <PhoneIcon size={10} /> 연락처
+                          </div>
+                          <div className="text-sm font-bold text-gray-700">{contract.customerContact}</div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50/50 rounded-xl p-3 grid grid-cols-2 gap-2 mb-4">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-bold text-gray-400">계약일</span>
+                          <span className="text-xs font-bold text-gray-600">{contract.contractDate ? formatDate(contract.contractDate) : "-"}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-bold text-gray-400">잔금일</span>
+                          <span className="text-xs font-bold text-gray-600 text-emerald-600">{contract.balanceDate ? formatDate(contract.balanceDate) : "-"}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-dashed border-gray-100">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-gray-400">총 수익</span>
+                          <span className="text-base font-black text-gray-900">{formatCurrency(isZeroStatus ? 0 : (contract.totalCalculation || 0))}</span>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+                          <ChevronRight size={16} className="text-gray-300" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* 모바일용 페이지네이션 */}
+              <div className="py-4">
+                <Pagination 
+                  pagination={pagination} 
+                  onPageChange={handlePageChange} 
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <SalesContractRecordsModal
