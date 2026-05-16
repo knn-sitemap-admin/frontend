@@ -170,6 +170,7 @@ export default function UserSettingsPage({
           hideEdit={true}
           hideFavorites={true}
           hideReservedPins={true}
+          hideImageProtection={true}
           removeLabel="팀 제외"
         />
       </div>

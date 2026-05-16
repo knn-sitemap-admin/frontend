@@ -278,7 +278,7 @@ export default function CompletionRegistrySection({
                 if (setElevator) setElevator(next);
               }}
             />
-            {showValidationErrors && elevator === null && (
+            {showValidationErrors && !isVisitPlanPin && elevator === null && (
               <p className="text-red-500 text-[11px] mt-1 font-medium animate-in slide-in-from-top-1 duration-200">
                 엘리베이터 선택 필수
               </p>
@@ -382,7 +382,7 @@ export default function CompletionRegistrySection({
             />
             <span className="text-sm text-gray-500">만원</span>
           </div>
-          {showValidationErrors && !localPrice.trim() && (
+          {showValidationErrors && !isVisitPlanPin && !localPrice.trim() && (
             <p className="text-red-500 text-[11px] mt-1 font-medium animate-in slide-in-from-top-1 duration-200">
               최저실입 금액을 입력해 주세요.
             </p>

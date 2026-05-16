@@ -28,6 +28,7 @@ type Props = {
   hideEdit?: boolean; // 계정 수정 컬럼 숨기기 (팀 관리용)
   hideFavorites?: boolean; // 즐겨찾기 목록 컬럼 숨기기 (팀 관리용)
   hideReservedPins?: boolean; // 예약한 매물 목록 컬럼 숨기기 (팀 관리용)
+  hideImageProtection?: boolean; // 이미지 보호 컬럼 숨기기 (팀 관리용)
   removeLabel?: string; // 삭제 버튼 라벨 (기본값: "삭제", 팀 관리용: "팀 제외")
   onSetLeader?: (id: string) => void; // 팀장으로 임명 (팀 관리용)
   onToggleStatus?: (id: string, currentStatus: boolean) => void; // 활성/비활성 토글
@@ -48,6 +49,7 @@ export default function AccountsListPage({
   hideEdit = false,
   hideFavorites = false,
   hideReservedPins = false,
+  hideImageProtection = false,
   removeLabel = "삭제",
   onSetLeader,
   onToggleStatus,
@@ -159,9 +161,11 @@ export default function AccountsListPage({
               {!hideEdit && (
                 <th className="px-4 py-3 text-center font-medium">계정 수정</th>
               )}
-              <th className="px-4 py-3 text-center font-medium">
-                이미지 보호
-              </th>
+              {!hideImageProtection && (
+                <th className="px-4 py-3 text-center font-medium">
+                  이미지 보호
+                </th>
+              )}
               <th className="px-4 py-3 text-center font-medium">
                 {removeLabel}
               </th>
@@ -252,33 +256,35 @@ export default function AccountsListPage({
                       )}
                     </td>
                   )}
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex justify-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <button
-                          type="button"
-                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${!u.canDownloadImage ? "bg-emerald-600" : "bg-slate-200"
-                            }`}
-                          onClick={() => onToggleImageDownload?.(u.id, !!u.canDownloadImage)}
-                          title={u.canDownloadImage ? "이미지 보호 비활성 (다운로드 허용)" : "이미지 보호 활성 (다운로드 차단)"}
-                        >
-                          <span
-                            aria-hidden="true"
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${!u.canDownloadImage
-                                ? "translate-x-5"
-                                : "translate-x-0"
+                  {!hideImageProtection && (
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex justify-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <button
+                            type="button"
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${!u.canDownloadImage ? "bg-emerald-600" : "bg-slate-200"
                               }`}
-                          />
-                        </button>
-                        <span
-                          className={`text-[10px] font-bold uppercase ${!u.canDownloadImage ? "text-emerald-600" : "text-slate-400"
-                            }`}
-                        >
-                          {!u.canDownloadImage ? "ON" : "OFF"}
-                        </span>
+                            onClick={() => onToggleImageDownload?.(u.id, !!u.canDownloadImage)}
+                            title={u.canDownloadImage ? "이미지 보호 비활성 (다운로드 허용)" : "이미지 보호 활성 (다운로드 차단)"}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${!u.canDownloadImage
+                                  ? "translate-x-5"
+                                  : "translate-x-0"
+                                }`}
+                            />
+                          </button>
+                          <span
+                            className={`text-[10px] font-bold uppercase ${!u.canDownloadImage ? "text-emerald-600" : "text-slate-400"
+                              }`}
+                          >
+                            {!u.canDownloadImage ? "ON" : "OFF"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-center">
                     {u.role === "admin" ? (
                       <span className="text-muted-foreground text-xs">-</span>

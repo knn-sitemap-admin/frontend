@@ -788,7 +788,7 @@ export default function ScheduleCalendar() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 auto-rows-fr min-h-full bg-white divide-x divide-y divide-gray-100/80 w-full">
+        <div className="grid grid-cols-7 auto-rows-auto min-h-full bg-white divide-x divide-y divide-gray-100/80 w-full">
           {days.map((day, i) => {
             const daySchedules = getDaySchedules(day);
             const holiday = getKoreanHoliday(day);
@@ -799,11 +799,11 @@ export default function ScheduleCalendar() {
                 key={day.toString()}
                 onClick={() => handleDayClick(day)}
                 className={cn(
-                  "min-h-[100px] sm:min-h-[180px] pt-1 sm:pt-2 px-0 transition-all hover:bg-emerald-50/20 group/day cursor-pointer flex flex-col relative w-full overflow-hidden",
+                  "min-h-[100px] sm:min-h-[180px] pt-1 sm:pt-2 px-0 transition-all hover:bg-emerald-50/20 group/day cursor-pointer flex flex-col relative w-full",
                   !isCurrMonth && "bg-gray-50/50 opacity-40 grayscale-[0.5]"
                 )}
               >
-                <div className="flex justify-between items-start h-7 sm:h-12 mb-0.5 sm:mb-3 px-0.5 sm:px-2 w-full">
+                <div className="flex justify-between items-start h-auto min-h-[28px] sm:min-h-[48px] mb-0.5 sm:mb-3 px-0.5 sm:px-2 w-full">
                   <div className="flex flex-col">
                     <span className={cn(
                       "text-[10px] sm:text-[15px] font-black w-5 h-5 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-all group-hover/day:bg-white group-hover/day:shadow-sm",
@@ -915,7 +915,7 @@ export default function ScheduleCalendar() {
                   </div>
 
                   <div className="flex sm:hidden flex-col gap-0.5 w-full pb-1 mt-1">
-                    {daySchedules.slice(0, 3).map((s) => {
+                    {daySchedules.map((s) => {
                       const isMultiDay = new Date(s.startDate).toDateString() !== new Date(s.endDate).toDateString();
                       const isStart = isSameDay(day, new Date(s.startDate));
                       const isEnd = isSameDay(day, new Date(s.endDate));
@@ -954,7 +954,13 @@ export default function ScheduleCalendar() {
                               } : {}}
                             >
                               {(isStart || (i % 7 === 0 && !isStart) || !isMultiDay) && (
-                                `${s.creator?.name || "유저"}: ${s.eventType === "contract" ? s.title : (s.location || s.title)}`
+                                `${s.creator?.name || "유저"}: ${
+                                  s.eventType === "contract"
+                                    ? s.title
+                                    : s.category === "휴무"
+                                      ? "휴무"
+                                      : (s.location || s.title || s.category)
+                                }`
                               )}
                             </span>
                           </div>

@@ -87,7 +87,10 @@ export function useCreateSave({
     try {
 
       // ✨ 필수 필드 점검 - validation 위반 시 alert 대신 showValidationErrors 활성화
-      if (!f.isSaveEnabled) {
+      const isVisitPlanValid = !!mainTitle && !!f.address?.trim() && isValidPhoneKR(f.officePhone);
+      const isOkToSave = isVisitPlanPin ? isVisitPlanValid : f.isSaveEnabled;
+
+      if (!isOkToSave) {
         // 🚨 리프팅된 로컬 세터 직접 호출
         setShowValidationErrors?.(true);
 
@@ -115,18 +118,9 @@ export function useCreateSave({
 
       /* ====== 1) 답사예정핀 전용 분기 ====== */
       if (isVisitPlanPin) {
-        if (!mainTitle) {
-          alert("매물명을 입력해 주세요.");
-          return;
-        }
-        if (!isValidPhoneKR(f.officePhone)) {
-          alert("분양사무실 전화번호를 정확히 입력해 주세요.");
-          return;
-        }
-
         // 핀 종류는 옵셔널
 
-        const addressLine = (f.address && f.address.trim()) || mainTitle;
+        const addressLine = f.address?.trim() || mainTitle;
         const subPhone = (f.officePhone2 ?? "").trim();
 
         const draft = await createPinDraft({

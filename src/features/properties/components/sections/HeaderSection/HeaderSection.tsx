@@ -137,7 +137,7 @@ export default function HeaderSection(
 
   // 🚨 에러 상태 정의
   const titleError = showValidationErrors && !title?.trim();
-  const rebateError = showValidationErrors && !rebateDisabled && !rebateDisplay.trim();
+  const rebateError = showValidationErrors && !isVisitPlanPin && !rebateDisabled && !rebateDisplay.trim();
   const buildingGradeError = showValidationErrors && !buildingGradeDisabled && !_buildingGrade;
   const hasHeaderError = titleError || rebateError || buildingGradeError;
 
