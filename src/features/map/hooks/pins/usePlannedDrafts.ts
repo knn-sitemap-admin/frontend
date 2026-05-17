@@ -62,6 +62,17 @@ export function usePlannedDrafts({
   const [reloadTick, setReloadTick] = useState(0);
   const reloadPlanned = () => setReloadTick((t) => t + 1);
 
+  // 웹소켓 이벤트 수신 시 자동으로 새로고침
+  useEffect(() => {
+    const handleSocketEvent = () => {
+      setReloadTick((t) => t + 1);
+    };
+    window.addEventListener("socket_reservation_changed", handleSocketEvent);
+    return () => {
+      window.removeEventListener("socket_reservation_changed", handleSocketEvent);
+    };
+  }, []);
+
   // 마지막으로 가져온 key 기억
   const lastKeyRef = useRef<string | null>(null);
 

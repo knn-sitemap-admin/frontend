@@ -70,8 +70,21 @@ export async function getPinsInBounds(q: PinsMapQuery, signal?: AbortSignal) {
     neLng: toNum("neLng", q.neLng),
   };
 
+  // 🔹 백엔드 Validation 400 에러 방지를 위해 undefined, null, 또는 문자열 "undefined"/"null" 인 값을 완전 제거
+  const cleanedParams: Record<string, any> = {};
+  const mergedParams = {
+    ...safeParams,
+    _t: Date.now(),
+  };
+
+  for (const [k, v] of Object.entries(mergedParams)) {
+    if (v !== undefined && v !== null && String(v) !== "undefined" && String(v) !== "null" && String(v).trim() !== "") {
+      cleanedParams[k] = v;
+    }
+  }
+
   const { data } = await api.get<PinsMapResponse>("/pins/map", {
-    params: safeParams,
+    params: cleanedParams,
     withCredentials: true,
     signal,
   });

@@ -18,7 +18,7 @@ import {
   createMarker,
   updateMarkerIcon,
 } from "../overlays/pinOverlays";
-import { DRAFT_ID, SELECTED_Z } from "../overlays/overlayStyles";
+import { DRAFT_ID, SELECTED_Z, applyOrderBadgeToLabel } from "../overlays/overlayStyles";
 
 type Args = {
   isReady: boolean;
@@ -192,8 +192,16 @@ export function useRebuildScene(args: Args) {
           let lb = labelOvRef.current[key];
           if (lb) {
             lb.setPosition(pos);
-            const el = lb.getContent?.() as HTMLElement | null;
-            if (el) el.textContent = labelText;
+            const el = lb.getContent?.() as HTMLDivElement | null;
+            if (el) {
+              el.dataset.rawTitle = String(labelText ?? "");
+              const titleEl = el.querySelector('[data-role="label-title"]') as HTMLSpanElement | null;
+              if (titleEl) {
+                titleEl.textContent = labelText;
+              } else {
+                applyOrderBadgeToLabel(el, labelText, order);
+              }
+            }
           } else {
              lb = createLabelOverlay(kakao, pos, labelText, labelGapPx, order);
              labelOvRef.current[key] = lb;

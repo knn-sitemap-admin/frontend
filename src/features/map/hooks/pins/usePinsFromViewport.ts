@@ -121,6 +121,26 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
     loadAllPins();
   }, [updateTick]);
 
+  // 🔄 웹소켓 실시간 이벤트 수신 시 글로벌 캐시 비우기 및 데이터 재요청 트리거
+  useEffect(() => {
+    const handleSocketRefresh = () => {
+      // eslint-disable-next-line no-console
+      console.log("usePinsFromViewport: Clearing global pin cache for real-time WebSocket sync");
+      globalPinCache.clear();
+      globalDraftCache.clear();
+      lastFilterHash = null;
+      setUpdateTick((t) => t + 1);
+    };
+
+    window.addEventListener("socket_refresh_map", handleSocketRefresh);
+    window.addEventListener("socket_reservation_changed", handleSocketRefresh);
+
+    return () => {
+      window.removeEventListener("socket_refresh_map", handleSocketRefresh);
+      window.removeEventListener("socket_reservation_changed", handleSocketRefresh);
+    };
+  }, []);
+
   // 🏠 캐시에서 데이터 추출 및 클라이언트 사이드 필터링
   const { points, drafts, markers } = useMemo(() => {
     const pMarkers: MapMarker[] = [];

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import SocketProvider from "./SocketProvider";
 
 export default function ReactQueryProvider({
   children,
@@ -15,7 +16,9 @@ export default function ReactQueryProvider({
 
   return (
     <QueryClientProvider client={client}>
-      {children}
+      <SocketProvider>
+        {children}
+      </SocketProvider>
 
       {/* ✅ 개발 모드에서만 Devtools 표시 */}
       {isDev && <ReactQueryDevtools initialIsOpen={false} />}

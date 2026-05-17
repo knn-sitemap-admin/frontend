@@ -85,8 +85,7 @@ export function Sidebar({
 
     // 2-a) 확정 예약 필터링 & 매핑
     const filteredScheduled = (items ?? []).filter((r) => {
-      if (isAdmin) return true; // 관리자는 전체
-      return r.isMine === true; // 일반 사용자는 내 것만
+      return r.isMine === true; // 누구나 자기 자신의 예약만 목록에 노출
     });
 
     // 2-b) 확정 예약 목록만 반환 (임시핀 제외)

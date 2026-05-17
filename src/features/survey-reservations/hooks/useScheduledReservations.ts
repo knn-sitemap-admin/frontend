@@ -217,6 +217,17 @@ export function useScheduledReservations() {
     void refetchInternal();
   }, []);
 
+  // 웹소켓 이벤트 수신 시 자동으로 내 예약 목록 새로고침
+  useEffect(() => {
+    const handleSocketReservationChange = () => {
+      void refetchInternal();
+    };
+    window.addEventListener("socket_reservation_changed", handleSocketReservationChange);
+    return () => {
+      window.removeEventListener("socket_reservation_changed", handleSocketReservationChange);
+    };
+  }, []);
+
   const snapshot = useSyncExternalStore(
     (l) => {
       store.listeners.add(l);
@@ -238,7 +249,6 @@ export function useScheduledReservations() {
   const reservationOrderMap = useMemo(() => {
     const m: Record<string, number> = {};
     const visibleItems = snapshot.items.filter((r) => {
-      if (isAdmin) return true;
       return r.isMine === true;
     });
     visibleItems.forEach((r, idx) => {
@@ -247,12 +257,11 @@ export function useScheduledReservations() {
       }
     });
     return m;
-  }, [snapshot.items, snapshot.version, isAdmin]);
+  }, [snapshot.items, snapshot.version]);
 
   const reservationOrderByPosKey = useMemo(() => {
     const m: Record<string, number> = {};
     const visibleItems = snapshot.items.filter((r) => {
-      if (isAdmin) return true;
       return r.isMine === true;
     });
     visibleItems.forEach((r, idx) => {
@@ -260,7 +269,7 @@ export function useScheduledReservations() {
       if (key) m[key] = idx; // 0-based index
     });
     return m;
-  }, [snapshot.items, snapshot.version, isAdmin]);
+  }, [snapshot.items, snapshot.version]);
 
   const getOrderIndex = useCallback(
     (marker: {

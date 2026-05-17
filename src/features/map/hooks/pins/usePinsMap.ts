@@ -208,6 +208,16 @@ export function usePinsMap() {
   }, [refreshViewportPins]);
 
   useEffect(() => {
+    const handleSocketRefresh = () => {
+      refetch();
+    };
+    window.addEventListener("socket_refresh_map", handleSocketRefresh);
+    return () => {
+      window.removeEventListener("socket_refresh_map", handleSocketRefresh);
+    };
+  }, [refetch]);
+
+  useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
 

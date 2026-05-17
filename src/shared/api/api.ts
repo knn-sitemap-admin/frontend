@@ -67,15 +67,21 @@ const getApiBase = () => {
   if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_BASE || "";
 
   const hostname = window.location.hostname;
-  const isActuallyLocal = hostname === "localhost" || hostname === "127.0.0.1";
+  const isActuallyLocal =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    /^192\.168\./.test(hostname) ||
+    /^10\./.test(hostname) ||
+    /^172\.(1[6-9]|2[0-9]|3[01])\./.test(hostname) ||
+    hostname.endsWith(".local");
 
   // 2. 상용/배포 환경 (Railway 등)
   if (!isActuallyLocal) {
     return process.env.NEXT_PUBLIC_API_BASE || "https://backend-test-production-2188.up.railway.app";
   }
 
-  // 3. 로컬 개발 환경
-  return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || "http://localhost:3050";
+  // 3. 로컬 개발 환경 (포트는 3050 고정, hostname을 동적으로 반영하여 타 기기 테스트 호환성 보장)
+  return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || `http://${hostname}:3050`;
 };
 export const API_BASE = getApiBase();
 
