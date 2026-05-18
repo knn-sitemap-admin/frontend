@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useId } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { Card, CardContent, CardHeader } from "@/components/atoms/Card/Card";
 import type { SidebarSectionProps as BaseProps } from "../types/sidebar";
@@ -27,6 +27,10 @@ type SidebarSectionProps = BaseProps & {
   /** ✅ 폴더 필터 기능 연동 */
   activeFavGroupId?: string | null;
   onToggleFilterGroup?: (groupId: string) => void;
+
+  /** ✅ 답사예약 핀들만 보기 필터 기능 */
+  activeReservedOnly?: boolean;
+  onToggleReservedOnly?: () => void;
 };
 
 const NOOP = () => { };
@@ -50,6 +54,8 @@ export function SidebarSection(props: SidebarSectionProps) {
     onFocusSubItemMap,
     activeFavGroupId,
     onToggleFilterGroup,
+    activeReservedOnly,
+    onToggleReservedOnly,
   } = props;
 
   // 🔹 내부 기본값: 접힌 상태
@@ -153,13 +159,13 @@ export function SidebarSection(props: SidebarSectionProps) {
   return (
     <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
       {/* 헤더를 버튼처럼 한 줄 카드 형태로 */}
-      <CardHeader className="p-0">
+      <CardHeader className="p-0 flex flex-row items-center justify-between pr-2">
         <Button
           id={headerId}
           aria-controls={regionId}
           aria-expanded={isExpanded}
           variant="ghost"
-          className="flex h-11 w-full items-center gap-2 px-2 text-gray-700 justify-start hover:bg-gray-50 hover:text-gray-900"
+          className="flex-1 flex h-11 items-center gap-2 px-2 text-gray-700 justify-start hover:bg-gray-50 hover:text-gray-900 rounded-r-none"
           onClick={toggleExpanded}
         >
           {isExpanded ? (
@@ -169,6 +175,28 @@ export function SidebarSection(props: SidebarSectionProps) {
           )}
           <span className="font-semibold text-base leading-none">{title}</span>
         </Button>
+
+        {onToggleReservedOnly && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-7 w-7 p-0 hover:shadow-sm hover:bg-gray-100 shrink-0",
+              activeReservedOnly ? "text-blue-500 bg-blue-50 shadow-sm" : "text-gray-400"
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleReservedOnly();
+            }}
+            title={activeReservedOnly ? "필터 해제" : "이 목록의 예약핀만 보기"}
+          >
+            {activeReservedOnly ? (
+              <Eye className="h-4 w-4" />
+            ) : (
+              <EyeOff className="h-4 w-4" />
+            )}
+          </Button>
+        )}
       </CardHeader>
 
       {/* 🔽 부드러운 열림/닫힘용 래퍼 (CSS Grid를 활용한 가변 높이 애니메이션) */}

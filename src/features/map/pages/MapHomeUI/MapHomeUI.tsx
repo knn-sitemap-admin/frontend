@@ -431,7 +431,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
 
   const activeMenu = (filter as MapMenuKey) ?? "all";
 
-  const { siteReservations, activeFavGroupId, nestedFavorites } = useSidebarCtx();
+  const { siteReservations, activeFavGroupId, nestedFavorites, activeReservedOnly, scheduledReservations } = useSidebarCtx();
 
   const handleFocusItemMap = useCallback(
     (item: ListItem | null) => {
@@ -467,10 +467,23 @@ export function MapHomeUI(props: MapHomeUIProps) {
     );
   }, [activeFavGroupId, nestedFavorites]);
 
+  // ✅ 내 답사지 예약 핀 필터링 로직
+  const activeReservedPinIds = useMemo(() => {
+    if (!activeReservedOnly) return null;
+    return new Set(
+      scheduledReservations?.map((r) => `__visit__${r.pinDraftId}`).filter(Boolean) || []
+    );
+  }, [activeReservedOnly, scheduledReservations]);
+
   const finalMergedForCulling = useMemo(() => {
-    if (!activeFavPinIds) return mergedWithTempDraft;
-    return mergedWithTempDraft.filter((m) => activeFavPinIds.has(String(m.id)));
-  }, [mergedWithTempDraft, activeFavPinIds]);
+    if (activeFavPinIds) {
+      return mergedWithTempDraft.filter((m) => activeFavPinIds.has(String(m.id)));
+    }
+    if (activeReservedPinIds) {
+      return mergedWithTempDraft.filter((m) => activeReservedPinIds.has(String(m.id)));
+    }
+    return mergedWithTempDraft;
+  }, [mergedWithTempDraft, activeFavPinIds, activeReservedPinIds]);
 
   // --- 마커 컬링 (Slack Culling) ---
   const [culledMarkers, setCulledMarkers] = useState<typeof finalMergedForCulling>([]);

@@ -43,11 +43,13 @@ const mapReservationToListItem = (r: any): ListItem => {
   const created = String(r?.createdAt ?? new Date().toISOString());
   const title = String(r?.addressLine ?? "");
   const reserved = String(r?.reservedDate ?? ""); // "YYYY-MM-DD"
+  const pinDraftId = r?.pinDraftId != null ? String(r.pinDraftId) : undefined;
 
   const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
 
   return {
     id: String(r?.id ?? crypto.randomUUID()),
+    pinDraftId,
     title,
     dateISO: reserved || created.slice(0, 10),
     createdAt: created,
@@ -89,6 +91,7 @@ export function useSidebarState() {
     [],
   );
   const [activeFavGroupId, setActiveFavGroupId] = useState<string | null>(null);
+  const [activeReservedOnly, setActiveReservedOnly] = useState<boolean>(false);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<any>(null);
@@ -700,6 +703,10 @@ export function useSidebarState() {
     // 폴더 필터링 상태 추가
     activeFavGroupId,
     setActiveFavGroupId,
+
+    // 답사예약 필터링 상태 추가
+    activeReservedOnly,
+    setActiveReservedOnly,
   };
 }
 

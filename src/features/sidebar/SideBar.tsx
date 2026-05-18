@@ -53,6 +53,8 @@ export function Sidebar({
     setSelectedContract,
     activeFavGroupId,
     setActiveFavGroupId,
+    activeReservedOnly,
+    setActiveReservedOnly,
   } = useSidebar();
 
   // 1) 훅 호출(조건문 밖)
@@ -205,6 +207,14 @@ export function Sidebar({
             expanded={openSection === "exploration"}
             onToggleExpanded={toggleExploration}
             onFocusItemMap={onFocusItemMap}
+            activeReservedOnly={activeReservedOnly}
+            onToggleReservedOnly={() => {
+              const nextVal = !activeReservedOnly;
+              setActiveReservedOnly(nextVal);
+              if (nextVal) {
+                setActiveFavGroupId(null); // 즐겨찾기 필터 해제
+              }
+            }}
           />
 
           {/* 즐겨찾기 */}
@@ -222,7 +232,13 @@ export function Sidebar({
             onToggleExpanded={toggleFavorites}
             onFocusSubItemMap={onFocusSubItemMap}
             activeFavGroupId={activeFavGroupId}
-            onToggleFilterGroup={(id) => setActiveFavGroupId(activeFavGroupId === id ? null : id)}
+            onToggleFilterGroup={(id) => {
+              const nextGroupId = activeFavGroupId === id ? null : id;
+              setActiveFavGroupId(nextGroupId);
+              if (nextGroupId) {
+                setActiveReservedOnly(false); // 예약핀 필터 해제
+              }
+            }}
           />
 
           <div className="space-y-2 mt-2 pb-2">

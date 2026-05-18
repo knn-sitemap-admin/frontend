@@ -86,6 +86,8 @@ export default function MapHomePage() {
     removeFavoriteByPinId,
     reserveVisitPlan,
     activeFavGroupId,
+    activeReservedOnly,
+    scheduledReservations,
   } = useSidebar();
 
   const reverseGeocode = useReverseGeocode(s.kakaoSDK);
@@ -130,15 +132,33 @@ export default function MapHomePage() {
     );
   }, [activeFavGroupId, nestedFavorites]);
 
+  // ✅ 내 답사지 예약 핀 필터링 로직
+  const activeReservedPinIds = useMemo(() => {
+    if (!activeReservedOnly) return null;
+    return new Set(
+      scheduledReservations?.map((r) => `__visit__${r.pinDraftId}`).filter(Boolean) || []
+    );
+  }, [activeReservedOnly, scheduledReservations]);
+
   const filteredMarkers = useMemo(() => {
-    if (!activeFavPinIds) return s.markers;
-    return s.markers.filter((m) => activeFavPinIds.has(String(m.id)));
-  }, [s.markers, activeFavPinIds]);
+    if (activeFavPinIds) {
+      return s.markers.filter((m) => activeFavPinIds.has(String(m.id)));
+    }
+    if (activeReservedPinIds) {
+      return s.markers.filter((m) => activeReservedPinIds.has(String(m.id)));
+    }
+    return s.markers;
+  }, [s.markers, activeFavPinIds, activeReservedPinIds]);
 
   const filteredItems = useMemo(() => {
-    if (!activeFavPinIds) return s.filtered;
-    return s.filtered.filter((item) => activeFavPinIds.has(String(item.id)));
-  }, [s.filtered, activeFavPinIds]);
+    if (activeFavPinIds) {
+      return s.filtered.filter((item) => activeFavPinIds.has(String(item.id)));
+    }
+    if (activeReservedPinIds) {
+      return s.filtered.filter((item) => activeReservedPinIds.has(String(item.id)));
+    }
+    return s.filtered;
+  }, [s.filtered, activeFavPinIds, activeReservedPinIds]);
 
   // ===== 콜백들 =====
   const onChangeQ = useCallback(

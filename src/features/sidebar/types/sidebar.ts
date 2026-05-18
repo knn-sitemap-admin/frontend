@@ -31,6 +31,9 @@ export interface ListItem {
   /** ✅ 지도 포커싱용 좌표 (답사지 예약 flat 리스트) */
   lat?: number | null;
   lng?: number | null;
+
+  /** ✅ 답사지 예약의 원본 pinDraftId */
+  pinDraftId?: string;
 }
 
 export interface PendingReservation {
