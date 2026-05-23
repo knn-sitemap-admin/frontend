@@ -106,6 +106,69 @@ export default function ProfilePage() {
   const [uploadErrors, setUploadErrors] = useState<
     Partial<Record<UploadField, string>>
   >({});
+  const [rotatingField, setRotatingField] = useState<UploadField | null>(null);
+  const [rotatingIndex, setRotatingIndex] = useState<number | null>(null);
+
+  const handleRotate = async (field: UploadField, index: number) => {
+    const urls = form.getValues(field);
+    let targetUrl = "";
+    if (field === "profileUrl") {
+      targetUrl = urls as string;
+    } else {
+      targetUrl = (urls as string[])[index];
+    }
+
+    if (!targetUrl) return;
+
+    setRotatingField(field);
+    setRotatingIndex(index);
+    setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
+
+    try {
+      const { rotateImage90 } = await import("@/shared/utils/file");
+      const rotatedBlob = await rotateImage90(targetUrl);
+      
+      const fileName = targetUrl.split("/").pop()?.split("?")[0] || "rotated.jpg";
+      const file = new File([rotatedBlob], fileName, { type: rotatedBlob.type });
+
+      const domain = uploadDomainMap[field] ?? "etc";
+      if (field === "profileUrl") {
+        const meta = await uploadOnePhoto(file, { domain });
+        const urlToUse = meta?.url || meta?.key || null;
+        if (!urlToUse) throw new Error("업로드 응답에 URL이 없습니다.");
+        form.setValue(field, urlToUse, { shouldValidate: true });
+      } else {
+        const metas = await uploadPhotos([file], { domain });
+        const newUrl = metas[0]?.url;
+        if (!newUrl) throw new Error("업로드 응답에 URL이 없습니다.");
+        
+        const currentUrls = [...((urls as string[]) || [])];
+        currentUrls[index] = newUrl;
+        form.setValue(field, currentUrls, { shouldValidate: true });
+      }
+      toast({
+        title: "이미지 회전 완료",
+        description: "이미지가 성공적으로 회전하여 재업로드되었습니다.",
+      });
+    } catch (err: any) {
+      const serverMessage =
+        err?.response?.data?.message ??
+        err?.message ??
+        "이미지 회전 중 오류가 발생했습니다.";
+      setUploadErrors((prev) => ({
+        ...prev,
+        [field]: serverMessage,
+      }));
+      toast({
+        title: "이미지 회전 실패",
+        description: serverMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setRotatingField(null);
+      setRotatingIndex(null);
+    }
+  };
 
   // 프로필 조회
   const { data: profile, isLoading: isProfileLoading } = useQuery({
@@ -389,16 +452,32 @@ export default function ProfilePage() {
                               onChange={handleFileChange("profileUrl")}
                               disabled={uploading === "profileUrl"}
                             />
-                            {photoUrl && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => clearFile("profileUrl")}
-                                disabled={uploading === "profileUrl"}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                             {photoUrl && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRotate("profileUrl", 0)}
+                                  disabled={uploading === "profileUrl" || (rotatingField === "profileUrl")}
+                                  title="이미지 시계방향 90도 회전"
+                                >
+                                  {rotatingField === "profileUrl" ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <span className="text-xs font-bold">↻ 회전</span>
+                                  )}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => clearFile("profileUrl")}
+                                  disabled={uploading === "profileUrl" || (rotatingField === "profileUrl")}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
                             )}
                           </div>
                           {uploadErrors.profileUrl && (
@@ -582,6 +661,8 @@ export default function ProfilePage() {
                           loading={uploading === field}
                           onChange={handleFileChange(field)}
                           onRemove={(idx) => removeFileAt(field, idx)}
+                          onRotate={(idx) => handleRotate(field, idx)}
+                          rotatingIndex={rotatingField === field ? rotatingIndex : null}
                           maxCount={5}
                         />
                         <FormMessage />
@@ -622,6 +703,8 @@ function MultipleUploadRow({
   loading,
   onChange,
   onRemove,
+  onRotate,
+  rotatingIndex,
   maxCount = 5,
 }: {
   label: string;
@@ -630,6 +713,8 @@ function MultipleUploadRow({
   loading?: boolean;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   onRemove: (index: number) => void;
+  onRotate?: (index: number) => void;
+  rotatingIndex?: number | null;
   maxCount?: number;
 }) {
   return (
@@ -638,7 +723,7 @@ function MultipleUploadRow({
         <div className="text-sm font-medium">{label}</div>
         <div className="text-xs text-muted-foreground">{values.length} / {maxCount}</div>
       </div>
-
+ 
       <div className="flex flex-col gap-2">
         <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground justify-center">
           {loading ? (
@@ -658,7 +743,7 @@ function MultipleUploadRow({
         </label>
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
-
+ 
       {values.length > 0 && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {values.map((v, idx) => (
@@ -684,6 +769,21 @@ function MultipleUploadRow({
               >
                 <span className="text-xs">×</span>
               </button>
+              {isImageUrl(v) && onRotate && (
+                <button
+                  type="button"
+                  onClick={() => onRotate(idx)}
+                  disabled={loading || rotatingIndex === idx}
+                  className="absolute -left-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 active:scale-95 group-hover:flex disabled:opacity-50"
+                  title="시계방향 90도 회전"
+                >
+                  {rotatingIndex === idx ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <span className="text-[10px] font-bold">↻</span>
+                  )}
+                </button>
+              )}
               <a
                 href={v}
                 target="_blank"

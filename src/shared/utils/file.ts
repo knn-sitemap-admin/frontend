@@ -17,6 +17,8 @@ export function fileNameFromUrl(u?: string) {
   }
 }
 
+import { API_BASE } from "@/shared/api/api";
+
 /**
  * 접근 가능한 URL인지 확인 (s3:// 형태는 브라우저에서 접근 불가)
  */
@@ -40,3 +42,59 @@ export const getAccessibleUrl = (url?: string) => {
   }
   return url;
 };
+
+/**
+ * 이미지 URL을 프록시를 통해 내려받아 시계방향 90도 회전한 후 Blob 객체로 반환합니다.
+ */
+export async function rotateImage90(imageUrl: string): Promise<Blob> {
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("notemap_token") : null;
+  const proxyUrl = `${API_BASE}/photo/upload/proxy?url=${encodeURIComponent(imageUrl)}`;
+  
+  const headers: HeadersInit = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(proxyUrl, { headers });
+  if (!response.ok) {
+    throw new Error(`이미지 다운로드 실패: ${response.statusText}`);
+  }
+  
+  const blob = await response.blob();
+  
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  
+  const objectUrl = URL.createObjectURL(blob);
+  img.src = objectUrl;
+  
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = () => reject(new Error("이미지 데이터 로드 실패"));
+  });
+  
+  URL.revokeObjectURL(objectUrl);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = img.height;
+  canvas.height = img.width;
+  
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Canvas 2D Context 생성 실패");
+  }
+  
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((90 * Math.PI) / 180);
+  ctx.drawImage(img, -img.width / 2, -img.height / 2);
+  
+  const rotatedBlob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((b) => resolve(b), blob.type || "image/jpeg", 0.9);
+  });
+  
+  if (!rotatedBlob) {
+    throw new Error("회전된 이미지 파일 생성 실패");
+  }
+  
+  return rotatedBlob;
+}

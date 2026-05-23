@@ -3,8 +3,9 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X, Lock, Key, RefreshCcw } from "lucide-react";
+import { X, Lock, Key, RefreshCcw, Plus, Loader2, Upload, ImageIcon, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
+import { cn } from "@/lib/cn";
 import { Input } from "@/components/atoms/Input/Input";
 import {
   Form,
@@ -14,7 +15,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/atoms/Form/Form";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { formatPhone } from "@/lib/formatPhone";
@@ -212,6 +213,66 @@ function AccountEditFormModalBody({
     Partial<Record<UploadField, string>>
   >({});
   const [isBirthdayOpen, setIsBirthdayOpen] = useState(false);
+  const [rotatingField, setRotatingField] = useState<UploadField | null>(null);
+  const [rotatingIndex, setRotatingIndex] = useState<number | null>(null);
+
+  const handleRotate = async (field: UploadField, index: number) => {
+    const urls = form.getValues(field as any);
+    let targetUrl = "";
+    if (field === "photo_url") {
+      targetUrl = urls as string;
+    } else {
+      targetUrl = (urls as string[])[index];
+    }
+
+    if (!targetUrl) return;
+
+    setRotatingField(field);
+    setRotatingIndex(index);
+    setFieldError(field, null);
+
+    try {
+      const { rotateImage90 } = await import("@/shared/utils/file");
+      const rotatedBlob = await rotateImage90(targetUrl);
+      
+      const fileName = targetUrl.split("/").pop()?.split("?")[0] || "rotated.jpg";
+      const file = new File([rotatedBlob], fileName, { type: rotatedBlob.type });
+
+      const domain = uploadDomainMap[field] ?? "etc";
+      if (field === "photo_url") {
+        const meta = await uploadOnePhoto(file, { domain });
+        if (meta?.url) {
+          form.setValue(field, meta.url, { shouldValidate: true, shouldDirty: true });
+        }
+      } else {
+        const metas = await uploadPhotos([file], { domain });
+        const newUrl = metas[0]?.url;
+        if (!newUrl) throw new Error("업로드 응답에 URL이 없습니다.");
+        
+        const currentUrls = [...((urls as string[]) || [])];
+        currentUrls[index] = newUrl;
+        form.setValue(field as any, currentUrls, { shouldValidate: true, shouldDirty: true });
+      }
+      toast({
+        title: "이미지 회전 완료",
+        description: "이미지가 성공적으로 회전하여 재업로드되었습니다.",
+      });
+    } catch (err: any) {
+      const serverMessage =
+        err?.response?.data?.message ??
+        err?.message ??
+        "이미지 회전 중 오류가 발생했습니다.";
+      setFieldError(field, serverMessage);
+      toast({
+        title: "이미지 회전 실패",
+        description: serverMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setRotatingField(null);
+      setRotatingIndex(null);
+    }
+  };
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -450,7 +511,7 @@ function AccountEditFormModalBody({
         if (field === "photo_url") {
           const meta = await uploadOnePhoto(files[0], { domain });
           if (meta?.url) {
-            form.setValue(field, meta.url, { shouldValidate: true });
+            form.setValue(field, meta.url, { shouldValidate: true, shouldDirty: true });
           }
         } else {
           const currentUrls = (form.getValues(field as any) as string[]) || [];
@@ -461,7 +522,7 @@ function AccountEditFormModalBody({
 
           const metas = await uploadPhotos(Array.from(files), { domain });
           const newUrls = metas.map(m => m.url).filter(Boolean) as string[];
-          form.setValue(field as any, [...currentUrls, ...newUrls], { shouldValidate: true });
+          form.setValue(field as any, [...currentUrls, ...newUrls], { shouldValidate: true, shouldDirty: true });
         }
       } catch (err: any) {
         const serverMessage =
@@ -479,14 +540,14 @@ function AccountEditFormModalBody({
     const current = (form.getValues(field as any) as string[]) || [];
     const next = [...current];
     next.splice(index, 1);
-    form.setValue(field as any, next, { shouldValidate: true });
+    form.setValue(field as any, next, { shouldValidate: true, shouldDirty: true });
   };
 
   const clearFile = (field: UploadField) => {
     if (field === "photo_url") {
-      form.setValue(field, "", { shouldValidate: true });
+      form.setValue(field, "", { shouldValidate: true, shouldDirty: true });
     } else {
-      form.setValue(field as any, [], { shouldValidate: true });
+      form.setValue(field as any, [], { shouldValidate: true, shouldDirty: true });
     }
     setFieldError(field, null);
   };
@@ -886,9 +947,10 @@ function AccountEditFormModalBody({
                     label="증명사진"
                     value={photoUrl}
                     error={uploadErrors.photo_url}
-                    loading={uploading === "photo_url"}
+                    loading={uploading === "photo_url" || rotatingField === "photo_url"}
                     onChange={handleFileChange("photo_url")}
                     onClear={() => clearFile("photo_url")}
+                    onRotate={() => handleRotate("photo_url", 0)}
                     isImage
                   />
                   
@@ -899,6 +961,8 @@ function AccountEditFormModalBody({
                     loading={uploading === "id_photo_urls"}
                     onChange={handleFileChange("id_photo_urls")}
                     onRemove={(idx) => removeFileAt("id_photo_urls", idx)}
+                    onRotate={(idx) => handleRotate("id_photo_urls", idx)}
+                    rotatingIndex={rotatingField === "id_photo_urls" ? rotatingIndex : null}
                   />
 
                   <MultipleUploadRow
@@ -908,6 +972,8 @@ function AccountEditFormModalBody({
                     loading={uploading === "resident_register_urls"}
                     onChange={handleFileChange("resident_register_urls")}
                     onRemove={(idx) => removeFileAt("resident_register_urls", idx)}
+                    onRotate={(idx) => handleRotate("resident_register_urls", idx)}
+                    rotatingIndex={rotatingField === "resident_register_urls" ? rotatingIndex : null}
                   />
 
                   <MultipleUploadRow
@@ -917,6 +983,8 @@ function AccountEditFormModalBody({
                     loading={uploading === "resident_extract_urls"}
                     onChange={handleFileChange("resident_extract_urls")}
                     onRemove={(idx) => removeFileAt("resident_extract_urls", idx)}
+                    onRotate={(idx) => handleRotate("resident_extract_urls", idx)}
+                    rotatingIndex={rotatingField === "resident_extract_urls" ? rotatingIndex : null}
                   />
 
                   <MultipleUploadRow
@@ -926,6 +994,8 @@ function AccountEditFormModalBody({
                     loading={uploading === "family_relation_urls"}
                     onChange={handleFileChange("family_relation_urls")}
                     onRemove={(idx) => removeFileAt("family_relation_urls", idx)}
+                    onRotate={(idx) => handleRotate("family_relation_urls", idx)}
+                    rotatingIndex={rotatingField === "family_relation_urls" ? rotatingIndex : null}
                   />
                 </div>
               </div>
@@ -973,6 +1043,7 @@ function UploadRow({
   value,
   onChange,
   onClear,
+  onRotate,
   loading,
   error,
   isImage,
@@ -981,58 +1052,159 @@ function UploadRow({
   value?: string;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   onClear: () => void;
+  onRotate?: () => void;
   loading?: boolean;
   error?: string;
   isImage?: boolean;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  useEffect(() => {
+    setImageError(null);
+  }, [value]);
+
+  const showPreview = !!value && !imageError;
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+  const handleDragLeave = () => setIsDragOver(false);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files?.length && inputRef.current) {
+      const dt = new DataTransfer();
+      dt.items.add(e.dataTransfer.files[0]);
+      inputRef.current.files = dt.files;
+      inputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="text-sm font-medium">{label}</div>
-      <div className="flex items-center gap-2">
-        <Input
-          type="file"
-          accept="*/*"
-          onChange={onChange}
+
+      {/* 숨겨진 input */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="*/*"
+        onChange={onChange}
+        disabled={loading}
+        className="hidden"
+      />
+
+      {/* 미리보기가 없을 때: 업로드 영역 */}
+      {!showPreview && (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           disabled={loading}
-          className="text-xs"
-        />
-        {value && (
-          <button
-            type="button"
-            className="text-xs hover:bg-accent disabled:opacity-50 text-red-600 font-bold px-2 py-1 rounded"
-            onClick={onClear}
-            disabled={!value || loading}
-          >
-            ×
-          </button>
-        )}
-      </div>
-
-      {loading && <p className="text-xs text-muted-foreground">업로드 중…</p>}
-      {error && <p className="text-xs text-destructive">{error}</p>}
-
-      {value && (
-        <div className="flex items-center gap-3">
-          {isImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={value}
-              alt={`${label} 미리보기`}
-              className="h-20 w-20 rounded-md border object-cover"
-            />
+          className={cn(
+            "flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 transition-all duration-200",
+            isDragOver
+              ? "border-blue-400 bg-blue-50/60"
+              : "border-slate-200 bg-slate-50/40 hover:border-slate-300 hover:bg-slate-50",
+            loading && "pointer-events-none opacity-50"
+          )}
+        >
+          {loading ? (
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           ) : (
-            <div className="rounded-md border bg-muted/40 px-2 py-1 text-xs">
-              {fileNameFromUrl(value)}
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+              <Upload className="h-5 w-5 text-slate-400" />
             </div>
           )}
-          <a
-            href={value}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs underline"
-          >
-            원본 보기
-          </a>
+          <div className="text-center">
+            <p className="text-xs font-medium text-slate-600">
+              {loading ? "업로드 중…" : "클릭 또는 드래그하여 파일 선택"}
+            </p>
+            <p className="mt-0.5 text-[10px] text-slate-400">이미지, PDF 등</p>
+          </div>
+        </button>
+      )}
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {imageError && <p className="text-xs text-destructive">{imageError}</p>}
+
+      {/* 미리보기 카드 */}
+      {showPreview && (
+        <div className="relative overflow-hidden rounded-xl border bg-white shadow-sm">
+          <div className="flex items-center gap-3 p-3">
+            {isImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={value}
+                alt={`${label} 미리보기`}
+                className="h-16 w-16 flex-shrink-0 rounded-lg border object-cover"
+                onError={() =>
+                  setImageError(
+                    "이미지 다운로드 실패: 접근 권한이 없거나 URL이 올바르지 않습니다."
+                  )
+                }
+              />
+            ) : (
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg border bg-slate-50">
+                <FileText className="h-6 w-6 text-slate-400" />
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-xs font-medium text-slate-700">
+                {fileNameFromUrl(value)}
+              </p>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                {/* 교체 */}
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={loading}
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <Upload className="h-3 w-3" />
+                  교체
+                </button>
+                {/* 회전 */}
+                {isImage && onRotate && (
+                  <button
+                    type="button"
+                    onClick={onRotate}
+                    disabled={loading}
+                    className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50/60 px-2 py-1 text-[11px] font-medium text-blue-600 shadow-sm transition-colors hover:bg-blue-100 disabled:opacity-50"
+                  >
+                    <RefreshCcw className="h-3 w-3" />
+                    회전
+                  </button>
+                )}
+                {/* 원본 */}
+                <a
+                  href={value}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50"
+                >
+                  원본
+                </a>
+              </div>
+            </div>
+
+            {/* 삭제 */}
+            <button
+              type="button"
+              onClick={onClear}
+              disabled={loading}
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+              title="삭제"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -1048,6 +1220,8 @@ function MultipleUploadRow({
   loading,
   onChange,
   onRemove,
+  onRotate,
+  rotatingIndex,
   maxCount = 5,
 }: {
   label: string;
@@ -1056,64 +1230,141 @@ function MultipleUploadRow({
   loading?: boolean;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   onRemove: (index: number) => void;
+  onRotate?: (index: number) => void;
+  rotatingIndex?: number | null;
   maxCount?: number;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const isFull = values.length >= maxCount;
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isFull) setIsDragOver(true);
+  };
+  const handleDragLeave = () => setIsDragOver(false);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (isFull || !e.dataTransfer.files?.length || !inputRef.current) return;
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach((f) => dt.items.add(f));
+    inputRef.current.files = dt.files;
+    inputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-muted-foreground">{values.length} / {maxCount}</div>
-      </div>
-      
-      <div className="flex flex-col gap-2">
-        <Input
-          type="file"
-          accept="image/*,.pdf"
-          onChange={onChange}
-          disabled={loading || values.length >= maxCount}
-          multiple
-          className="text-xs"
-        />
-        {loading && (
-          <p className="text-xs text-muted-foreground animate-pulse">업로드 중입니다…</p>
-        )}
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        <div className={cn(
+          "text-xs font-medium tabular-nums",
+          isFull ? "text-amber-500" : "text-muted-foreground"
+        )}>
+          {values.length} / {maxCount}
+        </div>
       </div>
 
+      {/* 숨겨진 input */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,.pdf"
+        onChange={onChange}
+        disabled={loading || isFull}
+        multiple
+        className="hidden"
+      />
+
+      {/* 업로드 영역 */}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        disabled={loading || isFull}
+        className={cn(
+          "flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-4 transition-all duration-200",
+          isFull
+            ? "cursor-not-allowed border-slate-100 bg-slate-50/30 opacity-60"
+            : isDragOver
+            ? "border-blue-400 bg-blue-50/60"
+            : "border-slate-200 bg-slate-50/40 hover:border-slate-300 hover:bg-slate-50",
+          loading && "pointer-events-none opacity-50"
+        )}
+      >
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+        ) : (
+          <Plus className="h-4 w-4 text-slate-400" />
+        )}
+        <span className="text-xs font-medium text-slate-500">
+          {loading
+            ? "업로드 중…"
+            : isFull
+            ? "최대 장수에 도달했습니다"
+            : "클릭 또는 드래그하여 파일 추가"}
+        </span>
+      </button>
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+
+      {/* 썸네일 그리드 */}
       {values.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {values.map((v, idx) => (
             <div key={idx} className="group relative aspect-square">
-              <div className="h-full w-full overflow-hidden rounded-md border bg-muted/20">
+              <div className="h-full w-full overflow-hidden rounded-lg border bg-muted/20 shadow-sm">
                 {isImageUrl(v) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={v}
                     alt={`${label}-${idx}`}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground overflow-hidden px-1">
-                    파일
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
+                    <FileText className="h-5 w-5" />
+                    <span className="text-[9px]">파일</span>
                   </div>
                 )}
               </div>
-              
+
+              {/* 삭제 */}
               <button
                 type="button"
                 onClick={() => onRemove(idx)}
-                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm hover:bg-destructive/80 group-hover:flex"
+                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow transition-transform hover:scale-110 hover:bg-red-600 group-hover:flex"
               >
-                <span className="text-[10px]">×</span>
+                <X className="h-3 w-3" />
               </button>
-              
+
+              {/* 회전 */}
+              {isImageUrl(v) && onRotate && (
+                <button
+                  type="button"
+                  onClick={() => onRotate(idx)}
+                  disabled={loading || rotatingIndex === idx}
+                  className="absolute -left-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white shadow transition-transform hover:scale-110 hover:bg-blue-600 group-hover:flex disabled:opacity-50"
+                  title="시계방향 90도 회전"
+                >
+                  {rotatingIndex === idx ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCcw className="h-3 w-3" />
+                  )}
+                </button>
+              )}
+
+              {/* 원본 보기 오버레이 */}
               <a
                 href={v}
                 target="_blank"
                 rel="noreferrer"
-                className="absolute inset-x-0 bottom-0 flex h-4 items-center justify-center bg-black/40 text-[8px] text-white opacity-0 transition-opacity group-hover:opacity-100"
+                className="absolute inset-x-0 bottom-0 flex h-5 items-center justify-center rounded-b-lg bg-black/50 text-[9px] font-medium text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
               >
-                원본
+                원본 보기
               </a>
             </div>
           ))}

@@ -10,6 +10,7 @@ import {
   CardContent,
 } from "@/components/atoms/Card/Card";
 import { Button } from "@/components/atoms/Button/Button";
+import { cn } from "@/lib/cn";
 import { Input } from "@/components/atoms/Input/Input";
 import {
   Select,
@@ -26,8 +27,8 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/atoms/Form/Form";
-import { Plus, ChevronDownIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus, ChevronDownIcon, Upload, FileText, Trash2, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { formatPhone } from "@/lib/formatPhone";
 import { useRouter } from "next/navigation";
 import { getTeams } from "@/features/teams";
@@ -907,64 +908,120 @@ function MultipleUploadRow({
   onRemove: (index: number) => void;
   maxCount?: number;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const isFull = values.length >= maxCount;
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isFull) setIsDragOver(true);
+  };
+  const handleDragLeave = () => setIsDragOver(false);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (isFull || !e.dataTransfer.files?.length || !inputRef.current) return;
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach((f) => dt.items.add(f));
+    inputRef.current.files = dt.files;
+    inputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-muted-foreground">{values.length} / {maxCount}</div>
-      </div>
-      
-      <div className="flex flex-col gap-2">
-        <Input
-          type="file"
-          accept="image/*,.pdf"
-          onChange={onChange}
-          disabled={loading || values.length >= maxCount}
-          multiple // 여러 장 선택 가능 (컨트롤키 활용)
-        />
-        {loading && (
-          <p className="text-xs text-muted-foreground animate-pulse">업로드 중입니다…</p>
-        )}
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        <div className={cn(
+          "text-xs font-medium tabular-nums",
+          isFull ? "text-amber-500" : "text-muted-foreground"
+        )}>
+          {values.length} / {maxCount}
+        </div>
       </div>
 
+      {/* 숨겨진 input */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,.pdf"
+        onChange={onChange}
+        disabled={loading || isFull}
+        multiple
+        className="hidden"
+      />
+
+      {/* 업로드 영역 */}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        disabled={loading || isFull}
+        className={cn(
+          "flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-4 transition-all duration-200",
+          isFull
+            ? "cursor-not-allowed border-slate-100 bg-slate-50/30 opacity-60"
+            : isDragOver
+            ? "border-blue-400 bg-blue-50/60"
+            : "border-slate-200 bg-slate-50/40 hover:border-slate-300 hover:bg-slate-50",
+          loading && "pointer-events-none opacity-50"
+        )}
+      >
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+        ) : (
+          <Plus className="h-4 w-4 text-slate-400" />
+        )}
+        <span className="text-xs font-medium text-slate-500">
+          {loading
+            ? "업로드 중…"
+            : isFull
+            ? "최대 장수에 도달했습니다"
+            : "클릭 또는 드래그하여 파일 추가"}
+        </span>
+      </button>
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+
+      {/* 썸네일 그리드 */}
       {values.length > 0 && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {values.map((v, idx) => (
             <div key={idx} className="group relative aspect-square">
-              {/* 이미지/PDF 썸네일 */}
-              <div className="h-full w-full overflow-hidden rounded-md border bg-muted/20">
+              <div className="h-full w-full overflow-hidden rounded-lg border bg-muted/20 shadow-sm">
                 {isImageUrl(v) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={v}
                     alt={`${label}-${idx}`}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-110"
+                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground overflow-hidden px-1">
-                    {fileNameFromUrl(v)}
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
+                    <FileText className="h-5 w-5" />
+                    <span className="text-[9px]">파일</span>
                   </div>
                 )}
               </div>
-              
-              {/* 호버 시 삭제 버튼 */}
+
+              {/* 삭제 */}
               <button
                 type="button"
                 onClick={() => onRemove(idx)}
-                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-destructive text-white shadow-sm hover:bg-destructive/80 group-hover:flex"
+                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow transition-transform hover:scale-110 hover:bg-red-600 group-hover:flex"
               >
                 <span className="text-xs">×</span>
               </button>
-              
-              {/* 원본 링크 */}
+
+              {/* 원본 보기 오버레이 */}
               <a
                 href={v}
                 target="_blank"
                 rel="noreferrer"
-                className="absolute inset-x-0 bottom-0 flex h-4 items-center justify-center bg-black/40 text-[8px] text-white opacity-0 transition-opacity group-hover:opacity-100"
+                className="absolute inset-x-0 bottom-0 flex h-5 items-center justify-center rounded-b-lg bg-black/50 text-[9px] font-medium text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
               >
-                원본
+                원본 보기
               </a>
             </div>
           ))}
@@ -993,54 +1050,142 @@ function UploadRow({
   onClear: () => void;
   isImage?: boolean;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  useEffect(() => {
+    setImageError(null);
+  }, [value]);
+
+  const showPreview = !!value && !imageError;
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+  const handleDragLeave = () => setIsDragOver(false);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files?.length && inputRef.current) {
+      const dt = new DataTransfer();
+      dt.items.add(e.dataTransfer.files[0]);
+      inputRef.current.files = dt.files;
+      inputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="text-sm font-medium">{label}</div>
-      <div className="flex items-center gap-2">
-        <Input
-          type="file"
-          accept="image/*,.pdf"
-          onChange={onChange}
-          disabled={loading}
-        />
-        <Button
+
+      {/* 숨겨진 input */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,.pdf"
+        onChange={onChange}
+        disabled={loading}
+        className="hidden"
+      />
+
+      {/* 미리보기가 없을 때: 업로드 영역 */}
+      {!showPreview && (
+        <button
           type="button"
-          variant="outline"
-          onClick={onClear}
-          disabled={!value || loading}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          disabled={loading}
+          className={cn(
+            "flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 transition-all duration-200",
+            isDragOver
+              ? "border-blue-400 bg-blue-50/60"
+              : "border-slate-200 bg-slate-50/40 hover:border-slate-300 hover:bg-slate-50",
+            loading && "pointer-events-none opacity-50"
+          )}
         >
-          제거
-        </Button>
-      </div>
-
-      {loading && (
-        <p className="text-xs text-muted-foreground">업로드 중입니다…</p>
-      )}
-      {error && <p className="text-xs text-destructive">{error}</p>}
-
-      {value && (
-        <div className="flex items-center gap-3">
-          {isImage ? (
-            // 이미지 미리보기
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={value}
-              alt={`${label} 미리보기`}
-              className="h-20 w-20 rounded-md border object-cover"
-            />
+          {loading ? (
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           ) : (
-            <div className="rounded-md border bg-muted/40 px-2 py-1 text-xs">
-              {fileNameFromUrl(value)}
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+              <Upload className="h-5 w-5 text-slate-400" />
             </div>
           )}
-          <a
-            href={value}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs underline"
-          >
-            원본 보기
-          </a>
+          <div className="text-center">
+            <p className="text-xs font-medium text-slate-600">
+              {loading ? "업로드 중…" : "클릭 또는 드래그하여 파일 선택"}
+            </p>
+            <p className="mt-0.5 text-[10px] text-slate-400">이미지, PDF 등</p>
+          </div>
+        </button>
+      )}
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {imageError && <p className="text-xs text-destructive">{imageError}</p>}
+
+      {/* 미리보기 카드 */}
+      {showPreview && (
+        <div className="relative overflow-hidden rounded-xl border bg-white shadow-sm">
+          <div className="flex items-center gap-3 p-3">
+            {isImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={value}
+                alt={`${label} 미리보기`}
+                className="h-16 w-16 flex-shrink-0 rounded-lg border object-cover"
+                onError={() =>
+                  setImageError(
+                    "이미지 다운로드 실패: 접근 권한이 없거나 URL이 올바르지 않습니다."
+                  )
+                }
+              />
+            ) : (
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg border bg-slate-50">
+                <FileText className="h-6 w-6 text-slate-400" />
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-xs font-medium text-slate-700">
+                {fileNameFromUrl(value)}
+              </p>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                {/* 교체 */}
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={loading}
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <Upload className="h-3 w-3" />
+                  교체
+                </button>
+                {/* 원본 */}
+                <a
+                  href={value}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50"
+                >
+                  원본
+                </a>
+              </div>
+            </div>
+
+            {/* 삭제 */}
+            <button
+              type="button"
+              onClick={onClear}
+              disabled={loading}
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+              title="삭제"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>
