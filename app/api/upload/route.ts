@@ -9,8 +9,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "파일이 없습니다." }, { status: 400 });
     }
 
-    // 파일 크기 제한 (5MB)
-    const maxSize = 5 * 1024 * 1024;
+    // 파일 크기 제한 (30MB)
+    const maxSize = 30 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
         {

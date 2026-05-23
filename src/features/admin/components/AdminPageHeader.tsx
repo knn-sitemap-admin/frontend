@@ -82,9 +82,9 @@ export function AdminPageHeader({ className }: AdminPageHeaderProps) {
 
       {/* 데스크탑 메뉴 */}
       <nav
-        className="hidden lg:flex flex-1 max-w-[80%] px-8 min-w-0"
+        className="hidden lg:flex flex-1 max-w-[75%] xl:max-w-[80%] px-2 xl:px-6 min-w-0 justify-center"
       >
-        <div className="relative flex items-center gap-1 p-1 bg-gray-100/50 rounded-2xl border border-gray-200/30 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden">
+        <div className="relative flex items-center justify-between gap-0.5 xl:gap-1 p-1 bg-gray-100/50 rounded-2xl border border-gray-200/30 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -94,18 +94,18 @@ export function AdminPageHeader({ className }: AdminPageHeaderProps) {
                 key={item.key}
                 href={item.href}
                 className={cn(
-                  "relative group px-3.5 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 whitespace-nowrap",
+                  "relative group px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl transition-all duration-300 flex items-center gap-1 xl:gap-1.5 whitespace-nowrap flex-1 justify-center",
                   isActive
                     ? "bg-white shadow-sm border border-gray-100 z-10"
                     : "hover:bg-white/40 text-gray-500 hover:text-gray-900"
                 )}
               >
                 <Icon className={cn(
-                  "h-4 w-4 transition-colors",
+                  "h-3.5 w-3.5 xl:h-4 xl:w-4 transition-colors hidden xl:inline-block",
                   isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
                 )} />
                 <span className={cn(
-                  "text-[13px] font-bold tracking-tight",
+                  "text-[11px] xl:text-[12px] 2xl:text-[13px] font-bold tracking-tight",
                   isActive ? "text-gray-900" : "text-gray-500 group-hover:text-gray-900"
                 )}>
                   {item.label}

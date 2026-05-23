@@ -436,8 +436,8 @@ function AccountEditFormModalBody({
       setFieldError(field, null);
 
       for (let i = 0; i < files.length; i++) {
-        if (files[i].size > 5 * 1024 * 1024) {
-          setFieldError(field, "파일 중 하나가 너무 큽니다. 최대 5MB 까지 가능합니다.");
+        if (files[i].size > 30 * 1024 * 1024) {
+          setFieldError(field, "파일 중 하나가 너무 큽니다. 최대 30MB 까지 가능합니다.");
           if (e.currentTarget) e.currentTarget.value = "";
           return;
         }

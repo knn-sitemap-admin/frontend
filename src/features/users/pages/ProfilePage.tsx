@@ -184,7 +184,7 @@ export default function ProfilePage() {
 
         setUploadErrors((prev) => ({ ...prev, [field]: undefined }));
 
-        const maxUploadBytes = 5 * 1024 * 1024; // 5MB
+        const maxUploadBytes = 30 * 1024 * 1024; // 30MB
 
         for (let i = 0; i < files.length; i++) {
           if (files[i].size > maxUploadBytes) {
