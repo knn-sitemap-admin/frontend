@@ -2,33 +2,33 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription
 } from "@/components/atoms/Dialog/Dialog";
 import { getEmployeePerformance, getAvailablePeriods } from "@/features/performances/api/performance";
-import { 
-  StatCard, 
-  StatCardsGrid 
+import {
+  StatCard,
+  StatCardsGrid
 } from "@/features/data-table";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Legend 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
 } from "recharts";
-import { 
-  MapPin, 
-  Calendar, 
+import {
+  MapPin,
+  Calendar,
   TrendingUp,
-  Loader2 as Spinner 
+  Loader2 as Spinner
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/atoms/Button/Button";
@@ -70,14 +70,14 @@ export function AccountSurveyModal({
   // 차트 데이터 및 통계 계산
   const { chartData, totals } = React.useMemo(() => {
     if (!performance) return { chartData: [], totals: { surveyCount: 0 } };
-    
+
     const data = performance.monthlyStats.map((stat: any) => ({
       name: `${stat.month}월`,
       "답사 건수": stat.surveyCount || 0,
     }));
 
     const totalSurveys = performance.monthlyStats.reduce(
-      (acc: number, curr: any) => acc + (curr.surveyCount || 0), 
+      (acc: number, curr: any) => acc + (curr.surveyCount || 0),
       0
     );
 
@@ -89,12 +89,12 @@ export function AccountSurveyModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
-             <div className="bg-orange-100 p-2 rounded-lg">
-                <MapPin className="h-5 w-5 text-orange-600" />
-             </div>
-             <DialogTitle className="text-2xl font-black">
-                {accountName}님 답사 현황
-             </DialogTitle>
+            <div className="bg-orange-100 p-2 rounded-lg">
+              <MapPin className="h-5 w-5 text-orange-600" />
+            </div>
+            <DialogTitle className="text-2xl font-black">
+              {accountName}님 답사 현황
+            </DialogTitle>
           </div>
           <DialogDescription>
             {selectedYear}년도 월별 현장 답사 활동 내역입니다.
@@ -113,8 +113,8 @@ export function AccountSurveyModal({
                   size="sm"
                   className={cn(
                     "h-8 px-4 text-xs font-bold rounded-lg transition-all",
-                    selectedYear === parseInt(year) 
-                      ? "bg-white shadow-sm text-orange-600" 
+                    selectedYear === parseInt(year)
+                      ? "bg-white shadow-sm text-orange-600"
                       : "text-gray-500 hover:bg-white/50"
                   )}
                   onClick={() => setSelectedYear(parseInt(year))}
@@ -151,26 +151,26 @@ export function AccountSurveyModal({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} 
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
                       dy={10}
                     />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
                       tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
                     />
-                    <Tooltip 
+                    <Tooltip
                       cursor={{ fill: '#fff7ed' }}
                       contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                     />
-                    <Bar 
-                      dataKey="답사 건수" 
-                      fill="#f97316" 
-                      radius={[6, 6, 0, 0]} 
+                    <Bar
+                      dataKey="답사 건수"
+                      fill="#f97316"
+                      radius={[6, 6, 0, 0]}
                       barSize={32}
                     />
                   </BarChart>
@@ -189,7 +189,7 @@ export function AccountSurveyModal({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 bg-white">
-                {chartData.map((stat, i) => (
+                {chartData.map((stat: any, i: number) => (
                   <tr key={i} className="hover:bg-orange-50/30 transition-colors group">
                     <td className="py-3 px-6 font-bold text-gray-600">{stat.name}</td>
                     <td className="py-3 px-6 text-right font-black text-orange-600 group-hover:scale-110 transition-transform origin-right">
@@ -201,9 +201,9 @@ export function AccountSurveyModal({
             </table>
           </div>
         </div>
-        
+
         <div className="mt-8 flex justify-end">
-          <Button 
+          <Button
             onClick={onClose}
             className="rounded-xl px-8 font-bold bg-gray-900 hover:bg-black transition-all"
           >

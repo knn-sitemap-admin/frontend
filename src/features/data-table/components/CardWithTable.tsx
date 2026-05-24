@@ -21,6 +21,7 @@ interface CardWithTableProps {
   /** 카드 본문 상단 (차트 등) */
   children: ReactNode;
   className?: string;
+  description?: string;
 }
 
 export function CardWithTable({
