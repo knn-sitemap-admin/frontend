@@ -64,6 +64,12 @@ export function TeamStatsCards({
                     </div>
                   </div>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">답사건수:</span>
+                  <span className="font-semibold text-orange-600">
+                    {stat.surveyCount.toLocaleString()}건
+                  </span>
+                </div>
                 <div className="flex justify-between items-center pt-2 border-t text-xs text-gray-500">
                   <span>인원: {stat.memberCount}명</span>
                   <span>평균수당: {formatCurrency(Math.round(stat.avgAllowance))}</span>

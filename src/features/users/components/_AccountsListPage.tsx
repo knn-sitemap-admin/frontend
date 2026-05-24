@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Trash2, Edit, List, ChevronUp, ChevronDown } from "lucide-react";
+import { Trash2, Edit, List, ChevronUp, ChevronDown, MapPin } from "lucide-react";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import {
   Avatar,

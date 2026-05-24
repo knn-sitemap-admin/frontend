@@ -33,6 +33,7 @@ import {
   Calendar, 
   User as UserIcon,
   ChevronRight,
+  MapPin,
   Loader2 as Spinner
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -94,12 +95,13 @@ export function EmployeePerformanceView() {
       totalContracts: stat.totalContractCount,
       completedContracts: stat.completedContractCount,
       rejectedContracts: stat.rejectedContractCount,
+      surveyCount: stat.surveyCount,
     }));
   }, [performance]);
 
   // 연간 합계 계산
   const totals = useMemo(() => {
-    if (!performance) return { grossSales: 0, netProfit: 0, finalPayout: 0, totalContractCount: 0, completedContractCount: 0, rejectedContractCount: 0 };
+    if (!performance) return { grossSales: 0, netProfit: 0, finalPayout: 0, totalContractCount: 0, completedContractCount: 0, rejectedContractCount: 0, surveyCount: 0 };
     return performance.monthlyStats.reduce((acc: any, curr: any) => ({
       grossSales: acc.grossSales + curr.grossSales,
       netProfit: acc.netProfit + curr.netProfit,
@@ -107,7 +109,8 @@ export function EmployeePerformanceView() {
       totalContractCount: acc.totalContractCount + curr.totalContractCount,
       completedContractCount: acc.completedContractCount + curr.completedContractCount,
       rejectedContractCount: acc.rejectedContractCount + curr.rejectedContractCount,
-    }), { grossSales: 0, netProfit: 0, finalPayout: 0, totalContractCount: 0, completedContractCount: 0, rejectedContractCount: 0 });
+      surveyCount: acc.surveyCount + (curr.surveyCount || 0),
+    }), { grossSales: 0, netProfit: 0, finalPayout: 0, totalContractCount: 0, completedContractCount: 0, rejectedContractCount: 0, surveyCount: 0 });
   }, [performance]);
 
   return (
@@ -205,6 +208,12 @@ export function EmployeePerformanceView() {
               value={`${totals.totalContractCount}건`}
               description={`완료 ${totals.completedContractCount} / 부결 ${totals.rejectedContractCount}`}
               icon={<Users className="h-6 w-6" />}
+              variant="orange"
+            />
+            <StatCard
+              label="연간 총 답사"
+              value={`${totals.surveyCount}건`}
+              icon={<MapPin className="h-6 w-6" />}
               variant="orange"
             />
           </StatCardsGrid>
@@ -346,6 +355,7 @@ export function EmployeePerformanceView() {
                     <th className="py-3 px-4 text-center">총 계약</th>
                     <th className="py-3 px-4 text-center text-emerald-600">완료</th>
                     <th className="py-3 px-4 text-center text-red-500">부결</th>
+                    <th className="py-3 px-4 text-center text-orange-600">답사</th>
                     <th className="py-3 px-4 text-right">기여 총 매출</th>
                     <th className="py-3 px-4 text-right">회사 수익</th>
                     <th className="py-3 px-4 text-right">영업자 수익</th>
@@ -369,6 +379,9 @@ export function EmployeePerformanceView() {
                         <td className="py-4 px-4 text-center">
                           <span className="text-red-500 font-bold">{stat.rejectedContracts}건</span>
                         </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-orange-600 font-bold">{stat.surveyCount}건</span>
+                        </td>
                         <td className="py-4 px-4 text-right font-medium tabular-nums">{formatCurrency(stat.total)}</td>
                         <td className="py-4 px-4 text-right text-emerald-600 font-medium tabular-nums">{formatCurrency(stat["회사 수익"])}</td>
                         <td className="py-4 px-4 text-right text-blue-600 font-bold tabular-nums">{formatCurrency(stat["영업자 수익"])}</td>
@@ -384,6 +397,7 @@ export function EmployeePerformanceView() {
                     <td className="py-4 px-4 text-center">{totals.totalContractCount}건</td>
                     <td className="py-4 px-4 text-center text-emerald-400">{totals.completedContractCount}건</td>
                     <td className="py-4 px-4 text-center text-red-400">{totals.rejectedContractCount}건</td>
+                    <td className="py-4 px-4 text-center text-orange-400">{totals.surveyCount}건</td>
                     <td className="py-4 px-4 text-right">{formatCurrency(totals.grossSales)}</td>
                     <td className="py-4 px-4 text-right text-emerald-400">{formatCurrency(totals.netProfit)}</td>
                     <td className="py-4 px-4 text-right text-blue-400">{formatCurrency(totals.finalPayout)}</td>

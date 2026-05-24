@@ -126,6 +126,13 @@ export function TeamDetailView({
               render: (value) => <span className="text-red-500 font-bold">{value}건</span>,
             },
             {
+              key: "surveyCount",
+              label: "답사",
+              sortable: true,
+              align: "center",
+              render: (value) => <span className="text-orange-500 font-bold">{value}건</span>,
+            },
+            {
               key: "grossSales",
               label: "총매출",
               sortable: true,

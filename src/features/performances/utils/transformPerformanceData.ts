@@ -19,6 +19,7 @@ export function transformTeamSummaryToTeamStat(team: TeamSummary): TeamStat {
     totalContracts: team.totalContractCount,
     completedContracts: team.completedContractCount,
     rejectedContracts: team.rejectedContractCount,
+    surveyCount: team.surveyCount,
     memberCount: team.memberCount,
     avgAllowance: team.memberCount > 0 ? team.finalPayout / team.memberCount : 0,
     avgGrossSales: team.memberCount > 0 ? team.grossSales / team.memberCount : 0,
@@ -34,6 +35,7 @@ export function transformCompanyKpiToPerformanceStats(
   totalContracts: number;
   completedContracts: number;
   rejectedContracts: number;
+  surveyCount: number;
   totalAllowance: number; // 수당 총합
   totalGrossSales: number; // 총매출
   totalNetProfit: number; // 순수익
@@ -43,6 +45,7 @@ export function transformCompanyKpiToPerformanceStats(
     totalContracts: company.totalContractCount,
     completedContracts: company.completedContractCount,
     rejectedContracts: company.rejectedContractCount,
+    surveyCount: company.surveyCount,
     totalAllowance: 0, // 요약 대시보드에서 수당합계 대신 매출/수익 위주로 표시할 수 있음
     totalGrossSales: company.grossSales, // 총매출
     totalNetProfit: company.netProfit, // 순수익
@@ -65,6 +68,7 @@ export function transformTeamEmployeeToPerformanceData(
     totalContractCount: employee.totalContractCount,
     completedContractCount: employee.completedContractCount,
     rejectedContractCount: employee.rejectedContractCount,
+    surveyCount: employee.surveyCount,
     grossSales: employee.grossSales,
     netProfit: employee.netProfit,
     finalAllowance: employee.finalPayout,

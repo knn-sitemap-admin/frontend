@@ -17,7 +17,7 @@ import { TeamStatsCards } from "./TeamStatsCards";
 import { TeamAllowanceBarChart } from "./TeamAllowanceBarChart";
 import { TeamDetailView } from "./TeamDetailView";
 import { CHART_CONFIG } from "../utils/chartConfig";
-import { DollarSign, TrendingUp, Users, FileText } from "lucide-react";
+import { DollarSign, TrendingUp, Users, FileText, MapPin } from "lucide-react";
 import { formatCurrency } from "@/components/contract-management/utils/contractUtils";
 import {
   getPerformanceSummary,
@@ -37,6 +37,7 @@ import {
   TabsTrigger
 } from "@/components/atoms/Tabs/Tabs";
 import { EmployeePerformanceView } from "./EmployeePerformanceView";
+import { PerformanceComparisonView } from "./PerformanceComparisonView";
 import { cn } from "@/lib/cn";
 
 export function Performance() {
@@ -115,6 +116,7 @@ export function Performance() {
     totalContracts,
     completedContracts,
     rejectedContracts,
+    surveyCount,
     totalGrossSales,
     totalNetProfit,
     totalEmployees
@@ -124,6 +126,7 @@ export function Performance() {
         totalContracts: 0,
         completedContracts: 0,
         rejectedContracts: 0,
+        surveyCount: 0,
         totalGrossSales: 0,
         totalNetProfit: 0,
         totalEmployees: 0,
@@ -265,6 +268,12 @@ export function Performance() {
               variant="red"
             />
             <StatCard
+              label="총 답사 건수"
+              value={`${surveyCount.toLocaleString()}건`}
+              icon={<MapPin className="h-6 w-6" />}
+              variant="orange"
+            />
+            <StatCard
               label="총 인원수"
               value={`${totalEmployees}명`}
               icon={<Users className="h-6 w-6" />}
@@ -286,6 +295,12 @@ export function Performance() {
                   className="px-8 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-bold transition-all"
                 >
                   영업자별 실적
+                </TabsTrigger>
+                <TabsTrigger
+                  value="spread"
+                  className="px-8 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-bold transition-all"
+                >
+                  현장답사 통계
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -350,6 +365,13 @@ export function Performance() {
 
             <TabsContent value="employee" className="focus:outline-none">
               <EmployeePerformanceView />
+            </TabsContent>
+
+            <TabsContent value="spread" className="focus:outline-none">
+               <PerformanceComparisonView 
+                 filterQuery={filterQuery} 
+                 yearOptions={yearOptions} 
+               />
             </TabsContent>
           </Tabs>
         </div>

@@ -8,6 +8,7 @@ export interface TeamStat {
   totalContracts: number;
   completedContracts: number;
   rejectedContracts: number;
+  surveyCount: number;
   memberCount: number;
   avgAllowance: number;
   avgGrossSales: number;
@@ -17,6 +18,7 @@ export interface PerformanceStats {
   totalContracts: number;
   completedContracts: number;
   rejectedContracts: number;
+  surveyCount: number;
   totalAllowance: number;
   totalGrossSales: number;
   totalNetProfit: number;
@@ -35,6 +37,7 @@ export function calculateTeamStats(
       totalContracts: number;
       completedContracts: number;
       rejectedContracts: number;
+      surveyCount: number;
       memberCount: number;
     }
   > = {};
@@ -48,6 +51,7 @@ export function calculateTeamStats(
         totalContracts: 0,
         completedContracts: 0,
         rejectedContracts: 0,
+        surveyCount: 0,
         memberCount: 0,
       };
     }
@@ -57,6 +61,7 @@ export function calculateTeamStats(
     stats[item.team].totalContracts += item.totalContractCount;
     stats[item.team].completedContracts += item.completedContractCount;
     stats[item.team].rejectedContracts += item.rejectedContractCount;
+    stats[item.team].surveyCount += (item.surveyCount || 0);
     stats[item.team].memberCount += 1;
   });
 
@@ -69,6 +74,7 @@ export function calculateTeamStats(
       totalContracts: data.totalContracts,
       completedContracts: data.completedContracts,
       rejectedContracts: data.rejectedContracts,
+      surveyCount: data.surveyCount,
       memberCount: data.memberCount,
       avgAllowance: data.totalAllowance / data.memberCount,
       avgGrossSales: data.totalGrossSales / data.memberCount,
@@ -91,6 +97,10 @@ export function calculateOverallStats(
     (sum, item) => sum + item.rejectedContractCount,
     0
   );
+  const surveyCount = performanceData.reduce(
+    (sum, item) => sum + (item.surveyCount || 0),
+    0
+  );
   const totalAllowance = performanceData.reduce(
     (sum, item) => sum + item.finalAllowance,
     0
@@ -109,6 +119,7 @@ export function calculateOverallStats(
     totalContracts,
     completedContracts,
     rejectedContracts,
+    surveyCount,
     totalAllowance,
     totalGrossSales,
     totalNetProfit,

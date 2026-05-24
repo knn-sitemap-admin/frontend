@@ -19,6 +19,7 @@ import type { UserRow, RoleKey } from "@/features/users/types";
 import { api } from "@/shared/api/api";
 import { useToast } from "@/hooks/use-toast";
 import { SearchBar } from "@/features/table/components/SearchBar";
+import { SurveyPerformanceDetailModal } from "@/features/account-favorites/components/SurveyPerformanceDetailModal";
 // getCredentialIdFromAccountId는 더 이상 사용되지 않습니다.
 
 export default function AccountsPage() {
@@ -118,9 +119,9 @@ export default function AccountsPage() {
           queryClient.setQueryData(key, data);
         });
       }
-      
+
       const errorMessage = error?.response?.data?.message || error?.message || "알 수 없는 오류가 발생했습니다.";
-      
+
       toast({
         title: "계정 상태 변경 실패",
         description: `사유: ${errorMessage}`,
@@ -438,6 +439,15 @@ export default function AccountsPage() {
           onSuccess={handleEditSuccess}
         />
       )}
+
+      {/* TODO: 추후 구현 
+      답사 현황 모달
+      <SurveyPerformanceDetailModal
+        open={!!viewingFavoritesAccountId}
+        accountId={viewingFavoritesAccountId}
+        accountName={viewingFavoritesAccountName}
+        onClose={() => { }}
+      /> */}
 
       {/* 즐겨찾기 목록 모달 */}
       <AccountFavoritesModal

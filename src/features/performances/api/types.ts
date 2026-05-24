@@ -22,6 +22,7 @@ export interface CompanyKpi {
   totalContractCount: number; // 전체 계약 수
   completedContractCount: number; // 완료 계약 수
   rejectedContractCount: number; // 부결 계약 수
+  surveyCount: number; // 답사 건수
   headcount: number; // 총 인원수
 }
 
@@ -34,6 +35,7 @@ export interface TeamSummary {
   totalContractCount: number; // 팀 전체 계약 건수
   completedContractCount: number; // 팀 완료 계약 건수
   rejectedContractCount: number; // 팀 부결 계약 건수
+  surveyCount: number; // 팀 답사 건수
   memberCount: number; // 팀원 수
 }
 
@@ -46,6 +48,7 @@ export interface TopTeam {
   totalContractCount: number;
   completedContractCount: number;
   rejectedContractCount: number;
+  surveyCount: number; // 답사 건수
   rank: 1 | 2 | 3;
 }
 
@@ -66,6 +69,7 @@ export interface TeamEmployeeItem {
   totalContractCount: number; // 직원이 참여한 전체 계약 건수
   completedContractCount: number; // 직원이 참여한 완료 계약 건수
   rejectedContractCount: number; // 직원이 참여한 부결 계약 건수
+  surveyCount: number; // 직원의 답사 건수
 }
 
 export interface TeamEmployeesResponse {
@@ -85,6 +89,7 @@ export interface EmployeeMonthlyStat {
   totalContractCount: number;
   completedContractCount: number;
   rejectedContractCount: number;
+  surveyCount: number; // 월별 답사 건수
 }
 
 export interface EmployeePerformanceResponse {
