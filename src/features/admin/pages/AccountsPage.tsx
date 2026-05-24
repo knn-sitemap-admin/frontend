@@ -19,27 +19,25 @@ import type { UserRow, RoleKey } from "@/features/users/types";
 import { api } from "@/shared/api/api";
 import { useToast } from "@/hooks/use-toast";
 import { SearchBar } from "@/features/table/components/SearchBar";
-import { SurveyPerformanceDetailModal } from "@/features/account-favorites/components/SurveyPerformanceDetailModal";
-// getCredentialIdFromAccountId는 더 이상 사용되지 않습니다.
+import { AccountSurveyDetailModal } from "@/features/account-favorites/components/SurveyPerformanceDetailModal";
 
 export default function AccountsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [editingCredentialId, setEditingCredentialId] = useState<string | null>(
-    null,
-  );
-  const [editingPositionRank, setEditingPositionRank] = useState<string | null>(
-    null,
-  );
-  const [viewingFavoritesAccountId, setViewingFavoritesAccountId] = useState<
-    string | null
-  >(null);
-  const [viewingFavoritesAccountName, setViewingFavoritesAccountName] =
-    useState<string>("");
-  const [viewingReservedPinsAccountId, setViewingReservedPinsAccountId] =
-    useState<string | null>(null);
-  const [viewingReservedPinsAccountName, setViewingReservedPinsAccountName] =
-    useState<string>("");
+  const [editingCredentialId, setEditingCredentialId] = useState<string | null>(null);
+  const [editingPositionRank, setEditingPositionRank] = useState<string | null>(null);
+
+  // 즐겨찾기 관련 상태
+  const [viewingFavoritesAccountId, setViewingFavoritesAccountId] = useState<string | null>(null);
+  const [viewingFavoritesAccountName, setViewingFavoritesAccountName] = useState<string>("");
+
+  // 예약한 핀 관련 상태
+  const [viewingReservedPinsAccountId, setViewingReservedPinsAccountId] = useState<string | null>(null);
+  const [viewingReservedPinsAccountName, setViewingReservedPinsAccountName] = useState<string>("");
+
+  // 답사 현황 관련 핵심 상태
+  const [viewingSurveyPerformanceAccountId, setViewingSurveyPerformanceAccountId] = useState<string | null>(null);
+  const [viewingSurveyPerformanceAccountName, setViewingSurveyPerformanceAccountName] = useState<string>("");
 
   // 검색 및 정렬 상태
   const [searchNameInput, setSearchNameInput] = useState<string>("");
@@ -56,72 +54,73 @@ export default function AccountsPage() {
   }, [searchNameInput]);
 
   // 정렬 핸들러
-  const handleSort = (
-    column: "name" | "rank" | null,
-    direction: "asc" | "desc",
-  ) => {
+  const handleSort = (column: "name" | "rank" | null, direction: "asc" | "desc") => {
     setSortColumn(column);
     setSortDirection(direction);
   };
 
-  // 백엔드 API용 sort 값 (null이면 rank 사용)
   const apiSort = sortColumn || "rank";
 
-  // 계정 목록 조회 (새로운 API 사용)
+  // 계정 목록 조회
   const {
     data: employeesList,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["employees-list", apiSort, searchName],
-    queryFn: () =>
-      getEmployeesList({ sort: apiSort, name: searchName || undefined }),
+    queryFn: () => getEmployeesList({ sort: apiSort, name: searchName || undefined }),
   });
 
-  // 계정 비활성화 토글 (optimistic update)
+  // AccountsPage.tsx 내부의 useQuery 부분을 아래 코드로 교체하세요.
+
+  const {
+    data: surveyPerformanceResponse,
+    isLoading: isSurveyPerformanceLoading
+  } = useQuery({
+    queryKey: ["survey-performance", viewingSurveyPerformanceAccountId],
+    queryFn: async () => {
+      if (!viewingSurveyPerformanceAccountId) return [];
+
+      // 🎯 백엔드 새 스펙: /performance/survey/employees/:accountId
+      const res = await api.get(`/performance/survey/employees/${viewingSurveyPerformanceAccountId}`);
+
+      // 백엔드 { success: true, data: [...] } 구조에서 배열 데이터 추출
+      return res.data?.data ?? [];
+    },
+    // 계정 목록에서 직원을 클릭해 ID가 셋팅되었을 때만 트리거 (네트워크 낭비 방지)
+    enabled: !!viewingSurveyPerformanceAccountId,
+  });
+
+  // 계정 비활성화 토글
   const toggleAccountMutation = useMutation({
-    mutationFn: async ({
-      credentialId,
-      disabled,
-    }: { credentialId: string; disabled: boolean }) => {
+    mutationFn: async ({ credentialId, disabled }: { credentialId: string; disabled: boolean }) => {
       return await updateAccountDisabled(credentialId, disabled);
     },
-    // Optimistically update the cached list
     onMutate: async ({ credentialId, disabled }) => {
       const targetIdStr = String(credentialId);
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: ["employees-list"] });
-
-      // Snapshot the previous value for all matching queries
       const queryKeyPrefix = ["employees-list"];
       const previousQueriesData = queryClient.getQueriesData<EmployeeListItem[]>({ queryKey: queryKeyPrefix });
 
-      // Optimistically update all matching queries
       queryClient.setQueriesData<EmployeeListItem[]>(
         { queryKey: queryKeyPrefix },
         (oldData) => {
           if (!oldData || !Array.isArray(oldData)) return oldData;
           return oldData.map((item) =>
-            String(item.credentialId) === targetIdStr
-              ? { ...item, isDisabled: disabled }
-              : item
+            String(item.credentialId) === targetIdStr ? { ...item, isDisabled: disabled } : item
           );
         }
       );
-
       return { previousQueriesData };
     },
     onError: (error: any, variables, context: any) => {
       console.error("[Mutation] 계정 상태 토글 실패:", error);
-      // Rollback to previous data on error
       if (context?.previousQueriesData) {
         context.previousQueriesData.forEach(([key, data]: [any, any]) => {
           queryClient.setQueryData(key, data);
         });
       }
-
       const errorMessage = error?.response?.data?.message || error?.message || "알 수 없는 오류가 발생했습니다.";
-
       toast({
         title: "계정 상태 변경 실패",
         description: `사유: ${errorMessage}`,
@@ -129,7 +128,6 @@ export default function AccountsPage() {
       });
     },
     onSuccess: () => {
-      // Ensure fresh data from server
       queryClient.invalidateQueries({ queryKey: ["employees-list"] });
       toast({
         title: "계정 상태 변경 완료",
@@ -140,10 +138,7 @@ export default function AccountsPage() {
 
   // 이미지 다운로드 권한 토글 mutation
   const toggleImageDownloadMutation = useMutation({
-    mutationFn: async ({
-      credentialId,
-      canDownload,
-    }: { credentialId: string; canDownload: boolean }) => {
+    mutationFn: async ({ credentialId, canDownload }: { credentialId: string; canDownload: boolean }) => {
       return await updateAccountCanDownloadImage(credentialId, canDownload);
     },
     onMutate: async ({ credentialId, canDownload }) => {
@@ -157,9 +152,7 @@ export default function AccountsPage() {
         (oldData) => {
           if (!oldData || !Array.isArray(oldData)) return oldData;
           return oldData.map((item) =>
-            String(item.credentialId) === targetIdStr
-              ? { ...item, canDownloadImage: canDownload }
-              : item
+            String(item.credentialId) === targetIdStr ? { ...item, canDownloadImage: canDownload } : item
           );
         }
       );
@@ -201,8 +194,7 @@ export default function AccountsPage() {
     onError: (error: any) => {
       toast({
         title: "계정 삭제 실패",
-        description:
-          error?.response?.data?.message || "계정 삭제 중 오류가 발생했습니다.",
+        description: error?.response?.data?.message || "계정 삭제 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     },
@@ -211,21 +203,20 @@ export default function AccountsPage() {
   // 백엔드 응답을 UserRow 형식으로 변환
   const transformToUserRows = (employees: EmployeeListItem[]): UserRow[] => {
     return employees.map((employee) => {
-      // 디버깅 로그 추가: 특정 계정의 상태 확인
-      if (employee.credentialId === "8" || String(employee.credentialId) === "8") {
-      }
       return {
-        id: employee.accountId, // accountId를 id로 사용
-        credentialId: String(employee.credentialId), // 확실히 문자열로 변환
+        id: employee.accountId,
+        credentialId: String(employee.credentialId),
         name: employee.name || "이름 없음",
         phone: employee.phone || undefined,
         positionRank: employee.positionRank || undefined,
         photo_url: employee.profileUrl || undefined,
         teamName: employee.teamName || undefined,
-        favoritePins: employee.favoritePins || [], // 계정별 즐겨찾기 핀 목록 포함
-        reservedPinDrafts: employee.reservedPinDrafts || [], // 계정별 예약한 핀 목록 포함
-        role: employee.role, // role 정보 포함
-        disabled: !!employee.isDisabled, // 확실히 불리언으로 변환
+        favoritePins: employee.favoritePins || [],
+        reservedPinDrafts: employee.reservedPinDrafts || [],
+        // 💡 목록 조회 시 기본 요약정보 바딩을 유지하기 위한 로직
+        surveySummary: (employee as any).surveySummary || { totalCount: 0 },
+        role: employee.role,
+        disabled: !!employee.isDisabled,
         canDownloadImage: !!employee.canDownloadImage,
       };
     });
@@ -234,12 +225,9 @@ export default function AccountsPage() {
   const userRows = useMemo(() => {
     if (!employeesList) return [];
     let rows = transformToUserRows(employeesList);
-
-    // 내림차순일 때 배열 뒤집기 (백엔드는 항상 오름차순으로 반환)
     if (sortDirection === "desc") {
       rows = [...rows].reverse();
     }
-
     return rows;
   }, [employeesList, sortDirection]);
 
@@ -247,16 +235,10 @@ export default function AccountsPage() {
   const handleRemove = async (accountId: string) => {
     const account = userRows.find((row) => row.id === accountId);
     const credentialId = account?.credentialId;
-
     if (!credentialId) {
-      toast({
-        title: "오류",
-        description: "계정 정보를 찾을 수 없습니다.",
-        variant: "destructive",
-      });
+      toast({ title: "오류", description: "계정 정보를 찾을 수 없습니다.", variant: "destructive" });
       return;
     }
-
     deleteAccountMutation.mutate(credentialId);
   };
 
@@ -264,70 +246,39 @@ export default function AccountsPage() {
   const handleToggleStatus = (accountId: string, currentDisabled: boolean) => {
     const account = userRows.find((row) => row.id === accountId);
     const credentialId = account?.credentialId;
-
     if (!credentialId) {
-      toast({
-        title: "오류",
-        description: "계정 정보를 찾을 수 없습니다.",
-        variant: "destructive",
-      });
+      toast({ title: "오류", description: "계정 정보를 찾을 수 없습니다.", variant: "destructive" });
       return;
     }
-
-    toggleAccountMutation.mutate({
-      credentialId,
-      disabled: !currentDisabled,
-    });
+    toggleAccountMutation.mutate({ credentialId, disabled: !currentDisabled });
   };
 
   // 이미지 다운로드 권한 토글 핸들러
-  const handleToggleImageDownload = (
-    accountId: string,
-    currentCanDownload: boolean,
-  ) => {
+  const handleToggleImageDownload = (accountId: string, currentCanDownload: boolean) => {
     const account = userRows.find((row) => row.id === accountId);
     const credentialId = account?.credentialId;
-
     if (!credentialId) {
-      toast({
-        title: "오류",
-        description: "계정 정보를 찾을 수 없습니다.",
-        variant: "destructive",
-      });
+      toast({ title: "오류", description: "계정 정보를 찾을 수 없습니다.", variant: "destructive" });
       return;
     }
-
-    toggleImageDownloadMutation.mutate({
-      credentialId,
-      canDownload: !currentCanDownload,
-    });
+    toggleImageDownloadMutation.mutate({ credentialId, canDownload: !currentCanDownload });
   };
 
-  // 역할 변경 핸들러 (현재는 사용하지 않지만 Props에 필요)
-  const handleChangeRole = (id: string, role: RoleKey) => {
-    // TODO: 역할 변경 기능이 필요하면 구현
-  };
+  const handleChangeRole = (id: string, role: RoleKey) => { };
 
   // 계정 수정 핸들러
   const handleEdit = async (accountId: string) => {
-    // userRows에서 해당 계정 찾기
     const account = userRows.find((row) => row.id === accountId);
     const positionRank = account?.positionRank || null;
     const credentialId = account?.credentialId;
-
     if (!credentialId) {
-      toast({
-        title: "오류",
-        description: "계정 정보를 찾을 수 없습니다.",
-        variant: "destructive",
-      });
+      toast({ title: "오류", description: "계정 정보를 찾을 수 없습니다.", variant: "destructive" });
       return;
     }
     setEditingCredentialId(credentialId);
     setEditingPositionRank(positionRank);
   };
 
-  // 수정 완료 핸들러
   const handleEditSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ["employees-list"] });
     setEditingCredentialId(null);
@@ -348,34 +299,39 @@ export default function AccountsPage() {
     setViewingReservedPinsAccountName(account?.name || "");
   };
 
-  // 현재 보고 있는 계정의 favoritePins 가져오기
+  // 답사 현황 보기 핸들러 (자식 리스트 컴포넌트에서 트리거됨)
+  const handleViewSurveyPerformance = (accountId: string) => {
+    const account = userRows.find((row) => row.id === accountId);
+    setViewingSurveyPerformanceAccountId(accountId);
+    setViewingSurveyPerformanceAccountName(account?.name || "");
+  };
+
   const viewingAccountFavorites = useMemo(() => {
     if (!viewingFavoritesAccountId) return null;
-    const account = userRows.find(
-      (row) => row.id === viewingFavoritesAccountId,
-    );
+    const account = userRows.find((row) => row.id === viewingFavoritesAccountId);
     return account?.favoritePins || [];
   }, [viewingFavoritesAccountId, userRows]);
 
-  // 현재 보고 있는 계정의 reservedPinDrafts 가져오기
   const viewingAccountReservedPins = useMemo(() => {
     if (!viewingReservedPinsAccountId) return null;
-    const account = userRows.find(
-      (row) => row.id === viewingReservedPinsAccountId,
-    );
+    const account = userRows.find((row) => row.id === viewingReservedPinsAccountId);
     return account?.reservedPinDrafts || [];
   }, [viewingReservedPinsAccountId, userRows]);
 
-  // 즐겨찾기 모달 닫기
   const handleCloseFavoritesModal = () => {
     setViewingFavoritesAccountId(null);
     setViewingFavoritesAccountName("");
   };
 
-  // 예약한 핀 모달 닫기
   const handleCloseReservedPinsModal = () => {
     setViewingReservedPinsAccountId(null);
     setViewingReservedPinsAccountName("");
+  };
+
+  // 답사 현황 모달 닫기 핸들러
+  const handleCloseSurveyPerformanceModal = () => {
+    setViewingSurveyPerformanceAccountId(null);
+    setViewingSurveyPerformanceAccountName("");
   };
 
   return (
@@ -406,9 +362,7 @@ export default function AccountsPage() {
 
       <div className="p-1 pb-8">
         {isLoading ? (
-          <div className="p-10 text-center text-muted-foreground">
-            로딩 중...
-          </div>
+          <div className="p-10 text-center text-muted-foreground">로딩 중...</div>
         ) : (
           <AccountsListPage
             rows={userRows}
@@ -419,6 +373,7 @@ export default function AccountsPage() {
             onEdit={handleEdit}
             onViewFavorites={handleViewFavorites}
             onViewReservedPins={handleViewReservedPins}
+            onViewSurveyPerformance={handleViewSurveyPerformance}
             sortColumn={sortColumn}
             sortDirection={sortDirection}
             onSort={handleSort}
@@ -440,14 +395,13 @@ export default function AccountsPage() {
         />
       )}
 
-      {/* TODO: 추후 구현 
-      답사 현황 모달
-      <SurveyPerformanceDetailModal
-        open={!!viewingFavoritesAccountId}
-        accountId={viewingFavoritesAccountId}
-        accountName={viewingFavoritesAccountName}
-        onClose={() => { }}
-      /> */}
+      {/* 💡 [연동 완] API 데이터 및 로딩 상태를 받아 컴포넌트에 바인딩 주입 */}
+      <AccountSurveyDetailModal
+        open={!!viewingSurveyPerformanceAccountId}
+        accountId={viewingSurveyPerformanceAccountId}
+        accountName={viewingSurveyPerformanceAccountName}
+        onClose={handleCloseSurveyPerformanceModal}
+      />
 
       {/* 즐겨찾기 목록 모달 */}
       <AccountFavoritesModal
