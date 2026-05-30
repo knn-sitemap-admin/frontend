@@ -53,6 +53,7 @@ import { distM } from "../../poi/lib/geometry";
 import { Viewport } from "../hooks/useMapHomeState/mapHome.types";
 
 import { NoticeBanner } from "../../components/NoticeBanner";
+import AddressPickerModal from "./components/AddressPickerModal";
 
 export function MapHomeUI(props: MapHomeUIProps) {
   const {
@@ -298,6 +299,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
     handleSubmitSearch,
     clearSearchMarkers,
     lastSearchCenterRef,
+    addressPickerState,
+    closeAddressPicker,
   } = usePlaceSearchOnMap({
     kakaoSDK,
     mapInstance,
@@ -817,6 +820,19 @@ export function MapHomeUI(props: MapHomeUIProps) {
         kakaoSDK={kakaoSDK}
         mapInstance={mapInstance}
       />
+
+      {/* 🔹 주소 선택 모달 */}
+      {addressPickerState && (
+        <AddressPickerModal
+          candidates={addressPickerState.candidates}
+          query={addressPickerState.query}
+          onSelect={(c) => {
+            addressPickerState.onSelect(c);
+            closeAddressPicker();
+          }}
+          onClose={closeAddressPicker}
+        />
+      )}
 
       <NoResultDialog
         open={noResultDialogOpen}

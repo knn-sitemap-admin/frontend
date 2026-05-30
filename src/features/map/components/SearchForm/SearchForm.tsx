@@ -5,7 +5,6 @@ import { Search, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Input } from "@/components/atoms/Input/Input";
 import { useToast } from "@/hooks/use-toast";
-import { isTooBroadKeyword } from "@/features/map/shared/utils/isTooBroadKeyword";
 
 export const FILTER_KEYS = ["all", "new", "old"] as const;
 export type FilterKey = (typeof FILTER_KEYS)[number];
