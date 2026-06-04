@@ -191,7 +191,7 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
   };
 
   const setCenterWithMarker = async (lat: number, lng: number, label?: string | null) => {
-    const NEAR_THRESHOLD_M = 800;
+    const NEAR_THRESHOLD_M = 20;
     type RealAroundPin = {
       id: string;
       lat: number;
@@ -229,7 +229,7 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
         tryReal(p.id, p.lat, p.lng, (p as any).title ?? (p as any).name ?? null, kind);
       });
       (effectiveServerDrafts ?? []).forEach((d: any) => {
-        tryReal(d.id, d.lat, d.lng, (d as any).title ?? (d as any).name ?? "답사예정", "question");
+        tryReal(`__visit__${d.id}`, d.lat, d.lng, (d as any).title ?? (d as any).name ?? "답사예정", "question");
       });
       localDraftMarkers.forEach((m: any) => {
         const idStr = String(m.id);

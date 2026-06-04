@@ -79,7 +79,7 @@ function usePlaceSearchOnMap({
       const pos = extractLatLng(marker);
       if (!pos) return;
       const { lat, lng } = pos;
-      const NEAR_THRESHOLD_M = 800;
+      const NEAR_THRESHOLD_M = 20;
       const hasServerPointNear = (effectiveServerPoints ?? []).some((p) => {
         const pp = extractLatLng(p);
         return pp && distM(lat, lng, pp.lat, pp.lng) <= NEAR_THRESHOLD_M;
@@ -99,7 +99,7 @@ function usePlaceSearchOnMap({
   );
 
   const localDraftMarkers = useMemo(() => {
-    const NEAR_THRESHOLD_M = 800;
+    const NEAR_THRESHOLD_M = 20;
     return (rawLocalDraftMarkers ?? []).filter((m) => {
       const mm = extractLatLng(m);
       if (!mm) return false;
