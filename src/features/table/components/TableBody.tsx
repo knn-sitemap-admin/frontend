@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+
 import { cn } from "@/lib/cn";
 import type { TableBodyProps, TableData } from "../types/table";
 

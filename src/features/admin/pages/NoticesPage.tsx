@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Table, SearchBar, processTableData } from "@/features/table";
-import type { TableColumn, TableData } from "@/features/table/types/table";
+import type { TableData } from "@/features/table/types/table";
 import { useToast } from "@/hooks/use-toast";
 import { CreateNoticeForm } from "../components/CreateNoticeForm";
 
-import { Users, Eye, CheckCircle2, XCircle, Trash2 } from "lucide-react";
+import { Users, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import { getNotices, getNoticeReadStatus, deleteNotice, NoticeReadStatus } from "../api/notices";
 import { Button } from "@/components/atoms/Button/Button";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
@@ -32,10 +32,8 @@ export function NoticesPage() {
   const [notices, setNotices] = useState<NoticeData[]>([]);
   const [isLoadingNotices, setIsLoadingNotices] = useState(true);
   
-  // 조회 현황 모달 상태
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [statusData, setStatusData] = useState<NoticeReadStatus | null>(null);
-  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [currentNoticeTitle, setCurrentNoticeTitle] = useState("");
   
   // 삭제 컨펌 관련 상태
@@ -46,7 +44,6 @@ export function NoticesPage() {
   const { toast } = useToast();
 
   const handleCheckStatus = async (id: number, title: string) => {
-    setIsLoadingStatus(true);
     setCurrentNoticeTitle(title);
     try {
       const data = await getNoticeReadStatus(id);
@@ -54,8 +51,6 @@ export function NoticesPage() {
       setIsStatusOpen(true);
     } catch (error) {
       toast({ title: "조회 현황을 불러오지 못했습니다.", variant: "destructive" });
-    } finally {
-      setIsLoadingStatus(false);
     }
   };
 

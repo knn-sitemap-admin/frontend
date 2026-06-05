@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { useEscapeToClose } from "@/hooks/useEscapeToClose";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useRoadviewMinimap } from "./useRoadviewMinimap";
 
 type Props = {
@@ -37,7 +35,6 @@ export default function RoadviewHost({
   mapInstance,
 }: Props) {
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const lastActiveElRef = useRef<Element | null>(null);
 
   // 모바일 여부 감지
   const [isMobile, setIsMobile] = useState(false);

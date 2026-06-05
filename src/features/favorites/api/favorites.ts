@@ -65,7 +65,7 @@ export type ReorderGroupsRequest = {
 
 export async function reorderGroups(data: ReorderGroupsRequest): Promise<void> {
   try {
-    const response = await api.patch<{ message: string }>(
+    await api.patch<{ message: string }>(
       "/favorite/group/reorder",
       data
     );
@@ -79,7 +79,7 @@ export async function reorderGroups(data: ReorderGroupsRequest): Promise<void> {
 // 즐겨찾기 그룹 삭제
 export async function deleteFavoriteGroup(groupId: string): Promise<void> {
   try {
-    const response = await api.delete<{ message: string }>(
+    await api.delete<{ message: string }>(
       `/favorite/group/${groupId}`
     );
   } catch (error: any) {
@@ -95,7 +95,7 @@ export async function deleteFavoriteItem(
   itemId: string
 ): Promise<void> {
   try {
-    const response = await api.delete<{ message: string }>(
+    await api.delete<{ message: string }>(
       `/favorite-groups/${groupId}/items/${itemId}`
     );
   } catch (error: any) {
@@ -118,7 +118,7 @@ export async function reorderItems(
   data: ReorderItemsRequest
 ): Promise<void> {
   try {
-    const response = await api.patch<{ message: string }>(
+    await api.patch<{ message: string }>(
       `/favorite-groups/${groupId}/items/reorder`,
       data
     );

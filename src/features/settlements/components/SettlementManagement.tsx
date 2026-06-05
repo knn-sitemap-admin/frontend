@@ -20,7 +20,6 @@ import {
   AlertCircle,
   Search,
   ArrowRight,
-  MoreHorizontal,
   RefreshCw,
   Edit3,
   Users
@@ -66,7 +65,7 @@ export function SettlementManagement() {
   });
 
   // 정산 데이터 조회
-  const { data: settlements = [], isLoading, refetch } = useQuery({
+  const { data: settlements = [], isLoading } = useQuery({
     queryKey: ["settlements", selectedYear, selectedMonth],
     queryFn: () => getSettlements(parseInt(selectedYear), parseInt(selectedMonth)),
   });

@@ -1,5 +1,5 @@
-import React from "react";
-import { format, isSameDay, startOfDay } from "date-fns";
+import { format } from "date-fns";
+
 import { ko } from "date-fns/locale";
 import { Schedule } from "../api/schedules";
 import { cn } from "@/lib/cn";
@@ -8,7 +8,6 @@ import { getKoreanHoliday } from "../utils/holiday";
 
 interface ScheduleListViewProps {
   schedules: Schedule[];
-  currentMonth: Date;
   onScheduleClick: (schedule: Schedule) => void;
   getUserColor: (userId: string) => string;
   getScheduleColor: (category: string, colorId?: string) => any;
@@ -16,7 +15,6 @@ interface ScheduleListViewProps {
 
 export const ScheduleListView = ({
   schedules,
-  currentMonth,
   onScheduleClick,
   getUserColor,
   getScheduleColor,

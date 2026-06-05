@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import ScheduleCalendar from "@/features/schedules/components/ScheduleCalendar";
 
 export default function SchedulesPage() {

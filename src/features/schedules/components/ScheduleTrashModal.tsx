@@ -1,11 +1,9 @@
 "use client";
 
-import React from "react";
 import { format } from "date-fns";
-import { ko } from "date-fns/locale";
-import { RotateCcw, Trash2, X } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getDeletedSchedules, restoreSchedule, Schedule } from "@/features/schedules/api/schedules";
+import { RotateCcw, Trash2 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getDeletedSchedules, restoreSchedule } from "@/features/schedules/api/schedules";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/atoms/Dialog/Dialog";
 import { Button } from "@/components/atoms/Button/Button";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +16,6 @@ interface ScheduleTrashModalProps {
 
 export function ScheduleTrashModal({ isOpen, onClose, onRestored }: ScheduleTrashModalProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const { data: deletedSchedules = [], isLoading, refetch } = useQuery({
     queryKey: ["deletedSchedules"],

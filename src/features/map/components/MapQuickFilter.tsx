@@ -1,4 +1,4 @@
-import React from "react";
+
 import { cn } from "@/lib/cn";
 import { Map, Building2, House, CheckCircle2 } from "lucide-react";
 import { MapMenuKey } from "./menu/types/mapMenu.types";

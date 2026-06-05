@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import { cn } from "@/lib/cn";
@@ -26,8 +26,7 @@ export function Pagination({
     }
   };
 
-  const startList = (currentPage - 1) * listsPerPage + 1;
-  const endList = Math.min(currentPage * listsPerPage, totalLists);
+
 
   return (
     <div

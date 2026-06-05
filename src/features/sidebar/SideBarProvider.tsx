@@ -14,7 +14,6 @@ const SidebarCtx = createContext<
 export function SideBarProvider({ children }: { children: React.ReactNode }) {
   const state = useSidebarState();
   const {
-    items: reservations = [],
     reservationOrderMap = {},
     reservationOrderByPosKey = {},
   } = useScheduledReservations();

@@ -15,7 +15,7 @@ import {
 } from "@/features/data-table";
 import { Table, Pagination, SearchBar } from "@/features/table";
 import { Button } from "@/components/atoms/Button/Button";
-import { Wallet, Calendar, Plus, Search, PieChart, TrendingDown } from "lucide-react";
+import { Wallet, Calendar, Plus, PieChart, TrendingDown } from "lucide-react";
 import { formatCurrency } from "@/components/contract-management/utils/contractUtils";
 import {
   getExpenseSummary,
@@ -23,8 +23,6 @@ import {
   createExpense,
   updateExpense,
   deleteExpense,
-  getYearlyExpenseStats,
-  type ExpenseItem,
 } from "../api/expense";
 import { ExpenseAddModal, type ExpenseFormData } from "./ExpenseAddModal";
 import {
@@ -40,7 +38,7 @@ export function Expense() {
   const [editingItem, setEditingItem] = useState<ExpenseFormData | (ExpenseFormData & { id: string }) | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -105,7 +103,7 @@ export function Expense() {
     [selectedPeriod, selectedYear, selectedQuarter, selectedMonth]
   );
 
-  const { data: expenseSummary, isLoading: isLoadingSummary } = useQuery({
+  const { data: expenseSummary } = useQuery({
     queryKey: ["expense-summary", filterQuery],
     queryFn: () => getExpenseSummary(filterQuery),
   });

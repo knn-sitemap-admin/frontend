@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   format,
   addMonths,
@@ -19,7 +19,7 @@ import {
   subDays,
 } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Calendar as CalIcon, Bell, Phone, Check, X, ShieldCheck, Users, Coffee } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, FileText, Banknote, Home, Home as HomeIcon, Phone, Check, X, ShieldCheck, Users, Coffee } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/atoms/Button/Button";
@@ -238,7 +238,7 @@ export default function ScheduleCalendar() {
   // 기존 state 호환을 위해 유지 (또는 calendarData 직접 사용으로 리팩토링)
   const schedules = calendarData.schedules;
   const contracts = calendarData.contracts;
-  const isLoading = isCalendarLoading;
+
 
   // 검색 결과 필터링
   const searchResults = useMemo(() => {
@@ -417,13 +417,12 @@ export default function ScheduleCalendar() {
     }
   };
 
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+
 
   const handleCreateContract = (schedule: Schedule) => {
     setContractDefaultData({
       customerInfo: {
-        name: schedule.title || "",
+        name: "",
         contact: schedule.customerPhone || "",
       },
       contractSite: {

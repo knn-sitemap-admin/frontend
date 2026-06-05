@@ -11,7 +11,6 @@ import {
 } from "@/components/contract-management/utils/contractUtils";
 import { 
   DataTableSection, 
-  generateYearOptions, 
   StatCard, 
   StatCardsGrid 
 } from "@/features/data-table";
@@ -22,9 +21,7 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer, 
-  Legend, 
-  Cell
+  ResponsiveContainer
 } from "recharts";
 import { 
   Users, 
@@ -32,7 +29,6 @@ import {
   DollarSign, 
   Calendar, 
   User as UserIcon,
-  ChevronRight,
   MapPin,
   Loader2 as Spinner
 } from "lucide-react";

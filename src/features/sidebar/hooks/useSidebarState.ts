@@ -212,7 +212,6 @@ export function useSidebarState() {
   // 3) 내 예약 목록(서버 /survey-reservations/scheduled) — 전용 훅 사용
   const {
     items: scheduledItems,
-    loading: scheduledLoading,
     error: scheduledError,
     refetch: refetchScheduled,
     setItems: setScheduledItems, // 낙관적 업데이트용
@@ -709,23 +708,3 @@ export function useSidebarState() {
     setActiveReservedOnly,
   };
 }
-
-/* 초기 하드코딩 데이터 (즐겨찾기) */
-const DEFAULT_GROUPS: FavorateListItem[] = [
-  {
-    id: "fav1",
-    title: "7342",
-    subItems: [
-      { id: "sub1-1", title: "서울특별시 강남구 테헤란로 123" },
-      { id: "sub1-2", title: "부산광역시 해운대구 해운대해변로 264" },
-    ],
-  },
-  {
-    id: "fav2",
-    title: "9158",
-    subItems: [
-      { id: "sub2-1", title: "제주특별자치도 제주시 첨단로 242" },
-      { id: "sub2-2", title: "경기도 성남시 분당구 판교역로 166" },
-    ],
-  },
-];

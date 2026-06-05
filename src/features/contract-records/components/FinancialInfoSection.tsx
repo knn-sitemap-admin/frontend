@@ -34,14 +34,7 @@ export function FinancialInfoSection({
   onFinancialInfoChange,
   readOnly = false,
 }: FinancialInfoSectionProps) {
-  const handleInputChange = (
-    field: keyof FinancialInfo,
-    value: string | number
-  ) => {
-    const numValue =
-      typeof value === "string" ? parseNumberFromFormatted(value) : value;
-    onFinancialInfoChange({ ...financialInfo, [field]: numValue });
-  };
+
 
   // 천단위 구분자가 포함된 숫자 입력 핸들러
   const handleFormattedInputChange = (

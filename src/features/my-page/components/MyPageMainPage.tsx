@@ -3,22 +3,11 @@
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/atoms/Card/Card";
-import { Button } from "@/components/atoms/Button/Button";
 import { User, Users, FileText, Megaphone } from "lucide-react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { getProfile } from "@/features/users/api/account";
 
 export function MyPageMainPage() {
-  // 프로필 정보 가져오기
-  const { data: profile } = useQuery({
-    queryKey: ["profile"],
-    queryFn: getProfile,
-    staleTime: 10 * 60 * 1000, // 10분
-  });
 
   const quickActions = [
     {

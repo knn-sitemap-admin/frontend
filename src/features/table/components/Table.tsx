@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+
 import { cn } from "@/lib/cn";
 import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";

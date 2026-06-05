@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { PerformanceData } from "../types/PerformanceData";
+
 import {
   DataTablePageLayout,
   DataTablePageHeader,
@@ -10,7 +10,6 @@ import {
   StatCardsGrid,
   DataTableSection,
   PeriodFilters,
-  generateYearOptions,
   getPeriodLabel,
 } from "@/features/data-table";
 import { TeamStatsCards } from "./TeamStatsCards";

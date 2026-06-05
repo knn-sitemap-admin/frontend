@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/atoms/Input/Input";
 import { Button } from "@/components/atoms/Button/Button";

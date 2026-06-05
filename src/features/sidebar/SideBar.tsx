@@ -17,7 +17,7 @@ import { useScheduledReservations } from "../survey-reservations/hooks/useSchedu
 import { useReorderReservations } from "../survey-reservations/hooks/useReorderReservations";
 import { useCancelReservation } from "../survey-reservations/hooks/useCancelReservation";
 import { useSignout } from "../auth/hooks/useSignout";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProfile } from "../users/api/account";
 import { cn } from "@/lib/cn";
 import { SalesContractRecordsModal } from "../contract-records";
@@ -45,8 +45,6 @@ export function Sidebar({
     handleDeleteSubFavorite,
     handleContractRecordsClick,
     updateFavoriteGroupTitle,
-    // 🔸 추가: 임시핀(Drafts)
-    siteReservations = [],
     isContractModalOpen,
     setIsContractModalOpen,
     selectedContract,
@@ -74,6 +72,9 @@ export function Sidebar({
   // ✅ 로그아웃 훅
   const { mutate: doSignout, isPending: isSigningOut } = useSignout();
 
+  // ✅ 달력 쿼리 무효화용
+  const queryClient = useQueryClient();
+
   // ✅ 프로필 정보 가져오기
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -83,23 +84,18 @@ export function Sidebar({
 
   // 2) 파생 리스트 구성 (임시핀 + 확정 예약)
   const listItems: ListItem[] = useMemo(() => {
-    const isAdmin = profile?.role === "admin" || profile?.role === "manager";
-
-    // 2-a) 확정 예약 필터링 & 매핑
-    const filteredScheduled = (items ?? []).filter((r) => {
-      return r.isMine === true; // 누구나 자기 자신의 예약만 목록에 노출
-    });
-
-    // 2-b) 확정 예약 목록만 반환 (임시핀 제외)
-    return filteredScheduled.map((r) => ({
-      id: String(r.id),
-      title: r.addressLine ?? (r.posKey ? `좌표 ${r.posKey}` : "주소 미확인"),
-      dateISO: r.reservedDate ?? "",
-      lat: (r as any).lat,
-      lng: (r as any).lng,
-      isDraft: false,
-    }));
-  }, [items, profile?.role]);
+    // 자기 자신의 예약만 목록에 노출
+    return (items ?? [])
+      .filter((r) => r.isMine === true)
+      .map((r) => ({
+        id: String(r.id),
+        title: r.addressLine ?? (r.posKey ? `좌표 ${r.posKey}` : "주소 미확인"),
+        dateISO: r.reservedDate ?? "",
+        lat: (r as any).lat,
+        lng: (r as any).lng,
+        isDraft: false,
+      }));
+  }, [items]);
 
   const handleListItemsChange = useCallback((_nextList: ListItem[]) => {
     // no-op (현재는 드래그 순서만 서버에 반영, 리스트 자체는 API 기준)
@@ -286,6 +282,8 @@ export function Sidebar({
         data={selectedContract ?? undefined}
         onDataChange={() => {
           refetch(); // 계약 저장 후 답사지 예약 목록 새로고침
+          // 달력 쿼리 캐시 무효화 → ScheduleCalendar의 contractId 아이콘 즉시 반영
+          queryClient.invalidateQueries({ queryKey: ["calendar"] });
         }}
       />
     </div>

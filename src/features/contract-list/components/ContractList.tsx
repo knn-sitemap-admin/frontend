@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Table, SearchBar, processTableData } from "@/features/table";
+import { Table, SearchBar } from "@/features/table";
 import type { ContractData } from "@/components/contract-management/types";
 import {
   contractTableColumns,
-  searchKeys,
   paginationConfig,
 } from "@/components/contract-management/utils/tableConfig";
 import { getContract, getContractFilterOptions } from "@/features/contract-records/api/contracts";
@@ -21,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/atoms/Select/Select"; // Corrected import path
 import { Button } from "@/components/atoms/Button/Button"; // Import Button component
-import { Plus, List, Calendar as CalendarIcon, User, Phone as PhoneIcon, ChevronRight } from "lucide-react";
+import { Plus, User, Phone as PhoneIcon, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { statusConfigMap, formatCurrency, formatDate } from "@/components/contract-management/utils/contractUtils";
 import { Pagination } from "@/features/table/components/Pagination";
@@ -66,7 +65,6 @@ export function ContractList({
   const [selectedContract, setSelectedContract] =
     useState<SalesContractData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [yearMonthMap, setYearMonthMap] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
 
