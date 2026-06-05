@@ -283,7 +283,7 @@ export function Sidebar({
         onDataChange={() => {
           refetch(); // 계약 저장 후 답사지 예약 목록 새로고침
           // 달력 쿼리 캐시 무효화 → ScheduleCalendar의 contractId 아이콘 즉시 반영
-          queryClient.invalidateQueries({ queryKey: ["calendar"] });
+          queryClient.invalidateQueries({ queryKey: ["calendar"], exact: false });
         }}
       />
     </div>

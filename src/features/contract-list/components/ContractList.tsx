@@ -12,6 +12,7 @@ import { transformContractResponseToSalesContract } from "@/features/contract-re
 import { SalesContractRecordsModal } from "@/features/contract-records/components/SalesContractRecordsModal";
 import type { SalesContractData } from "@/features/contract-records/types/contract-records";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
@@ -67,6 +68,7 @@ export function ContractList({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [yearMonthMap, setYearMonthMap] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // 가용 필터 옵션 로드
   useEffect(() => {
@@ -425,6 +427,7 @@ export function ContractList({
         data={selectedContract ?? undefined}
         onDataChange={() => {
           loadContracts();
+          queryClient.invalidateQueries({ queryKey: ["calendar"], exact: false });
         }}
       />
     </>
