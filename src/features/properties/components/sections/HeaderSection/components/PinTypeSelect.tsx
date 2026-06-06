@@ -23,7 +23,6 @@ const PIN_OPTION_BASE = [
   { value: "duplex", label: "복층" },
   { value: "duplex-terrace", label: "복층 (테라스)" },
   { value: "townhouse", label: "타운하우스" },
-  { value: "question", label: "답사예정" },
   { value: "completed", label: "입주완료" },
 ] as const;
 
@@ -50,14 +49,21 @@ export default function PinTypeSelect({
   placeholder = "핀 종류 선택",
   /** 신축/구옥에 따라 아이콘만 변경 */
   buildingGrade = null,
+  /** ✅ manager/admin 전용: true일 때만 '입주완료' 옵션 노출 */
+  showCompleted = false,
 }: {
   value: PinKind | null;
   onChange: (v: PinKind) => void;
   className?: string;
   placeholder?: string;
   buildingGrade?: BuildingGrade | null;
+  showCompleted?: boolean;
 }) {
-  const items = PIN_OPTION_BASE.map((o) => {
+  const filteredOptions = showCompleted
+    ? PIN_OPTION_BASE
+    : PIN_OPTION_BASE.filter((o) => o.value !== "completed");
+
+  const items = filteredOptions.map((o) => {
     // 🔧 신축/구옥에 따라 아이콘 결정
     const ageType = buildingGrade === "old" ? "OLD" : "NEW";
     const displayKind = getDisplayPinKind(o.value as PinKind, ageType);

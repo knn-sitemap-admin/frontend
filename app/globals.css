@@ -7,6 +7,18 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
+  /* ✅ iOS PWA: 브라우저 당김(bounce) 방지 */
+  overscroll-behavior: none;
+  /* ✅ iOS Safari: 더블탭 줌 방지 */
+  touch-action: manipulation;
+}
+
+/* ✅ iOS Safe Area CSS 변수 노출 (--sab = safe-area-inset-bottom) */
+:root {
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sat: env(safe-area-inset-top, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 @layer utilities {

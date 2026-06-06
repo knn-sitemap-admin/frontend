@@ -32,6 +32,8 @@ export default function HeaderSection(
     /** 답사예정핀일 때 true → 신축/구옥 + 별 + 리베이트 막기 */
     isVisitPlanPin?: boolean;
     showValidationErrors?: boolean;
+    /** ✅ manager/admin 전용: true일 때만 '입주완료' 옵션 노출 */
+    showCompletedOption?: boolean;
   }
 ) {
   const {
@@ -48,6 +50,7 @@ export default function HeaderSection(
     setRebate,
     isVisitPlanPin,
     showValidationErrors,
+    showCompletedOption = false,
   } = props;
 
   const placeholder = placeholderHint ?? "예: 성수 리버뷰 84A";
@@ -178,6 +181,7 @@ export default function HeaderSection(
             className="h-9 w-[135px] md:w-[160px]"
             placeholder="핀선택"
             buildingGrade={buildingGradeForPinSelect}
+            showCompleted={showCompletedOption}
           />
         </div>
 

@@ -115,7 +115,7 @@ export default function StructureLinesList({
                     <span>{minText}</span>
                     <span className="mx-1.5 text-gray-300 font-normal">~</span>
                     <span>{maxText}</span>
-                    <span className="ml-1 text-[11px] text-gray-400 font-normal shrink-0">만원</span>
+                    <span className="ml-1 text-[11px] text-gray-400 font-normal shrink-0">원</span>
                   </div>
                 </div>
 

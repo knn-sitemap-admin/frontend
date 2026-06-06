@@ -60,7 +60,9 @@ export default function FilterSearch({
 
       setFilters((prev) => ({ ...prev, [category]: newArray }));
     } else {
-      setFilters((prev) => ({ ...prev, [category]: value }));
+      // 이미 선택된 값이면 해제(빈 문자열), 다른 값이면 선택
+      const current = filters[category] as string;
+      setFilters((prev) => ({ ...prev, [category]: current === value ? "" : value }));
     }
   };
 
@@ -199,7 +201,7 @@ export default function FilterSearch({
                   setFilters((prev) => ({ ...prev, deposit: value }))
                 }
                 placeholder="금액 입력"
-                showKoreanCurrency={false}
+                showKoreanCurrency={true}
               />
             </FilterSection>
 
@@ -294,7 +296,7 @@ export default function FilterSearch({
                       setFilters((prev) => ({ ...prev, priceMin: value }))
                     }
                     placeholder="최소 금액"
-                    showKoreanCurrency={false}
+                    showKoreanCurrency={true}
                   />
                 </div>
                 <span className="text-gray-500 text-xs px-1 mt-2 flex-shrink-0">
@@ -307,7 +309,7 @@ export default function FilterSearch({
                       setFilters((prev) => ({ ...prev, priceMax: value }))
                     }
                     placeholder="최대 금액"
-                    showKoreanCurrency={false}
+                    showKoreanCurrency={true}
                   />
                 </div>
               </div>

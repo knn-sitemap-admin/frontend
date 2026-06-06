@@ -3,6 +3,7 @@
 import { BuildingGrade } from "@/features/properties/types/building-grade";
 import HeaderSection from "@/features/properties/components/sections/HeaderSection/HeaderSection";
 import { PinKind } from "@/features/pins/types";
+import { useMeRole } from "@/features/auth/hooks/useMeRole";
 
 /** 최신 버전 폼 타입 */
 export type HeaderForm = {
@@ -39,6 +40,8 @@ export default function HeaderContainer({
   isVisitPlanPin?: boolean;
   showValidationErrors?: boolean;
 }) {
+  const { isPrivileged } = useMeRole();
+
   // ✅ HeaderSection이 기대하는 시그니처로 맞춰주는 어댑터
   const handleSetRebate = (v: string | number | null) => {
     if (v == null) form.setRebateRaw("");
@@ -63,6 +66,7 @@ export default function HeaderContainer({
       setRebate={handleSetRebate}
       isVisitPlanPin={isVisitPlanPin}
       showValidationErrors={showValidationErrors}
+      showCompletedOption={isPrivileged}
     />
   );
 }

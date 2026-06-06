@@ -411,6 +411,7 @@ export default function PropertyEditModalBody({
     lng: null,
   });
 
+  // ⭐ 최초 마운트 시점에만 초기 시각적 정보를 캡처하여 보존 (PATCH 이후 mutation이나 리렌더에 의한 덮어쓰기 방지)
   useEffect(() => {
     const src = bridgedInitial as any;
     const initialLabel = (src?.title ?? src?.name ?? "").trim();
@@ -424,7 +425,8 @@ export default function PropertyEditModalBody({
       lat: src?.lat ?? null,
       lng: src?.lng ?? null,
     };
-  }, [bridgedInitial, initialBuildingGrade]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** ⭐ 저장 성공 시, title / pinKind / 신축구옥 / 위치 변경 여부를 계산해서 상위로 올리는 래퍼 */
   const handleLabelChangedInternal = useCallback(() => {
@@ -484,6 +486,9 @@ export default function PropertyEditModalBody({
     setShowValidationErrors: setLocalShowValidationErrors,
   });
 
+  // ✅ 답사예정핀 여부 파생
+  const isVisitPlanPin = f.pinKind === "question";
+
   /* ───────── 레이아웃 분기 ───────── */
   let content: ReactNode;
 
@@ -506,6 +511,7 @@ export default function PropertyEditModalBody({
           save={save}
           canSaveNow={canSaveNow}
           showValidationErrors={localShowValidationErrors}
+          isVisitPlanPin={isVisitPlanPin}
         />
       );
     }
@@ -526,6 +532,7 @@ export default function PropertyEditModalBody({
           save={save}
           canSaveNow={canSaveNow}
           showValidationErrors={localShowValidationErrors}
+          isVisitPlanPin={isVisitPlanPin}
         />
       );
     }

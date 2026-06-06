@@ -3,6 +3,7 @@
 import { PinKind } from "@/features/pins/types";
 import HeaderSection from "@/features/properties/components/sections/HeaderSection/HeaderSection";
 import { BuildingGrade } from "@/features/properties/types/building-grade";
+import { useMeRole } from "@/features/auth/hooks/useMeRole";
 
 type HeaderForm = {
   title: string;
@@ -43,6 +44,7 @@ export default function HeaderContainer({
   isVisitPlanPin,
   showValidationErrors,
 }: HeaderContainerProps) {
+  const { isPrivileged } = useMeRole();
   // ⭐ 답사예정일 때: 별점/엘리베이터/신축·구옥만 막고,
   //    핀 종류(pinKind)는 항상 변경 가능해야 한다.
   const disabled = !!isVisitPlanPin;
@@ -89,6 +91,8 @@ export default function HeaderContainer({
         /** 별/리베이트/신축·구옥 비활성화용 플래그 */
         isVisitPlanPin={isVisitPlanPin}
         showValidationErrors={showValidationErrors}
+        /** ✅ manager/admin 전용: 입주완료 옵션 노출 */
+        showCompletedOption={isPrivileged}
       />
     </div>
   );

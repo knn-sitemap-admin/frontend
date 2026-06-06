@@ -2,7 +2,7 @@
 
 export default function FilterFab({ onOpen }: { onOpen: () => void }) {
   return (
-    <div className="absolute bottom-4 left-4 z-30">
+    <div className="absolute left-4 z-30" style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
       <button
         onClick={onOpen}
         className="bg-gray-900 shadow-2xl border-2 border-gray-800 hover:bg-gray-800 p-3 rounded-lg transition-all duration-200 hover:scale-105"

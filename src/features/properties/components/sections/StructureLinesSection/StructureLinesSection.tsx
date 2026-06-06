@@ -154,6 +154,7 @@ export default function StructureLinesSection({
                         inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
                         required
                       />
+                      <span className="text-sm text-gray-500 shrink-0">원</span>
                     </div>
                     {line.primary && (
                       <div className="text-[10px] text-purple-600 mt-1 pl-1 font-semibold leading-none truncate">
@@ -173,6 +174,7 @@ export default function StructureLinesSection({
                         inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
                         required
                       />
+                      <span className="text-sm text-gray-500 shrink-0">원</span>
                     </div>
                     {line.secondary && (
                       <div className="text-[10px] text-purple-600 mt-1 pl-1 font-semibold leading-none truncate">

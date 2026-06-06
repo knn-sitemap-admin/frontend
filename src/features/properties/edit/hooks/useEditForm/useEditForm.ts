@@ -291,6 +291,12 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
     const hasRebate = String(rebateText ?? "").replace(/[^\d]/g, "").length > 0;
     const hasSalePrice = String(salePriceRaw ?? "").trim().length > 0;
 
+    // ✅ 입주완료(completed) 또는 답사예정(question) 핀인 경우: 매물명, 주소, 연락처만 필수로 체크
+    const isMinimalValidation = pinKind === "completed" || pinKind === "question";
+    if (isMinimalValidation) {
+      return hasTitle && hasAddress && hasMainPhone;
+    }
+
     return (
       hasTitle &&
       hasAddress &&
@@ -300,7 +306,7 @@ export function useEditForm({ initialData }: UseEditFormArgs) {
       hasRebate &&
       hasSalePrice
     );
-  }, [title, address, officePhone, buildingGrade, elevator, rebateText, salePriceRaw]);
+  }, [pinKind, title, address, officePhone, buildingGrade, elevator, rebateText, salePriceRaw]);
 
   /* ========== 저장 헬퍼 ========== */
   const getParkingGradeNumber = useCallback(() => {

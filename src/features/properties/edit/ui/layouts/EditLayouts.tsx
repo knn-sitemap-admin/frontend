@@ -99,6 +99,7 @@ export type EmbeddedEditLayoutProps = {
   save: () => void;
   canSaveNow: boolean;
   showValidationErrors?: boolean;
+  isVisitPlanPin?: boolean;
 };
 
 export function EmbeddedEditLayout({
@@ -113,10 +114,11 @@ export function EmbeddedEditLayout({
   save,
   canSaveNow,
   showValidationErrors,
+  isVisitPlanPin,
 }: EmbeddedEditLayoutProps) {
   return (
     <div className="flex flex-col h-full">
-      <HeaderContainer form={headerForm as any} onClose={onClose} showValidationErrors={showValidationErrors} />
+      <HeaderContainer form={headerForm as any} onClose={onClose} showValidationErrors={showValidationErrors} isVisitPlanPin={isVisitPlanPin} />
 
       {/* ✅ 스크롤 컨테이너에 ref 연결 */}
       <div
@@ -213,6 +215,7 @@ export type ModalEditLayoutProps = {
   save: () => void;
   canSaveNow: boolean;
   showValidationErrors?: boolean;
+  isVisitPlanPin?: boolean;
 };
 
 export function ModalEditLayout({
@@ -227,6 +230,7 @@ export function ModalEditLayout({
   save,
   canSaveNow,
   showValidationErrors,
+  isVisitPlanPin,
 }: ModalEditLayoutProps) {
   return (
     <div
@@ -255,7 +259,7 @@ export function ModalEditLayout({
           WebkitBackfaceVisibility: "hidden",
         }}
       >
-        <HeaderContainer form={headerForm as any} onClose={onClose} showValidationErrors={showValidationErrors} />
+        <HeaderContainer form={headerForm as any} onClose={onClose} showValidationErrors={showValidationErrors} isVisitPlanPin={isVisitPlanPin} />
 
         {/* embedded 버전과 동일하게 + ref 연결 */}
         <div

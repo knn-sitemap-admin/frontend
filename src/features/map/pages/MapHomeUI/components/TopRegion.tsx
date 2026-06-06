@@ -102,9 +102,10 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
     return (
       <div
         className={cn(
-          "pointer-events-none absolute left-3 right-3 top-3 z-[70]",
+          "pointer-events-none absolute left-3 right-3 z-[70]",
           "flex flex-col gap-2"
         )}
+        style={{ top: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
         role="region"
         aria-label="지도 상단 검색 및 토글"
       >

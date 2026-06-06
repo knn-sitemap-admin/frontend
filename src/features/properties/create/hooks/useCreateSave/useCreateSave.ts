@@ -88,7 +88,10 @@ export function useCreateSave({
 
       // ✨ 필수 필드 점검 - validation 위반 시 alert 대신 showValidationErrors 활성화
       const isVisitPlanValid = !!mainTitle && !!f.address?.trim() && isValidPhoneKR(f.officePhone);
-      const isOkToSave = isVisitPlanPin ? isVisitPlanValid : f.isSaveEnabled;
+      const rawPinKindForCheck = (f as any).pinKind as string | null | undefined;
+      // 입주완료 핀도 답사예정과 동일하게 최소 조건만 체크
+      const isCompletedPin = rawPinKindForCheck === "completed";
+      const isOkToSave = (isVisitPlanPin || isCompletedPin) ? isVisitPlanValid : f.isSaveEnabled;
 
       if (!isOkToSave) {
         // 🚨 리프팅된 로컬 세터 직접 호출

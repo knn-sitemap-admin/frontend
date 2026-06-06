@@ -72,6 +72,11 @@ export default function PropertyCreateModalBody({
     initialPinKind,
   });
 
+  // ✅ 입주완료 핀: 필수 조건 완화 + 필드는 모두 활성화
+  const isCompletedPin = (form as any).pinKind === "completed";
+  // fieldset disable 대상: 답사예정 핀 전용 (입주완료는 모든 필드 편집 가능)
+  const isFieldsetDisabled = isVisitPlanPin && !isCompletedPin;
+
   const parkingForm = useParkingForm(form);
 
   /* === 생성 카드 내부 스크롤 컨테이너의 가로 스크롤 강제 리셋 === */
@@ -148,8 +153,8 @@ export default function PropertyCreateModalBody({
           "
         >
           <fieldset
-            disabled={isVisitPlanPin}
-            className={isVisitPlanPin ? "opacity-60" : ""}
+            disabled={isFieldsetDisabled}
+            className={isFieldsetDisabled ? "opacity-60" : ""}
           >
             <ImagesContainer images={media.imagesProp} />
           </fieldset>
@@ -165,8 +170,8 @@ export default function PropertyCreateModalBody({
             />
 
             <fieldset
-              disabled={isVisitPlanPin}
-              className={isVisitPlanPin ? "opacity-60" : ""}
+              disabled={isFieldsetDisabled}
+              className={isFieldsetDisabled ? "opacity-60" : ""}
             >
               <div className="space-y-6">
                 <NumbersContainer form={form} />

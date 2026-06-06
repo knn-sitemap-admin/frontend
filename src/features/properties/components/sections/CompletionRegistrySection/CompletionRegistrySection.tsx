@@ -41,6 +41,37 @@ const mapLabelToBackend = (v?: UIBuildingType | null): BuildingType | null => {
   return v as unknown as BuildingType;
 };
 
+function formatWithComma(val: string): string {
+  if (!val) return "";
+  const num = parseInt(val.replace(/[^0-9]/g, ""), 10);
+  if (isNaN(num)) return "";
+  return num.toLocaleString();
+}
+
+function formatKoreanAmount(amountStr: string): string {
+  if (!amountStr) return "";
+  const num = parseInt(amountStr.replace(/[^0-9]/g, ""), 10);
+  if (isNaN(num) || num === 0) return "";
+
+  const uk = Math.floor(num / 100000000);
+  const restUk = num % 100000000;
+  const man = Math.floor(restUk / 10000);
+  const won = restUk % 10000;
+
+  let result = "";
+  if (uk > 0) result += `${uk}억`;
+  if (man > 0) {
+    if (uk > 0) result += " ";
+    result += `${man.toLocaleString()}만`;
+  }
+  if (won > 0) {
+    if (uk > 0 || man > 0) result += " ";
+    result += `${won.toLocaleString()}`;
+  }
+  result += "원";
+  return result;
+}
+
 /** 라벨 배열 → 백엔드 배열 */
 const labelsToBackend = (arr: UIBuildingType[]): string[] =>
   arr.map((v) => (v === "근/생" ? "근생" : v === "도/생" ? "도생" : v));
@@ -374,14 +405,19 @@ export default function CompletionRegistrySection({
             <Input
               type="text"
               inputMode="numeric"
-              value={localPrice}
-              onChange={(e) => onChangePrice(e.target.value)}
-              placeholder="예: 5000"
+              value={formatWithComma(localPrice)}
+              onChange={(e) => onChangePrice(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="예: 50000000"
               className="h-9 w-40"
-              aria-label="최저실입(만원)"
+              aria-label="최저실입(원)"
             />
-            <span className="text-sm text-gray-500">만원</span>
+            <span className="text-sm text-gray-500">원</span>
           </div>
+          {localPrice && (
+            <div className="text-[11px] text-purple-600 mt-1 font-semibold">
+              {formatKoreanAmount(localPrice)}
+            </div>
+          )}
           {showValidationErrors && !isVisitPlanPin && !localPrice.trim() && (
             <p className="text-red-500 text-[11px] mt-1 font-medium animate-in slide-in-from-top-1 duration-200">
               최저실입 금액을 입력해 주세요.

@@ -92,7 +92,7 @@ export default function CompletionRegistryView({
           <div className="h-9 flex items-center text-sm font-medium">
             {formatPriceMan(minRealMoveInCost)}
           </div>
-          <span className="text-sm text-gray-500">만원</span>
+          <span className="text-sm text-gray-500">원</span>
         </div>
       </Field>
     </div>
