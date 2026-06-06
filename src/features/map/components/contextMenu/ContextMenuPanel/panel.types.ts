@@ -116,6 +116,10 @@ export type ContextMenuPanelProps = {
 
   canDelete?: boolean;
   onDelete?: () => void;
+
+  /** 분양 중지 상태 */
+  isSalesStopped?: boolean;
+  onToggleSalesStopped?: (val: boolean) => void;
 };
 
 type BasePanelProps = {

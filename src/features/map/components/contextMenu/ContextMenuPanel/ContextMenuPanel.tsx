@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/atoms/Select/Select";
+import { Switch } from "@/components/atoms/Switch/Switch";
 
 import type React from "react";
 
@@ -253,6 +254,21 @@ export default function ContextMenuPanel(props: ContextMenuPanelProps) {
               <span>삭제</span>
             </Button>
           )}
+        </div>
+      )}
+
+      {/* 분양 중지 토글 */}
+      {props.onToggleSalesStopped && (
+        <div className="mt-2 mb-3 px-1 flex items-center justify-between">
+          <label className="text-sm font-medium text-gray-700 select-none cursor-pointer">
+            분양 중지
+          </label>
+          <div className="scale-75 origin-right">
+            <Switch
+              checked={!!props.isSalesStopped}
+              onCheckedChange={props.onToggleSalesStopped}
+            />
+          </div>
         </div>
       )}
 

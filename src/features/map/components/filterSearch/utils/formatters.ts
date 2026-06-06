@@ -300,21 +300,18 @@ export const convertPyeongToSquareMeter = (pyeong: string): string => {
   return squareMeter.toFixed(1);
 };
 
-// 매매가 입력값을 원 단위로 변환하는 함수 (200 → 200,000,000)
+// 매매가 입력값을 원 단위로 변환하는 함수 (이미 원단위로 입력됨)
 export const convertPriceToWon = (input: string): string => {
   const num = Number(input.replace(/,/g, ""));
   if (isNaN(num) || num === 0) return "0";
 
-  // 만원 단위를 원 단위로 변환 (예: 200 → 2,000,000)
-  return (num * 10000).toString();
+  return num.toString();
 };
 
-// 매매가 입력값(백만원 단위)을 원 단위로 변환하는 함수 (200 → 200,000,000)
-// DB는 백만원 단위로 저장하므로 필터 라벨 표시 시 이 함수를 사용
+// 매매가 입력값(원 단위)을 그대로 반환하는 함수
 export const convertSalePriceToWon = (input: string): string => {
   const num = Number(input.replace(/,/g, ""));
   if (isNaN(num) || num === 0) return "0";
 
-  // 백만원 단위를 원 단위로 변환 (예: 200 → 200,000,000)
-  return (num * 1_000_000).toString();
+  return num.toString();
 };

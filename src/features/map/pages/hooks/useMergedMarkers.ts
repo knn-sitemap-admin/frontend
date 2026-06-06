@@ -39,6 +39,8 @@ export type MergedMarker = {
   draftState?: "BEFORE" | "SCHEDULED";
   /** 🔹 신축/구옥 정보 (실매물에만 사용) */
   ageType?: "NEW" | "OLD" | null;
+  /** 🔹 분양중지 상태 (임시핀에 사용) */
+  isSalesStopped?: boolean;
 };
 
 export function useMergedMarkers(params: {
@@ -67,6 +69,7 @@ export function useMergedMarkers(params: {
     badge?: string | null;
     address?: string | null; // 🔹 추가: 주소
     isCompleted?: boolean;
+    isSalesStopped?: boolean;
   }>;
   menuOpen: boolean;
   menuAnchor?: { lat: number; lng: number } | null;
@@ -139,6 +142,7 @@ export function useMergedMarkers(params: {
         lng: d.lng,
         source: "draft",
         draftState: d.draftState,
+        isSalesStopped: d.isSalesStopped,
       };
     });
 
@@ -215,6 +219,7 @@ export function useMergedMarkers(params: {
         address: (d as any).addressLine ?? d.address ?? undefined, // 🔹 지역 클러스터링을 위해 주소 추가
         badge: d.badge,
         isCompleted: d.isCompleted,
+        isSalesStopped: d.isSalesStopped,
       };
     });
 

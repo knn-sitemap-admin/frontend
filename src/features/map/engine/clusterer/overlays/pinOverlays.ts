@@ -84,14 +84,22 @@ export function createLabelOverlay(
   pos: any,
   text: string,
   labelGapPx: number,
-  order?: number | null
+  order?: number | null,
+  isReserved?: boolean,
+  isSalesStopped?: boolean
 ) {
   const labelEl = document.createElement("div");
   labelEl.className = "kakao-label";
   (labelEl as any).dataset.rawTitle = String(text ?? "");
+  (labelEl as any).dataset.order = String(order ?? "");
 
   // ✅ 라벨-핀 간격은 CSS로만 처리 (좌표는 항상 pos 그대로)
-  applyLabelStyles(labelEl as HTMLDivElement, labelGapPx);
+  // 우선순위: 분양중지(검은색) > 예약됨(빨간색) > 기본(파란색)
+  let bgColor: string | undefined;
+  if (isSalesStopped) bgColor = "#111827"; // Tailwind gray-900 (거의 검은색)
+  else if (isReserved) bgColor = "#EF4444"; // Tailwind red-500
+
+  applyLabelStyles(labelEl as HTMLDivElement, labelGapPx, bgColor);
 
   const orderNum =
     typeof order === "number" && Number.isFinite(order) ? order : undefined;

@@ -359,7 +359,7 @@ export function toPinPatch(f: any, initial: InitialSnapshot): UpdatePinDto {
     (Number.isFinite(Number((initial as any)?.salePrice))
       ? Number((initial as any)?.salePrice)
       : undefined);
-  const nowMinCostNum = N2((f as any).salePrice);
+  const nowMinCostNum = N2((f as any).minRealMoveInCost);
   if (!jsonEq2Local(initMinCost, nowMinCostNum))
     (patch as any).minRealMoveInCost = nowMinCostNum ?? null;
 

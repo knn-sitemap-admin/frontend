@@ -376,8 +376,8 @@ export function MapHomeUI(props: MapHomeUIProps) {
   // 서버핀 + 로컬 임시핀 merge
   const { mergedWithTempDraft, mergedMeta } = useMergedMarkers({
     localMarkers: useMemo(
-      () => [...(markers ?? []), ...localDraftMarkers],
-      [markers, localDraftMarkers]
+      () => [...(searchRes ? [] : markers ?? []), ...localDraftMarkers],
+      [markers, localDraftMarkers, searchRes]
     ),
     serverPoints: effectiveServerPoints,
     serverDrafts: effectiveServerDrafts,

@@ -8,7 +8,8 @@ export const SELECTED_Z = 2000;
 /** 말풍선 라벨 스타일 적용 */
 export const applyLabelStyles = (
   el: HTMLDivElement,
-  gapPx: number = LABEL.GAP_PX
+  gapPx: number = LABEL.GAP_PX,
+  bgColor?: string
 ) => {
   Object.assign(el.style, {
     position: "relative",
@@ -20,7 +21,7 @@ export const applyLabelStyles = (
 
     padding: "6px 10px",
     borderRadius: "8px",
-    background: ACCENT,
+    background: bgColor ?? ACCENT,
     color: "#ffffff",
     fontWeight: "700",
     border: "1px solid rgba(0,0,0,0.12)",

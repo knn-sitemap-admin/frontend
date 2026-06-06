@@ -133,6 +133,11 @@ export type PinDraftDetail = {
   name?: string | null;
   contactMainPhone?: string | null;
   contactSubPhone?: string | null;
+  isSalesStopped?: boolean;
+};
+
+export type UpdatePinDraftDto = {
+  isSalesStopped?: boolean;
 };
 
 export type DeletePinRes = {

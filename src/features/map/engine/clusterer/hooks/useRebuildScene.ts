@@ -147,9 +147,15 @@ export function useRebuildScene(args: Args) {
           ) ||
           "";
 
+        const isSalesStopped = !!(m as any).isSalesStopped;
+
         const planText = m.regionLabel;
         const planDisplayName = displayName || planText;
-        const labelText = isPlan ? planDisplayName : displayName;
+        let labelText = isPlan ? planDisplayName : displayName;
+
+        if (isSalesStopped) {
+          labelText = `${labelText} (분양중지)`;
+        }
 
         // ── marker 처리 ──
         let mk = markerObjsRef.current[key];
@@ -189,21 +195,34 @@ export function useRebuildScene(args: Args) {
         if (isAddressOnly) {
            // 주소 전용은 라벨 생략 (필요시 히트박스만)
         } else {
+          const isReserved = typeof order === "number" && Number.isFinite(order);
           let lb = labelOvRef.current[key];
           if (lb) {
             lb.setPosition(pos);
             const el = lb.getContent?.() as HTMLDivElement | null;
             if (el) {
-              el.dataset.rawTitle = String(labelText ?? "");
-              const titleEl = el.querySelector('[data-role="label-title"]') as HTMLSpanElement | null;
-              if (titleEl) {
-                titleEl.textContent = labelText;
-              } else {
+              const currentOrder = el.dataset.order;
+              const currentText = el.dataset.rawTitle;
+              const currentSalesStopped = el.dataset.salesStopped;
+              const newOrder = String(order ?? "");
+              const newSalesStopped = String(isSalesStopped);
+              
+              if (currentOrder !== newOrder || currentText !== String(labelText ?? "") || currentSalesStopped !== newSalesStopped) {
+                let bgColor: string | undefined;
+                if (isSalesStopped) bgColor = "#111827";
+                else if (isReserved) bgColor = "#EF4444";
+                else bgColor = "#3B82F6";
+                el.style.background = bgColor;
                 applyOrderBadgeToLabel(el, labelText, order);
+                el.dataset.order = newOrder;
+                el.dataset.rawTitle = String(labelText ?? "");
+                el.dataset.salesStopped = newSalesStopped;
               }
             }
           } else {
-             lb = createLabelOverlay(kakao, pos, labelText, labelGapPx, order);
+             lb = createLabelOverlay(kakao, pos, labelText, labelGapPx, order, isReserved, isSalesStopped);
+             const el = lb.getContent?.() as HTMLDivElement | null;
+             if (el) el.dataset.salesStopped = String(isSalesStopped);
              labelOvRef.current[key] = lb;
           }
         }

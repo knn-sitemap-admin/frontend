@@ -14,6 +14,7 @@ export type MapMarker = {
   posKey?: string;
   badge?: string | null;
   isCompleted?: boolean;
+  isSalesStopped?: boolean;
 };
 
 export type MapMarkerTagged = MapMarker & {

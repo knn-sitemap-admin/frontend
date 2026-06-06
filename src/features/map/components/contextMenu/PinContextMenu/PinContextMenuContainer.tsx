@@ -15,8 +15,8 @@ import { posKey } from "./lib/draftMatching";
 import { useReservationVersion } from "@/features/survey-reservations/store/useReservationVersion";
 import { usePinContextMenuActions } from "./hooks/usePinContextMenuActions";
 import { useToast } from "@/hooks/use-toast";
-import { deletePinDraft } from "@/shared/api/pins";
-import { useCallback, useEffect, useMemo } from "react";
+import { deletePinDraft, updatePinDraft } from "@/shared/api/pins";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { extractDraftIdFromPropertyId } from "../ContextMenuPanel/panel.utils";
 import { useMeRole } from "@/features/auth/hooks/useMeRole";
 
@@ -119,6 +119,16 @@ export default function PinContextMenuContainer(props: Props) {
     const v = (fromMeta ?? fromPin) as unknown;
     return typeof v === "string" ? v : undefined;
   }, [metaAtPos, pin]);
+
+  /** 분양 중지 상태 */
+  const [localSalesStopped, setLocalSalesStopped] = useState<boolean | null>(null);
+
+  const resolvedSalesStopped = useMemo<boolean>(() => {
+    if (localSalesStopped !== null) return localSalesStopped;
+    const fromMeta = metaAtPos?.source === "draft" ? !!(metaAtPos as any)?.isSalesStopped : undefined;
+    const fromPin = !!(pin as any)?.draft?.isSalesStopped || !!(pin as any)?.isSalesStopped;
+    return fromMeta !== undefined ? fromMeta : fromPin;
+  }, [metaAtPos, pin, localSalesStopped]);
 
   const base = useDerivedPinState({
     propertyId,
@@ -491,6 +501,21 @@ export default function PinContextMenuContainer(props: Props) {
     }
   }, [handleReserveClick, toast]);
 
+  const handleToggleSalesStopped = useCallback(async (val: boolean) => {
+    if (draftId == null) return;
+    setLocalSalesStopped(val);
+    try {
+      await updatePinDraft(draftId, { isSalesStopped: val });
+      toast({ description: val ? "분양 중지 처리되었습니다." : "분양 중지가 해제되었습니다." });
+      if (refreshViewportPins) {
+        refreshViewportPins(getBoundsBox() || undefined as any);
+      }
+    } catch (err: any) {
+      setLocalSalesStopped(!val); // 롤백
+      toast({ variant: "destructive", description: "상태 변경 실패" });
+    }
+  }, [draftId, getBoundsBox, refreshViewportPins, toast]);
+
   const yAnchor = 1;
   const xAnchor = 0.5;
   const offsetPx = 54; // 핀 헤드까지의 거리
@@ -520,6 +545,8 @@ export default function PinContextMenuContainer(props: Props) {
               onCreate={handleCreateClick}
               onPlan={handlePlanClick}
               onReserve={reserving ? () => {} : handleReserveWithToast}
+              isSalesStopped={resolvedSalesStopped}
+              onToggleSalesStopped={isPrivileged && draftId != null && planned ? handleToggleSalesStopped : undefined}
               isPlanPin={planned}
               isVisitReservedPin={reserved}
               isAlreadyReserved={isReservedByOtherAccount}
