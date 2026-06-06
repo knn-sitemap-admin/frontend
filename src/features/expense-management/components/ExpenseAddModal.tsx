@@ -188,13 +188,32 @@ export function ExpenseAddModal({
 
           <div className="space-y-2">
             <Label htmlFor="amount">금액</Label>
-            <Input
-              id="amount"
-              type="number"
-              min={1}
-              placeholder="금액을 입력하세요"
-              {...register("amount", { valueAsNumber: true })}
-              disabled={isLoading}
+            <Controller
+              control={control}
+              name="amount"
+              render={({ field: { onChange, value, ...field } }) => {
+                const displayValue =
+                  value !== undefined && value !== null && !isNaN(value)
+                    ? Number(value).toLocaleString("ko-KR")
+                    : "";
+
+                return (
+                  <Input
+                    {...field}
+                    id="amount"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="금액을 입력하세요"
+                    disabled={isLoading}
+                    value={displayValue}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, "");
+                      const num = raw ? parseInt(raw, 10) : undefined;
+                      onChange(num);
+                    }}
+                  />
+                );
+              }}
             />
             <FormError message={errors.amount?.message} />
           </div>

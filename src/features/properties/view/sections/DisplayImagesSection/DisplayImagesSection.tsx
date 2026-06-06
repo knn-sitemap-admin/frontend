@@ -6,6 +6,12 @@ import MiniCarousel from "@/components/molecules/MiniCarousel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CaptionSlot from "./components/CaptionSlot";
 import { AnyImg, DisplayImagesSectionProps } from "./types";
+import { useMeRole } from "@/features/auth/hooks/useMeRole";
+import { API_BASE } from "@/shared/api/api";
+import { Button } from "@/components/atoms/Button/Button";
+import { Download, Loader2 } from "lucide-react";
+import JSZip from "jszip";
+import { useToast } from "@/hooks/use-toast";
 
 /* ───────── 로컬 전용 뷰 타입 ───────── */
 type DisplayImageItem = ImageItem & {
@@ -140,6 +146,84 @@ export default function DisplayImagesSection({
   files,
   showNames = false,
 }: DisplayImagesSectionProps) {
+  /* ---------- 권한 ---------- */
+  const { isPrivileged, canDownloadImage } = useMeRole();
+  const hasDownloadAccess = isPrivileged || canDownloadImage;
+
+  const { toast } = useToast();
+
+  /* ---------- 일괄 다운로드 로딩 상태 ---------- */
+  const [downloadingGroupId, setDownloadingGroupId] = useState<string | null>(null);
+
+  /* ---------- 일괄 다운로드 처리 함수 ---------- */
+  const handleGroupDownload = async (items: DisplayImageItem[], groupTitle: string, groupId: string) => {
+    if (!items || items.length === 0) return;
+    
+    setDownloadingGroupId(groupId);
+    const zip = new JSZip();
+    const folderName = groupTitle ? groupTitle.replace(/[\/\\?%*:|"<>]/g, "_") : "images";
+
+    try {
+      const downloadPromises = items.map(async (item, index) => {
+        if (!item.url) return;
+        
+        const proxyUrl = `${API_BASE}/photo/upload/proxy?url=${encodeURIComponent(item.url)}`;
+        const token = typeof window !== "undefined" ? localStorage.getItem("notemap_token") : null;
+        const headers: Record<string, string> = {};
+        if (token && token !== "undefined" && token !== "null") {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(proxyUrl, {
+          headers,
+          credentials: 'include',
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const blob = await response.blob();
+        
+        // 파일 이름 결정
+        let fileName = item.name;
+        if (!fileName) {
+          const urlParts = item.url.split('/');
+          fileName = urlParts[urlParts.length - 1] || `image_${index + 1}.webp`;
+        }
+        
+        zip.file(fileName, blob);
+      });
+
+      await Promise.all(downloadPromises);
+      const content = await zip.generateAsync({ type: "blob" });
+      
+      const blobUrl = URL.createObjectURL(content);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${folderName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error: any) {
+      console.error("일괄 다운로드 실패:", error);
+      
+      let errMsg = "일괄 다운로드 중 알 수 없는 에러가 발생했습니다.";
+      if (error?.message?.includes("status: 403")) {
+        errMsg = "이미지 접근 권한이 없거나 링크 주소가 만료되었습니다. 페이지를 새로고침 해보세요.";
+      } else if (error?.message?.includes("status: 404")) {
+        errMsg = "존재하지 않거나 유실된 이미지 파일이 포함되어 있습니다.";
+      } else if (error?.message) {
+        errMsg = `다운로드 실패: ${error.message}`;
+      }
+
+      toast({
+        variant: "destructive",
+        title: "다운로드 실패",
+        description: errMsg,
+      });
+    } finally {
+      setDownloadingGroupId(null);
+    }
+  };
+
   const rawCardGroups = useMemo(
     () => normalizeCardGroups(cards, images),
     [cards, images]
@@ -285,12 +369,41 @@ export default function DisplayImagesSection({
             ? group.title
             : curCaption) || "";
 
+        const id = `card-${gi}`;
+        const isDownloading = downloadingGroupId === id;
+
         return (
           <div
-            key={`card-${gi}`}
+            key={id}
             className="rounded-xl border bg-gray-50/60 p-3 transform-gpu"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
           >
+            {/* 일괄 저장 헤더 영역 */}
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-xs font-black text-gray-500">
+                {group.title || `가로형 이미지 세트 ${gi + 1}`}
+              </span>
+              {hasDownloadAccess && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isDownloading}
+                  className="h-7 px-2 text-[11px] font-bold flex items-center gap-1.5 bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100 hover:text-emerald-700 transition-all rounded-lg"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGroupDownload(items, group.title || `card_group_${gi + 1}`, id);
+                  }}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Download className="w-3 h-3" />
+                  )}
+                  {isDownloading ? "다운로드 중..." : "일괄 다운로드"}
+                </Button>
+              )}
+            </div>
+
             <div className="relative aspect-video overflow-hidden rounded-md border bg-white transform-gpu" style={{ transform: "translateZ(0)" }}>
               <MiniCarousel
                 images={items}
@@ -342,12 +455,41 @@ export default function DisplayImagesSection({
             ? group.title
             : cur?.caption) || "";
 
+        const id = `file-${gi}`;
+        const isDownloading = downloadingGroupId === id;
+
         return (
           <div
-            key={`file-${gi}`}
+            key={id}
             className="rounded-xl border bg-gray-50/60 p-3 transform-gpu"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
           >
+            {/* 일괄 저장 헤더 영역 */}
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-xs font-black text-gray-500">
+                {group.title || `세로형 이미지 세트 ${gi + 1}`}
+              </span>
+              {hasDownloadAccess && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isDownloading}
+                  className="h-7 px-2 text-[11px] font-bold flex items-center gap-1.5 bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100 hover:text-emerald-700 transition-all rounded-lg"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGroupDownload(items, group.title || `file_group_${gi + 1}`, id);
+                  }}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Download className="w-3 h-3" />
+                  )}
+                  {isDownloading ? "다운로드 중..." : "일괄 다운로드"}
+                </Button>
+              )}
+            </div>
+
             <div className="relative aspect-[3/4] overflow-hidden rounded-md border bg-white transform-gpu" style={{ transform: "translateZ(0)" }}>
               <MiniCarousel
                 images={items}

@@ -273,19 +273,18 @@ export function normalizeInitialData(initialData: any | null): Normalized {
         ? String(listingStars)
         : "") as StarStr);
 
-  // ───────── units → unitLines (DB 값 ÷ 1000000 → 백만원 단위로 표시, 등록과 동일) ─────────
-  // toViewDetailsFromApi에서 이미 ×1,000,000이 적용된 값이므로 ÷1,000,000하여 백만원 단위로 폼에 세팅
-  const toMillionUnit = (v: any): string => {
+  // ───────── units → unitLines (원 단위 그대로 폼에 세팅) ─────────
+  const toWonUnit = (v: any): string => {
     if (v == null || v === "") return "";
     const n = Number(v);
-    return Number.isFinite(n) ? String(Math.round(n / 1_000_000)) : "";
+    return Number.isFinite(n) ? String(Math.round(n)) : "";
   };
   const unitLines: UnitLine[] = Array.isArray(d.units)
     ? (d.units as any[]).map((u) => {
         const minVal = u?.minPrice;
         const maxVal = u?.maxPrice;
-        let primary = toMillionUnit(minVal);
-        let secondary = toMillionUnit(maxVal);
+        let primary = toWonUnit(minVal);
+        let secondary = toWonUnit(maxVal);
 
         if (primary && !secondary) secondary = primary;
         if (secondary && !primary) primary = secondary;

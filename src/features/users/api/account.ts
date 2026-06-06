@@ -465,3 +465,37 @@ export async function updateAccountCanDownloadImage(
     throw error;
   }
 }
+
+/** 삭제된 계정 목록 조회 */
+export type DeletedAccountListItem = {
+  id: string;
+  email: string;
+  role: "admin" | "manager" | "staff";
+  disabled: boolean;
+  name: string | null;
+  phone: string | null;
+  deletedAt: string | null;
+};
+
+export async function getDeletedAccounts(): Promise<DeletedAccountListItem[]> {
+  try {
+    const response = await api.get<{
+      message: string;
+      data: DeletedAccountListItem[];
+    }>("/dashboard/accounts/credentials/deleted");
+    return response.data.data;
+  } catch (error: any) {
+    console.error("삭제된 계정 목록 조회 실패:", error);
+    throw error;
+  }
+}
+
+/** 계정 복원 */
+export async function restoreAccount(credentialId: string): Promise<void> {
+  try {
+    await api.post(`/dashboard/accounts/credentials/${credentialId}/restore`);
+  } catch (error: any) {
+    console.error("계정 복원 실패:", error);
+    throw error;
+  }
+}

@@ -171,7 +171,7 @@ const useKakaoMap = ({
           }
 
           // 현재 위치 중심 이동 옵션
-          if (useCurrentLocationOnInit && "geolocation" in navigator) {
+          if (useCurrentLocationOnInit && "geolocation" in navigator && mapRef.current) {
             // 위치 가져오는 중임을 표시하여 center prop 동기화를 막음
             (mapRef.current as any).__isLocating__ = true;
             navigator.geolocation.getCurrentPosition(
@@ -191,15 +191,21 @@ const useKakaoMap = ({
                   map.setCenter(next);
                   setTimeout(() => {
                     isProgrammaticPanRef.current = false;
-                    (mapRef.current as any).__isLocating__ = false;
+                    if (mapRef.current) {
+                      (mapRef.current as any).__isLocating__ = false;
+                    }
                   }, 500);
                 } else {
-                  (mapRef.current as any).__isLocating__ = false;
+                  if (mapRef.current) {
+                    (mapRef.current as any).__isLocating__ = false;
+                  }
                 }
               },
               (err) => {
                 console.warn("[useKakaoMap] 현재 위치 가져오기 실패:", err);
-                (mapRef.current as any).__isLocating__ = false;
+                if (mapRef.current) {
+                  (mapRef.current as any).__isLocating__ = false;
+                }
 
                 // 위치 실패/거부 시 전국 한눈에 보기 강제
                 try {

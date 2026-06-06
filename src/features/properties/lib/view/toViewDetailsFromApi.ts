@@ -268,9 +268,9 @@ function mapUnits(apiUnits?: ApiPin["units"]):
     hasLoft: toBool(u?.hasLoft),
     hasTerrace: toBool(u?.hasTerrace),
     minPrice:
-      u?.minPrice == null ? undefined : (toIntOrUndef(u?.minPrice) ?? 0) * 1000000,
+      u?.minPrice == null ? undefined : (toIntOrUndef(u?.minPrice) ?? 0),
     maxPrice:
-      u?.maxPrice == null ? undefined : (toIntOrUndef(u?.maxPrice) ?? 0) * 1000000,
+      u?.maxPrice == null ? undefined : (toIntOrUndef(u?.maxPrice) ?? 0),
     note: u?.note ?? null,
   }));
 }

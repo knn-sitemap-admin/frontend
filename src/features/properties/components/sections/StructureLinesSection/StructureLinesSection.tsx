@@ -6,6 +6,39 @@ import { Checkbox } from "@/components/atoms/Checkbox/Checkbox";
 import { Trash2, Plus } from "lucide-react";
 import type { UnitLine } from "@/features/properties/types/property-domain";
 
+function formatWithComma(val: string): string {
+  if (!val) return "";
+  const num = parseInt(val.replace(/[^0-9]/g, ""), 10);
+  if (isNaN(num)) return "";
+  return num.toLocaleString();
+}
+
+function formatKoreanAmount(amountStr: string): string {
+  if (!amountStr) return "";
+  const num = parseInt(amountStr.replace(/[^0-9]/g, ""), 10);
+  if (isNaN(num) || num === 0) return "";
+
+  const uk = Math.floor(num / 100000000);
+  const restUk = num % 100000000;
+  const man = Math.floor(restUk / 10000);
+  const won = restUk % 10000;
+
+  let result = "";
+  if (uk > 0) {
+    result += `${uk}억`;
+  }
+  if (man > 0) {
+    if (uk > 0) result += " ";
+    result += `${man.toLocaleString()}만`;
+  }
+  if (won > 0) {
+    if (uk > 0 || man > 0) result += " ";
+    result += `${won.toLocaleString()}`;
+  }
+  result += "원";
+  return result;
+}
+
 type StructureLinesProps = {
   lines: UnitLine[];
   onAddPreset: (preset: string) => void;
@@ -109,31 +142,43 @@ export default function StructureLinesSection({
 
               {/* 가격 범위 (모바일에서는 아래 행, 데스크탑에선 4번째 그리드 칸) */}
               <div className="w-full md:col-start-4 md:row-start-1">
-                <div className="flex flex-row items-center gap-2 w-full md:grid md:grid-cols-[1fr_auto_1fr] md:gap-2">
-                  <div className="flex-1 flex items-center gap-1.5">
-                    <Input
-                      value={line.primary}
-                      onChange={(e) => onUpdate(idx, { primary: e.target.value.replace(/[^0-9]/g, "") })}
-                      placeholder="최소"
-                      className="h-8 md:h-9 flex-1 min-w-0"
-                      inputMode="numeric"
-                      inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
-                      required
-                    />
-                    <span className="text-[11px] md:text-xs text-gray-400 shrink-0">만</span>
+                <div className="flex flex-row items-start gap-2 w-full md:grid md:grid-cols-[1fr_auto_1fr] md:gap-2">
+                  <div className="flex-1 flex flex-col min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        value={formatWithComma(line.primary)}
+                        onChange={(e) => onUpdate(idx, { primary: e.target.value.replace(/[^0-9]/g, "") })}
+                        placeholder="최소"
+                        className="h-8 md:h-9 flex-1 min-w-0"
+                        inputMode="numeric"
+                        inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
+                        required
+                      />
+                    </div>
+                    {line.primary && (
+                      <div className="text-[10px] text-purple-600 mt-1 pl-1 font-semibold leading-none truncate">
+                        {formatKoreanAmount(line.primary)}
+                      </div>
+                    )}
                   </div>
-                  <span className="text-gray-300 text-xs text-center">~</span>
-                  <div className="flex-1 flex items-center gap-1.5">
-                    <Input
-                      value={line.secondary}
-                      onChange={(e) => onUpdate(idx, { secondary: e.target.value.replace(/[^0-9]/g, "") })}
-                      placeholder="최대"
-                      className="h-8 md:h-9 flex-1 min-w-0"
-                      inputMode="numeric"
-                      inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
-                      required
-                    />
-                    <span className="text-[11px] md:text-xs text-gray-400 shrink-0">만</span>
+                  <span className="text-gray-300 text-xs text-center mt-2.5">~</span>
+                  <div className="flex-1 flex flex-col min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        value={formatWithComma(line.secondary)}
+                        onChange={(e) => onUpdate(idx, { secondary: e.target.value.replace(/[^0-9]/g, "") })}
+                        placeholder="최대"
+                        className="h-8 md:h-9 flex-1 min-w-0"
+                        inputMode="numeric"
+                        inputClassName="placeholder:text-[11px] md:placeholder:text-xs"
+                        required
+                      />
+                    </div>
+                    {line.secondary && (
+                      <div className="text-[10px] text-purple-600 mt-1 pl-1 font-semibold leading-none truncate">
+                        {formatKoreanAmount(line.secondary)}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

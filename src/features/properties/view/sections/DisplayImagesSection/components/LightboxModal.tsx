@@ -363,15 +363,7 @@ export default function LightboxModal({
                 </button>
               </div>
 
-              {/* 다운로드 */}
-              {hasDownloadAccess && (
-                <button
-                  onClick={handleDownload}
-                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-emerald-500/80 hover:bg-emerald-500 text-white transition-all active:scale-90 shrink-0"
-                >
-                  <Download size={16} />
-                </button>
-              )}
+
 
               {/* 🎯 고객 제시 모드 토글 (워터마크가 표시되는 사용자만 노출) */}
               {showWatermark && (

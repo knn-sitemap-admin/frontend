@@ -238,7 +238,6 @@ export function Sidebar({
           />
 
           <div className="space-y-2 mt-2 pb-2">
-            <ContractRecordsButton onClick={handleContractRecordsClick} />
             <SchedulesButton />
             <MyPageButton />
             {profile?.role === "admin" && <AdminButton />}

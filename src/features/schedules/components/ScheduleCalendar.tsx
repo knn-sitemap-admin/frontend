@@ -417,8 +417,6 @@ export default function ScheduleCalendar() {
     }
   };
 
-
-
   const handleCreateContract = (schedule: Schedule) => {
     setContractDefaultData({
       customerInfo: {
@@ -1047,20 +1045,6 @@ export default function ScheduleCalendar() {
                 >
                   <Plus className="w-6 h-6" />
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAgendaOpen(false);
-                    setContractDefaultData({
-                      contractDate: format(selectedDate, "yyyy-MM-dd"),
-                    });
-                    setIsContractModalOpen(true);
-                  }}
-                  className="w-10 h-10 rounded-xl border-gray-200 text-blue-600 shadow-sm flex items-center justify-center transition-transform active:scale-95"
-                >
-                  <FileText className="w-5 h-5" />
-                </Button>
               </div>
             </SheetHeader>
 
@@ -1150,19 +1134,6 @@ export default function ScheduleCalendar() {
       </Sheet>
 
       <div className="hidden sm:flex fixed bottom-10 right-10 flex-col gap-3 z-40">
-        <button
-          onClick={() => {
-            setContractDefaultData({
-              contractDate: format(new Date(), "yyyy-MM-dd"),
-            });
-            setIsContractModalOpen(true);
-          }}
-          className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 rounded-2xl shadow-2xl shadow-blue-200 flex flex-col items-center justify-center text-white hover:scale-110 active:scale-95 transition-all group"
-        >
-          <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
-          <span className="text-[8px] sm:text-[9px] font-black mt-0.5">계약</span>
-        </button>
-
         <button
           onClick={() => {
             handleDayClick(new Date(), false);
