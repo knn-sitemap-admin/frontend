@@ -217,8 +217,10 @@ export function MapHomeUI(props: MapHomeUIProps) {
     searchRes,
     searchLoading,
     searchError,
+    activeFilters,
     handleApplyFilters,
     clearSearch,
+    handleRemoveFilter,
   } = useFilterSearch({
     kakaoSDK,
     mapInstance,
@@ -764,6 +766,10 @@ export function MapHomeUI(props: MapHomeUIProps) {
         saleModalOpen={saleModalOpen}
         onSaleModalOpenChange={setSaleModalOpen}
         onSelectSalePin={handleSelectSalePin}
+        // ✅ 활성화된 필터 연동
+        activeFilters={activeFilters}
+        onRemoveFilter={handleRemoveFilter}
+        onClearAllFilters={clearSearch}
       />
 
       {/* 필터 플로팅 버튼 + 필터 검색 패널 영역 */}
@@ -775,6 +781,7 @@ export function MapHomeUI(props: MapHomeUIProps) {
           onClose={() => setFilterSearchOpen(false)}
           onApply={handleApplyFilters}
           onClear={clearSearch}
+          initial={activeFilters}
         />
       </div>
 

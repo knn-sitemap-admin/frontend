@@ -16,7 +16,7 @@ export interface FilterState {
 export interface FilterSearchProps {
   isOpen: boolean;
   onClose: () => void;
-  onApply?: (params: PinSearchParams) => void;
+  onApply?: (params: PinSearchParams, filters?: FilterState) => void;
   onClear?: () => void;
   initial?: Partial<FilterState>;
 }

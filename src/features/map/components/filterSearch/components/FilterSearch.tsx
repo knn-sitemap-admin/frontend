@@ -96,7 +96,7 @@ export default function FilterSearch({
 
     // 2) 검증 통과 시 검색 파라미터 빌드 + onApply
     const params = buildPinSearchParams(filters);
-    onApply?.(params);
+    onApply?.(params, filters);
     onClose();
   };
 

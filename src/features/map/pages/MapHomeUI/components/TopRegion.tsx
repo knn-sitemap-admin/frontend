@@ -8,6 +8,8 @@ import TopRightControls from "@/features/map/components/TopRightControls";
 import { MapQuickFilter } from "@/features/map/components/MapQuickFilter";
 import type { MapMenuKey } from "@/features/map/components/menu/types/mapMenu.types";
 import { PoiKind } from "@/features/map/poi/lib/poiTypes";
+import FilterActiveChips from "@/features/map/components/filterSearch/components/FilterActiveChips";
+import type { FilterState } from "@/features/map/components/filterSearch/types/filterSearch.types";
 
 type TopRegionProps = {
   q: string;
@@ -54,6 +56,11 @@ type TopRegionProps = {
   saleModalOpen: boolean;
   onSaleModalOpenChange: (open: boolean) => void;
   onSelectSalePin: (item: any) => void;
+
+  // ✅ 필터 활성화 상태 및 액션 props
+  activeFilters: FilterState | null;
+  onRemoveFilter: (key: keyof FilterState, value?: string) => void;
+  onClearAllFilters: () => void;
 };
 
 export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
@@ -91,6 +98,9 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
       saleModalOpen,
       onSaleModalOpenChange,
       onSelectSalePin,
+      activeFilters,
+      onRemoveFilter,
+      onClearAllFilters,
     },
     rightAreaRef
   ) => {
@@ -145,6 +155,17 @@ export const TopRegion = forwardRef<HTMLDivElement, TopRegionProps>(
              className="md:max-w-fit"
           />
         </div>
+
+        {/* ⚡ 활성화된 필터검색 조건 칩 목록 */}
+        {activeFilters && (
+          <div className="pointer-events-auto mt-0.5 max-w-[80vw] md:max-w-[360px]">
+            <FilterActiveChips
+              activeFilters={activeFilters}
+              onRemoveFilter={onRemoveFilter}
+              onClearAll={onClearAllFilters}
+            />
+          </div>
+        )}
 
         <div className="pointer-events-auto flex items-center justify-between">
           <div
