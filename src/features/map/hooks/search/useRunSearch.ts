@@ -11,6 +11,9 @@ import { NEAR_THRESHOLD_M } from "../../shared/constants/mapGeo";
 
 // 👉 검색 주소랑 기존 핀 간 거리 허용치(조금 넉넉하게 3km까지)
 const SEARCH_NEAR_THRESHOLD_M = Math.max(NEAR_THRESHOLD_M, 3000);
+// 👉 이름/주소가 다를 때 강제 스냅할 초근접 거리 임계값 (10m)
+const SNAP_UNMATCHED_THRESHOLD_M = 10;
+
 
 type Args = {
   kakaoSDK: any;
@@ -146,7 +149,7 @@ export function useRunSearch({
             }
           } else {
             // 2) 이름/주소 둘 다 안 맞을 때만 거리 컷 적용
-            if (d >= SEARCH_NEAR_THRESHOLD_M) {
+            if (d >= SNAP_UNMATCHED_THRESHOLD_M) {
               continue;
             }
           }
@@ -166,7 +169,7 @@ export function useRunSearch({
 
         if (bestByNameOrAddr) {
           picked = bestByNameOrAddr;
-        } else if (nearest && nearestDist < SEARCH_NEAR_THRESHOLD_M) {
+        } else if (nearest && nearestDist < SNAP_UNMATCHED_THRESHOLD_M) {
           picked = nearest;
         }
 
