@@ -312,7 +312,7 @@ function toPinPatch(f, initial) {
     const initMinCost = (_x = initial === null || initial === void 0 ? void 0 : initial.minRealMoveInCost) !== null && _x !== void 0 ? _x : (Number.isFinite(Number(initial === null || initial === void 0 ? void 0 : initial.salePrice))
         ? Number(initial === null || initial === void 0 ? void 0 : initial.salePrice)
         : undefined);
-    const nowMinCostNum = N2(f.salePrice);
+    const nowMinCostNum = N2(f.minRealMoveInCost !== null && f.minRealMoveInCost !== undefined ? f.minRealMoveInCost : f.salePrice);
     if (!jsonEq2Local(initMinCost, nowMinCostNum))
         patch.minRealMoveInCost = nowMinCostNum !== null && nowMinCostNum !== void 0 ? nowMinCostNum : null;
     // ⭐ 리베이트 텍스트 diff

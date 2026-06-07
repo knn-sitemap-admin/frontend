@@ -359,13 +359,11 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
   const centerLL = mapInstance.getCenter?.();
 
   // ─────────────────────────────────────────────────────────
-  // 주소 검색 폴백 — 🔹 여러 결과 처리 추가
+  // 주소 검색 최우선 진행 — 실패 시 장소 키워드 검색 폴백
   // ─────────────────────────────────────────────────────────
-  const doAddressFallback = () => {
-    geocoder.addressSearch(query, (addrRes: any[], addrStatus: string) => {
-      if (addrStatus !== Status.OK || !addrRes?.length) return;
-
-      // 🔹 여러 후보를 모달로
+  geocoder.addressSearch(query, (addrRes: any[], addrStatus: string) => {
+    if (addrStatus === Status.OK && addrRes?.length) {
+      // 🔹 주소 검색 성공: 여러 후보를 모달로 또는 단일 처리
       handleMultipleResults(addrRes, query, (first) => {
         const { x, y, road_address, address } = first ?? {};
         const lat = Number(y);
@@ -385,39 +383,31 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
           setCenterOnly(lat, lng);
         }
       });
-    });
-  };
+    } else {
+      // 🔹 주소 검색 실패: 장소 키워드 검색 진행
+      places.keywordSearch(
+        query,
+        (data: any[], status: string) => {
+          if (status !== Status.OK || !data?.length) {
+            return;
+          }
 
-  const { stationName, exitNo, hasExit } = parseStationAndExit(query);
+          // 🔹 일반 장소 검색 분기
+          handleMultipleResults(data, query, (bestTarget) => {
+            const lat = Number(bestTarget.y);
+            const lng = Number(bestTarget.x);
+            const label = bestTarget.place_name ?? query;
 
-  // ─────────────────────────────────────────────────────────
-  // 장소 키워드 검색 — 🔹 여러 결과 처리 추가
-  // ─────────────────────────────────────────────────────────
-  places.keywordSearch(
-    query,
-    (data: any[], status: string) => {
-      if (status !== Status.OK || !data?.length) {
-        doAddressFallback();
-        return;
-      }
-
-      // ... (지하철역 관련 상단 조건문 분기들은 기존 유지) ...
-
-      // 🔹 일반 장소 검색 분기 수정
-      // 세 번째 인자인 단일 처리 콜백 함수를 유연하게 열어줍니다.
-      handleMultipleResults(data, query, (bestTarget) => {
-        const lat = Number(bestTarget.y);
-        const lng = Number(bestTarget.x);
-        const label = bestTarget.place_name ?? query;
-
-        if (shouldCreateSearchPin(bestTarget, query)) {
-          setCenterWithMarker(lat, lng, label);
-        } else {
-          setCenterOnly(lat, lng);
-        }
-      });
-    },
-    // 🌟 전국 검색 활성화를 위해 기존에 묶여있던 반경 3000m 제약을 해제합니다.
-    undefined
-  );
+            if (shouldCreateSearchPin(bestTarget, query)) {
+              setCenterWithMarker(lat, lng, label);
+            } else {
+              setCenterOnly(lat, lng);
+            }
+          });
+        },
+        // 🌟 전국 검색 활성화를 위해 기존에 묶여있던 반경 3000m 제약을 해제합니다.
+        undefined
+      );
+    }
+  });
 }
