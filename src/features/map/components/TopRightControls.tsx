@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { LocateFixed } from "lucide-react";
 import { Button } from "@/components/atoms/Button/Button";
 import ToggleSidebar from "./ToggleSidebar/ToggleSidebar";
+import { NotificationBell } from "./NotificationBell";
 import { usePlannedDrafts } from "../hooks/pins/usePlannedDrafts";
 import { useMemoViewMode } from "@/features/properties/view/store/useMemoViewMode";
 import { cn } from "@/lib/cn";
@@ -220,6 +221,11 @@ export default function TopRightControls(props: {
           >
             K&N
           </button>
+        </div>
+
+        {/* 🔔 알림 아이콘 (공지사항) */}
+        <div className="relative z-[2] shrink-0">
+          <NotificationBell />
         </div>
 
         {/* 현위치로 이동 버튼 - 필터 왼쪽 */}

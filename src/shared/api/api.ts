@@ -26,11 +26,11 @@ if (typeof window !== "undefined") {
     // ✅ [보안] 도메인 화이트리스트 체크: 우리 백엔드(API_BASE)로 향하는 요청에만 토큰 주입
     // url이 / 로 시작하거나 API_BASE로 시작하는 경우
     const isOurApi = url && (
-      url.startsWith(API_BASE) || 
-      url.startsWith("/") || 
+      url.startsWith(API_BASE) ||
+      url.startsWith("/") ||
       (typeof process.env.NEXT_PUBLIC_API_BASE === "string" && url.startsWith(process.env.NEXT_PUBLIC_API_BASE))
     );
-    
+
     if (isOurApi) {
       const token = window.localStorage.getItem("notemap_token");
       if (token && token !== "undefined" && token !== "null") {
@@ -80,8 +80,8 @@ const getApiBase = () => {
     return process.env.NEXT_PUBLIC_API_BASE || "https://backend-test-production-2188.up.railway.app";
   }
 
-  // 3. 로컬 개발 환경 (포트는 3050 고정, hostname을 동적으로 반영하여 타 기기 테스트 호환성 보장)
-  return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || `http://${hostname}:3050`;
+  // 3. 로컬 개발 환경 (포트는 4000 고정, hostname을 동적으로 반영하여 타 기기 테스트 호환성 보장)
+  return process.env.NEXT_PUBLIC_LOCAL_BACKEND_URL || `http://${hostname}:4000`;
 };
 export const API_BASE = getApiBase();
 
@@ -96,7 +96,7 @@ if (!apiInstance) {
     baseURL: API_BASE,
     withCredentials: true,
   });
-  
+
   (apiInstance as any).instanceId = "MASTER_API";
 
   // 모든 요청에 토큰 주입 인터셉터
@@ -105,7 +105,7 @@ if (!apiInstance) {
       if (typeof window !== "undefined") {
         const token = window.localStorage.getItem("notemap_token");
         const bearer = (token && token !== "undefined" && token !== "null") ? `Bearer ${token}` : null;
-        
+
         if (bearer) {
           // Axios 1.x 에서는 config.headers 가 Headers 객체일 수 있음
           if (config.headers.set) {
@@ -362,7 +362,7 @@ api.interceptors.response.use(
             }
           }
         }
-        
+
         return api.request(config);
       } else {
         // ✅ 재시도 후에도 401/419인 경우: 세션 만료로 판단

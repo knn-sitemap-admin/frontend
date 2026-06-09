@@ -21,6 +21,7 @@ export type NoticeListResponse = {
   author: { name: string } | null;
   views: number;
   createdAt: string;
+  isRead?: boolean;
 };
 
 // 공지사항 생성 API

@@ -22,6 +22,7 @@ interface NoticeData extends TableData {
   author: { name: string } | null;
   views: number;
   createdAt: string;
+  isRead?: boolean;
 }
 
 const columns: TableColumn<NoticeData>[] = [
@@ -34,10 +35,17 @@ const columns: TableColumn<NoticeData>[] = [
   {
     key: "title",
     label: "제목",
-    render: (value) => (
+    render: (value, row) => (
       <div className="flex items-center gap-2">
         <Megaphone className="w-4 h-4 text-primary shrink-0" />
-        <span className="font-medium text-gray-900 truncate">{value}</span>
+        <span className={`truncate ${row?.isRead === false ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+          {value}
+        </span>
+        {row?.isRead === false && (
+          <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+            N
+          </span>
+        )}
       </div>
     ),
   },
@@ -117,8 +125,8 @@ export function MyNoticesPage() {
       const full = await getNotice(row.id);
       setSelectedNotice(full);
       setIsDetailOpen(true);
-      // 조회수 즉시 반영 (낙관적 업데이트)
-      setNotices(prev => prev.map(n => n.id === row.id ? { ...n, views: n.views + 1 } : n));
+      // 조회수 및 읽음 상태 즉시 반영 (낙관적 업데이트)
+      setNotices(prev => prev.map(n => n.id === row.id ? { ...n, views: n.isRead ? n.views : n.views + 1, isRead: true } : n));
     } catch (error) {
       toast({ title: "공지사항 상세 로드 실패", variant: "destructive" });
     }
