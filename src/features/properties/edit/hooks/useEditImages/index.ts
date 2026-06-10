@@ -44,6 +44,14 @@ import {
   MAX_PER_CARD,
 } from "@/features/properties/components/constants";
 
+function cloneFolder(arr: ImageItem[], newItems?: ImageItem[]) {
+  const cloned = newItems ? [...newItems] : [...arr];
+  if ((arr as any).groupId !== undefined) {
+    (cloned as any).groupId = (arr as any).groupId;
+  }
+  return cloned;
+}
+
 /* ───────── 타입 ───────── */
 type UseEditImagesArgs = {
   propertyId: string;
@@ -238,7 +246,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
 
       setImageFolders((prev) => {
         const next = prev.map((folder, i) =>
-          i === idx ? [...folder, ...tempItems].slice(0, MAX_PER_CARD) : folder
+          i === idx ? cloneFolder(folder, [...folder, ...tempItems].slice(0, MAX_PER_CARD)) : folder
         );
         markDirty();
         return next;
@@ -269,7 +277,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
           }
         });
 
-        const next = prev.map((arr) => [...arr]);
+        const next = prev.map((arr) => cloneFolder(arr));
         next.splice(folderIdx, 1);
 
         if (next.length === 0 && keepAtLeastOne) next.push([]);
@@ -283,7 +291,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
   const handleRemoveImage = useCallback(
     (folderIdx: number, imageIdx: number) => {
       setImageFolders((prev) => {
-        const next = prev.map((arr) => [...arr]);
+        const next = prev.map((arr) => cloneFolder(arr));
         const removed = next[folderIdx]?.splice(imageIdx, 1)?.[0];
 
         queueDeleteIfServer(removed);
@@ -371,12 +379,13 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
       setImageFolders((prev) => {
         const next = prev.map((arr, i) => {
           if (i !== folderIdx) return arr;
-          return arr.map((img, j) => {
+          const updatedArr = arr.map((img, j) => {
             if (j !== imageIdx) return img;
             const updated = { ...img, caption: text };
             target = updated;
             return updated;
           });
+          return cloneFolder(arr, updatedArr);
         });
 
         const pid = getServerPhotoId(target);
@@ -394,7 +403,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
     (folderIdx: number, fromIdx: number, toIdx: number) => {
       setImageFolders((prev) => {
         if (folderIdx < 0 || folderIdx >= prev.length) return prev;
-        const next = prev.map((arr) => [...arr]);
+        const next = prev.map((arr) => cloneFolder(arr));
         const folder = next[folderIdx];
         if (
           fromIdx < 0 ||
@@ -435,7 +444,7 @@ export function useEditImages({ propertyId, initial }: UseEditImagesArgs) {
 
       setImageFolders((prev) => {
         if (folderIdx < 0 || folderIdx >= prev.length) return prev;
-        const next = prev.map((arr, i) => (i === folderIdx ? [...nextItems] : [...arr]));
+        const next = prev.map((arr, i) => (i === folderIdx ? cloneFolder(arr, [...nextItems]) : cloneFolder(arr)));
         imageFoldersRef.current = next; // 즉시 Ref 동기화
         markDirty();
         return next;

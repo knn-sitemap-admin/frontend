@@ -73,22 +73,8 @@ export function useContextMenuAnchor({
     });
     if (cand) return cand;
 
-    // 2-2) 근접(위경도 유클리드) 최솟값이 임계 미만(대략 20m)인 실제 등록핀
-    let best: MapMarker | undefined;
-    let bestD2 = Number.POSITIVE_INFINITY;
-    for (const m of visibleMarkers) {
-      if (isDraftLike(m.id)) continue;
-      const p = normalizeLL((m as any).position);
-      const dx = p.lat - anchorBase.lat;
-      const dy = p.lng - anchorBase.lng;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < bestD2) {
-        bestD2 = d2;
-        best = m;
-      }
-    }
-    // 위경도 약식: 0.0002 ≈ 20m
-    return bestD2 < 0.0002 * 0.0002 ? best : undefined;
+    // 2-2) 근접 스냅 로직 제거 (검색 좌표에 엉뚱한 매물 팝업 방지)
+    return undefined;
   }, [visibleMarkers, anchorBase]);
 
   /** 3) effective target: 클릭된 핀 있으면 그것, 없으면 underlying 등록핀, 없으면 draft */

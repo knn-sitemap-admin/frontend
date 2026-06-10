@@ -207,38 +207,8 @@ export async function searchPlaceOnMap(text: string, deps: SearchDeps) {
     } catch { }
 
     const findBestRealAround = (): RealAroundPin | null => {
-      let bestReal: RealAroundPin | null = null;
-      let bestDist = Infinity;
-      const tryReal = (
-        id: string | number,
-        plat: number,
-        plng: number,
-        title?: string | null,
-        kind?: PinKind
-      ) => {
-        const d = distM(lat, lng, plat, plng);
-        if (d <= NEAR_THRESHOLD_M && d < bestDist) {
-          bestDist = d;
-          bestReal = { id: String(id), lat: plat, lng: plng, title, kind };
-        }
-      };
-      (effectiveServerPoints ?? []).forEach((p: any) => {
-        const baseKind = mapBadgeToPinKind(p.badge, p.isCompleted);
-        const displayKind = getDisplayPinKind(baseKind, p.ageType ?? null);
-        const kind = (displayKind ?? baseKind ?? "1room") as PinKind;
-        tryReal(p.id, p.lat, p.lng, (p as any).title ?? (p as any).name ?? null, kind);
-      });
-      (effectiveServerDrafts ?? []).forEach((d: any) => {
-        tryReal(`__visit__${d.id}`, d.lat, d.lng, (d as any).title ?? (d as any).name ?? "답사예정", "question");
-      });
-      localDraftMarkers.forEach((m: any) => {
-        const idStr = String(m.id);
-        if (!idStr.startsWith("__visit__")) return;
-        const pos = m.position;
-        if (!pos) return;
-        tryReal(idStr, pos.lat, pos.lng, m.title ?? null, "question");
-      });
-      return bestReal;
+      // 🔹 검색 위치를 그대로 사용하기 위해 근접 매물 스냅 로직 제거
+      return null;
     };
 
     let bestReal = findBestRealAround();

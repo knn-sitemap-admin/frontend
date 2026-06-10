@@ -36,6 +36,9 @@ export function mapPinKindToBadge(pinKind: PinKind): string | null {
     case "question":
       return "SURVEY_SCHEDULED";
 
+    case "completed":
+      return "MOVE_IN_COMPLETE";
+
     default:
       return null;
   }

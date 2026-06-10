@@ -76,7 +76,10 @@ function resolveOrderIndex(
   reservationOrderMap: ReservationOrderMap,
   reservationOrderByPosKey: ReservationOrderByPosKey
 ): number | undefined {
-  const byId = reservationOrderMap?.[String(m.pinDraftId ?? m.id)];
+  const rawId = String(m.pinDraftId ?? m.id);
+  // __visit__ 접두사를 제거하여 예약 맵과 정확히 매칭되도록 보정 (간헐적 색상 변경 실패 해결)
+  const cleanId = rawId.replace(/^__visit__/, "");
+  const byId = reservationOrderMap?.[cleanId];
   if (typeof byId === "number") return byId;
 
   const isAddressOnly = isAddressOnlyMarker(m, key);

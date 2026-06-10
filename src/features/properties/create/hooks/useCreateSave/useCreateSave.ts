@@ -384,6 +384,7 @@ export function useCreateSave({
         isNew: isNewForPayload ?? undefined,
         isOld: isOldForPayload ?? undefined,
         pinKind: rawPinKindLocal ?? undefined,
+        isCompleted: isCompletedPin,
         pinDraftId,
       } as any;
 
