@@ -99,6 +99,7 @@ export function useMarkersForMapHome({
         title: title || displayName,
         address: (d.addressLine ?? d.address ?? undefined) as string | undefined,
         isFav: false,
+        draftState: d.draftState as "BEFORE" | "SCHEDULED" | undefined,
       };
     });
 

@@ -15,6 +15,7 @@ export type MapMarker = {
   badge?: string | null;
   isCompleted?: boolean;
   isSalesStopped?: boolean;
+  draftState?: "BEFORE" | "SCHEDULED";
 };
 
 export type MapMarkerTagged = MapMarker & {

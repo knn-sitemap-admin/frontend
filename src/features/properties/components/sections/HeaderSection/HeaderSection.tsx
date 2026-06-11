@@ -142,7 +142,8 @@ export default function HeaderSection(
   const titleError = showValidationErrors && !title?.trim();
   const rebateError = showValidationErrors && !isVisitPlanPin && !rebateDisabled && !rebateDisplay.trim();
   const buildingGradeError = showValidationErrors && !buildingGradeDisabled && !_buildingGrade;
-  const hasHeaderError = titleError || rebateError || buildingGradeError;
+  const pinKindError = showValidationErrors && !isVisitPlanPin && !pinKind;
+  const hasHeaderError = titleError || rebateError || buildingGradeError || pinKindError;
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b supports-[backdrop-filter]:bg-white/70">
@@ -174,15 +175,23 @@ export default function HeaderSection(
         </div>
 
         {/* 2) 핀선택 — 모바일에서는 2열의 첫 번째로 이동하여 폭 확보 */}
-        <div className="order-4 md:order-2 flex-shrink-0">
+        <div className="order-4 md:order-2 flex-shrink-0 flex flex-col items-start relative">
           <PinTypeSelect
             value={pinKind ?? null}
             onChange={(v) => setPinKind(v)}
-            className="h-9 w-[135px] md:w-[160px]"
+            className={cn(
+              "h-9 w-[135px] md:w-[160px]",
+              pinKindError && "border-red-500 ring-1 ring-red-500 bg-red-50"
+            )}
             placeholder="핀선택"
             buildingGrade={buildingGradeForPinSelect}
             showCompleted={showCompletedOption}
           />
+          {pinKindError && (
+            <span className="mt-0.5 ml-1 text-red-500 text-[10px] font-bold animate-in slide-in-from-top-1 duration-200 whitespace-nowrap absolute -bottom-4">
+              선택필수
+            </span>
+          )}
         </div>
 
         {/* 3) 매물평점 + (모바일용) 리베이트 — 모바일에서 1열의 우측으로 재배치 */}

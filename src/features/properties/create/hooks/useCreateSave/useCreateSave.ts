@@ -6,6 +6,7 @@ import type { UnitLine } from "@/features/properties/types/property-domain";
 
 import { useScheduledReservations } from "@/features/survey-reservations/hooks/useScheduledReservations";
 import { mapPinKindToBadge } from "@/features/properties/lib/badge";
+import { toastBus } from "@/shared/toast/toastBus";
 
 import {
   isValidIsoDateStrict,
@@ -91,7 +92,11 @@ export function useCreateSave({
       const rawPinKindForCheck = (f as any).pinKind as string | null | undefined;
       // 입주완료 핀도 답사예정과 동일하게 최소 조건만 체크
       const isCompletedPin = rawPinKindForCheck === "completed";
-      const isOkToSave = (isVisitPlanPin || isCompletedPin) ? isVisitPlanValid : f.isSaveEnabled;
+      
+      // ✅ 일반 매물은 핀 종류(pinKind)가 반드시 선택되어야 백엔드로 넘어갈 수 있음
+      const isGeneralPinValid = f.isSaveEnabled && !!rawPinKindForCheck;
+      
+      const isOkToSave = (isVisitPlanPin || isCompletedPin) ? isVisitPlanValid : isGeneralPinValid;
 
       if (!isOkToSave) {
         // 🚨 리프팅된 로컬 세터 직접 호출
@@ -113,7 +118,9 @@ export function useCreateSave({
       const latNum = Number(initialLat);
       const lngNum = Number(initialLng);
       if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
-        alert("좌표가 유효하지 않습니다. (initialLat/initialLng 미전달)");
+        toastBus.error("좌표가 유효하지 않습니다. (initialLat/initialLng 미전달)");
+        setIsSaving(false);
+        isSavingRef.current = false;
         return;
       }
 
@@ -182,7 +189,9 @@ export function useCreateSave({
           f.remainingHouseholds
         );
         if (priceError) {
-          alert(priceError);
+          toastBus.error(priceError);
+          setIsSaving(false);
+          isSavingRef.current = false;
           return;
         }
       }
@@ -216,7 +225,9 @@ export function useCreateSave({
           f.remainingHouseholds
         );
         if (areaError) {
-          alert(areaError);
+          toastBus.error(areaError);
+          setIsSaving(false);
+          isSavingRef.current = false;
           return;
         }
       }
@@ -228,7 +239,9 @@ export function useCreateSave({
           : rawCompletion;
 
       if (normalizedCompletion && !isValidIsoDateStrict(normalizedCompletion)) {
-        alert("준공일은 YYYY-MM-DD 형식으로 입력해 주세요.");
+        toastBus.error("준공일은 YYYY-MM-DD 형식으로 입력해 주세요.");
+        setIsSaving(false);
+        isSavingRef.current = false;
         return;
       }
 
@@ -424,7 +437,7 @@ export function useCreateSave({
         (e as any)?.responseData?.messages?.join("\n") ||
         (e as any)?.message ||
         "저장 중 오류가 발생했습니다. 콘솔 로그를 확인하세요.";
-      alert(msg);
+      toastBus.error(msg);
     } finally {
       isSavingRef.current = false;
       setIsSaving(false);

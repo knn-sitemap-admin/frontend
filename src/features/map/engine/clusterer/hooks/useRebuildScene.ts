@@ -195,7 +195,7 @@ export function useRebuildScene(args: Args) {
         if (isAddressOnly) {
            // 주소 전용은 라벨 생략 (필요시 히트박스만)
         } else {
-          const isReserved = typeof order === "number" && Number.isFinite(order);
+          const isReserved = (typeof order === "number" && Number.isFinite(order)) || m.draftState === "SCHEDULED";
           let lb = labelOvRef.current[key];
           if (lb) {
             lb.setPosition(pos);
