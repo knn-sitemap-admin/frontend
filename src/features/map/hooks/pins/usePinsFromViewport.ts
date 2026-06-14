@@ -20,6 +20,7 @@ const globalPinCache = new Map<string, any>();
 const globalDraftCache = new Map<string, any>();
 let lastFilterHash: string | null = null;
 let isFetchingAll = false;
+let globalFetchId = 0;
 
 /** 🔹 그룹핑/매칭 전용 키 (표시·클러스터 용) */
 function toPosKey(lat?: number, lng?: number) {
@@ -87,6 +88,7 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
 
     const loadAllPins = async () => {
       isFetchingAll = true;
+      const currentFetchId = ++globalFetchId;
       setLoading(true);
       setError(null);
 
@@ -97,6 +99,11 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
         });
 
         if (resp) {
+          if (currentFetchId !== globalFetchId) {
+            console.log("Stale fetch discarded:", currentFetchId);
+            return;
+          }
+
           const { points = [], drafts = [] } = resp;
 
           // 캐시 초기화 (필터가 바뀌었으므로)
@@ -122,23 +129,54 @@ export function usePinsFromViewport(opts: UsePinsOpts) {
     loadAllPins();
   }, [updateTick]);
 
-  // 🔄 웹소켓 실시간 이벤트 수신 시 글로벌 캐시 비우기 및 데이터 재요청 트리거
+  // 🔄 웹소켓 실시간 이벤트 수신 시 캐시 처리
   useEffect(() => {
-    const handleSocketRefresh = () => {
-      // eslint-disable-next-line no-console
-      console.log("usePinsFromViewport: Clearing global pin cache for real-time WebSocket sync");
+    // socket_refresh_map: 전체 캐시 클리어 후 재요청 (지도 전체 갱신 필요한 경우)
+    const handleSocketRefreshAll = () => {
+      console.log("usePinsFromViewport: Full cache clear (socket_refresh_map)");
+      globalFetchId++;
+      isFetchingAll = false;
       globalPinCache.clear();
       globalDraftCache.clear();
       lastFilterHash = null;
       setUpdateTick((t) => t + 1);
     };
 
-    window.addEventListener("socket_refresh_map", handleSocketRefresh);
-    window.addEventListener("socket_reservation_changed", handleSocketRefresh);
+    // socket_reservation_changed: 캐시를 클리어하지 않고 해당 draft의 draftState만 SCHEDULED로 업데이트
+    // 전체 클리어 시 마커가 잠깐 사라졌다 파란색으로 다시 생성되는 깜빡임이 발생하므로 피함
+    const handleReservationChanged = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      const draftId = detail?.draftId != null ? String(detail.draftId) : null;
+      const action = detail?.action;
+
+      if (draftId) {
+        // action이 "deleted"이면 해당 draft를 BEFORE로 되돌림 (취소 시)
+        const newState = action === "deleted" ? "BEFORE" : "SCHEDULED";
+
+        if (globalDraftCache.has(draftId)) {
+          // 캐시에 존재하면 draftState만 업데이트 (캐시 클리어 없음)
+          const existing = globalDraftCache.get(draftId);
+          globalDraftCache.set(draftId, { ...existing, draftState: newState });
+        } else if (newState === "SCHEDULED") {
+          // 캐시에 없지만 예약된 경우: 다른 사용자가 예약했을 때
+          // 전체 캐시 클리어 없이 백엔드에서 해당 draft만 다시 불러올 수 없으므로
+          // 전체 재로드 (단, 마커 깜빡임을 최소화하기 위해 isFetchingAll 플래그를 유지)
+          globalFetchId++;
+          isFetchingAll = false;
+          globalPinCache.clear();
+          globalDraftCache.clear();
+          lastFilterHash = null;
+        }
+        setUpdateTick((t) => t + 1);
+      }
+    };
+
+    window.addEventListener("socket_refresh_map", handleSocketRefreshAll);
+    window.addEventListener("socket_reservation_changed", handleReservationChanged);
 
     return () => {
-      window.removeEventListener("socket_refresh_map", handleSocketRefresh);
-      window.removeEventListener("socket_reservation_changed", handleSocketRefresh);
+      window.removeEventListener("socket_refresh_map", handleSocketRefreshAll);
+      window.removeEventListener("socket_reservation_changed", handleReservationChanged);
     };
   }, []);
 

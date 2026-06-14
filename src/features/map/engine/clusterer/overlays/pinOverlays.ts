@@ -105,20 +105,6 @@ export function createLabelOverlay(
     typeof order === "number" && Number.isFinite(order) ? order : undefined;
   applyOrderBadgeToLabel(labelEl as HTMLDivElement, text, orderNum);
 
-  // ✅ 제목 span만 복원 (외부 래퍼/배지는 건드리지 않음)
-  try {
-    const mo = new MutationObserver(() => {
-      const want = (labelEl as any).dataset?.rawTitle ?? "";
-      const titleEl = labelEl.querySelector(
-        '[data-role="label-title"]'
-      ) as HTMLSpanElement | null;
-      if (!titleEl) return;
-      const now = titleEl.textContent ?? "";
-      if (now !== want) titleEl.textContent = want;
-    });
-    mo.observe(labelEl, { characterData: true, subtree: true });
-  } catch {}
-
   return new kakao.maps.CustomOverlay({
     position: pos, // ✅ 핀과 같은 LatLng
     content: labelEl,

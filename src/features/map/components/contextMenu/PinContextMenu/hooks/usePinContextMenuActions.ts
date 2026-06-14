@@ -124,25 +124,20 @@ export function usePinContextMenuActions({
     let draftId = extractDraftIdFromPin(pin);
     if (draftId != null) return draftId;
 
-    const metaDraftId =
-      metaAtPos?.source === "draft" ? (metaAtPos as any)?.id : undefined;
-    if (typeof metaDraftId === "number") return metaDraftId;
-
-    const idStr = String(propertyId ?? "");
-    const m = idStr.match(/(\d{1,})$/);
-    if (m) {
-      const n = Number(m[1]);
-      if (Number.isFinite(n)) return n;
+    let metaDraftId = metaAtPos?.source === "draft" ? (metaAtPos as any)?.id : undefined;
+    if (typeof metaDraftId === "string" && metaDraftId.startsWith("__visit__")) {
+      metaDraftId = Number(metaDraftId.replace(/^__visit__/, ""));
     }
+    if (typeof metaDraftId === "number" && Number.isFinite(metaDraftId)) return metaDraftId;
 
     try {
       const before = await fetchUnreservedDrafts();
-      const lat = position.getLat();
-      const lng = position.getLng();
+      const exactLat = pin?.position?.lat ?? position.getLat();
+      const exactLng = pin?.position?.lng ?? position.getLng();
       draftId = findDraftIdByHeuristics({
         before,
-        lat,
-        lng,
+        lat: exactLat,
+        lng: exactLng,
         roadAddress,
         jibunAddress,
       });
@@ -176,7 +171,13 @@ export function usePinContextMenuActions({
         assigneeId,
       });
 
-      // 2) 예약 리스트 동기화
+      // 2) 낙관적 즉시 업데이트: 소켓 이벤트 대기 없이 해당 핀의 draftState를 SCHEDULED로 업데이트
+      // → 라벨 색상이 빨간색으로 즉시 변경됨
+      window.dispatchEvent(new CustomEvent("socket_reservation_changed", {
+        detail: { draftId: String(draftId), action: "created" },
+      }));
+
+      // 3) 예약 리스트 동기화
       try {
         await refetchScheduledReservations();
       } catch (e) {
@@ -184,13 +185,13 @@ export function usePinContextMenuActions({
         console.warn("[reserve] refetchScheduledReservations 실패:", e);
       }
 
-      // 3) 성공 토스트
+      // 4) 성공 토스트
       toast({
         title: "답사지 예약 완료",
-        description: "답사지 예약을 완료했습니다.",
+        description: "답사지 예약이 완료되었습니다.",
       });
 
-      // 4) 컨텍스트메뉴 닫기
+      // 5) 컨텍스트메뉴 닫기
       onClose?.();
     } catch (e: any) {
       // eslint-disable-next-line no-console

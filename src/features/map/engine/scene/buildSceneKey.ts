@@ -8,17 +8,18 @@ export function buildSceneKey(markers: readonly MapMarker[] | undefined) {
         id: String(m.id),
         lat: m.position?.lat,
         lng: m.position?.lng,
-        name:
-          (
-            m?.name ??
-            m?.point?.name ??
-            m?.data?.name ??
-            m?.property?.name ??
-            m?.property?.title ??
-            m?.title ??
-            ""
-          )?.toString() ?? "",
+        name: (
+          m?.name ??
+          m?.point?.name ??
+          m?.data?.name ??
+          m?.property?.name ??
+          m?.property?.title ??
+          m?.title ??
+          ""
+        )?.toString() ?? "",
         source: m?.source ?? "",
+        draftState: m?.draftState ?? "",
+        isSalesStopped: m?.isSalesStopped ?? false,
       }))
       .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return JSON.stringify(core);

@@ -295,7 +295,11 @@ export function useEditSave({
       hasFormChanges = hasMeaningfulPatch(dto);
     } catch (e: any) {
       console.error("[toPinPatch] 실패:", e);
-      showAlert(e?.message || "변경 사항 계산 중 오류가 발생했습니다.");
+      const msg =
+        (e as any)?.responseData?.messages?.join("\n") ||
+        e?.message ||
+        "변경 사항 계산 중 오류가 발생했습니다.";
+      showAlert(msg);
       setIsSaving(false);
       return;
     }
@@ -314,7 +318,11 @@ export function useEditSave({
       console.log("[useEditSave] commitImageChanges result:", imgResult);
     } catch (e: any) {
       console.error("[images.commit] 실패:", e);
-      showAlert(e?.message || "이미지 변경사항 반영에 실패했습니다.");
+      const msg =
+        (e as any)?.responseData?.messages?.join("\n") ||
+        e?.message ||
+        "이미지 변경사항 반영에 실패했습니다.";
+      showAlert(msg);
       setIsSaving(false);
       return;
     }
@@ -342,7 +350,11 @@ export function useEditSave({
         }
       } catch (e: any) {
         console.error("[PATCH /pins/:id] 실패:", e);
-        showAlert(e?.message || "핀 수정 중 오류가 발생했습니다.");
+        const msg =
+          (e as any)?.responseData?.messages?.join("\n") ||
+          e?.message ||
+          "핀 수정 중 오류가 발생했습니다.";
+        showAlert(msg);
         setIsSaving(false);
         return;
       }

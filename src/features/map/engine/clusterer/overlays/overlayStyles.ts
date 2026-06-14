@@ -66,54 +66,72 @@ export const applyOrderBadgeToLabel = (
   text: string,
   order?: number | null
 ) => {
-  // 초기 구성: 기존 내용을 싹 비우고 역할이 분리된 DOM을 만든다
-  el.innerHTML = "";
-
-  // 래퍼
-  const wrapper = document.createElement("div");
-  wrapper.className = "nm-label";
-  Object.assign(wrapper.style, {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-  } as CSSStyleDeclaration);
-  el.appendChild(wrapper);
-
-  // ✅ order === 0도 표시되도록 엄격 체크
+  // ✅ 기존 래퍼가 있는지 확인하여 재활용 (DOM 폭파 방지 -> 깜빡임 제거)
+  let wrapper = el.querySelector(".nm-label") as HTMLDivElement | null;
   const hasOrder = typeof order === "number" && Number.isFinite(order);
+  const desiredBadgeText = hasOrder ? String(order + 1) : "";
 
-  if (hasOrder) {
-    const badge = document.createElement("span");
-    badge.className = "nm-badge";
-    badge.setAttribute("data-role", "order-badge");
-    Object.assign(badge.style, {
+  if (!wrapper) {
+    el.innerHTML = ""; // 기존 단순 텍스트가 있었다면 비우기
+    wrapper = document.createElement("div");
+    wrapper.className = "nm-label";
+    Object.assign(wrapper.style, {
       display: "inline-flex",
       alignItems: "center",
-      justifyContent: "center",
-      width: "18px",
-      height: "18px",
-      minWidth: "18px",
-      borderRadius: "9999px",
-      fontSize: "10px",
-      fontWeight: "800",
-      background: "#ffffff",
-      color: "#000000",
-      marginRight: "0", // gap으로 간격 관리
-      boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
-      lineHeight: "18px",
-      textAlign: "center",
+      gap: "6px",
     } as CSSStyleDeclaration);
-
-    // 0-based → 1-based로 표기
-    badge.textContent = String(order + 1);
-    badge.setAttribute("aria-label", `예약 순서 ${order + 1}`);
-    wrapper.appendChild(badge);
+    el.appendChild(wrapper);
   }
 
-  // 타이틀(텍스트)
-  const titleSpan = document.createElement("span");
-  titleSpan.className = "nm-title";
-  titleSpan.setAttribute("data-role", "label-title");
-  titleSpan.textContent = text ?? "";
-  wrapper.appendChild(titleSpan);
+  // 배지 찾기
+  let badge = wrapper.querySelector('[data-role="order-badge"]') as HTMLSpanElement | null;
+  
+  if (hasOrder) {
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "nm-badge";
+      badge.setAttribute("data-role", "order-badge");
+      Object.assign(badge.style, {
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "18px",
+        height: "18px",
+        minWidth: "18px",
+        borderRadius: "9999px",
+        fontSize: "10px",
+        fontWeight: "800",
+        background: "#ffffff",
+        color: "#000000",
+        marginRight: "0",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+        lineHeight: "18px",
+        textAlign: "center",
+      } as CSSStyleDeclaration);
+      // 배지를 항상 맨 앞에 삽입
+      wrapper.insertBefore(badge, wrapper.firstChild);
+    }
+    if (badge.textContent !== desiredBadgeText) {
+      badge.textContent = desiredBadgeText;
+      badge.setAttribute("aria-label", `예약 순서 ${desiredBadgeText}`);
+    }
+  } else {
+    // 순번이 없어야 하는데 배지가 있다면 제거
+    if (badge) {
+      badge.remove();
+    }
+  }
+
+  // 타이틀 찾기
+  let titleSpan = wrapper.querySelector('[data-role="label-title"]') as HTMLSpanElement | null;
+  if (!titleSpan) {
+    titleSpan = document.createElement("span");
+    titleSpan.className = "nm-title";
+    titleSpan.setAttribute("data-role", "label-title");
+    wrapper.appendChild(titleSpan);
+  }
+  
+  if (titleSpan.textContent !== text) {
+    titleSpan.textContent = text ?? "";
+  }
 };

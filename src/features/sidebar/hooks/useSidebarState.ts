@@ -267,15 +267,24 @@ export function useSidebarState() {
     } catch {}
   }, [nestedFavorites]);
 
-  // 예약 순서 배지용 맵(id -> 1-based order) : 임시핀용
+  // 예약 순서 배지용 맵(draftId -> 1-based order)
   const reservationOrderMap = useMemo(() => {
     const map: Record<string, number> = {};
+    
+    // 1) 예약 전 목록 (파란 핀)
     siteReservations.forEach((it, idx) => {
       const id = it?.id;
       if (id) map[id] = idx + 1;
     });
+    
+    // 2) 내 예약 완료 목록 (빨간 핀)
+    scheduledReservations.forEach((it, idx) => {
+      const draftId = it?.pinDraftId || it?.id; // fallback으로 id 사용
+      if (draftId) map[draftId] = idx + 1;
+    });
+
     return map;
-  }, [siteReservations]);
+  }, [siteReservations, scheduledReservations]);
 
   const getReservationOrder = useCallback(
     (pinId: string) => reservationOrderMap[pinId] ?? null,

@@ -46,10 +46,11 @@ export function useSocketSync() {
       queryClient.invalidateQueries({ queryKey: ["myReservations"] });
       queryClient.invalidateQueries({ queryKey: ["pins"] });
       
-      // usePlannedDrafts에서 데이터를 새로고침하도록 이벤트 발송
-      window.dispatchEvent(new Event("socket_reservation_changed"));
-      // 지도 마커 즉시 갱신을 위해 커스텀 이벤트 발송
-      window.dispatchEvent(new Event("socket_refresh_map"));
+      // draftId를 포함한 CustomEvent를 발송하여 해당 핀만 상태 업데이트 (전체 클리어 방지)
+      window.dispatchEvent(new CustomEvent("socket_reservation_changed", {
+        detail: { draftId: data.draftId, action: data.action },
+      }));
+      // ⛔ socket_refresh_map은 발송하지 않음 → 전체 캐시 클리어 + 재요청으로 인한 깜빡임 방지
     });
 
     return () => {

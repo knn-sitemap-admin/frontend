@@ -11,6 +11,7 @@ import {
 export function useUpdateZIndexAndLabels(
   isReady: boolean,
   reservationOrderMap: Record<string, number | undefined> | undefined,
+  reservationOrderByPosKey: Record<string, number | undefined> | undefined,
   selectedKey: string | null,
   markerObjsRef: MutableRefObject<Record<string, any>>,
   labelOvRef: MutableRefObject<Record<string, any>>
@@ -44,13 +45,10 @@ export function useUpdateZIndexAndLabels(
         }
 
         // ✅ 3) 일반 매물핀
-        const order = reservationOrderMap?.[idStr];
-        const z = typeof order === "number" ? BASE_Z + (1000 - order) : BASE_Z;
-
         if (selectedKey && idStr === selectedKey) {
           mk.setZIndex?.(SELECTED_Z);
         } else {
-          mk.setZIndex?.(z);
+          mk.setZIndex?.(BASE_Z);
         }
       });
     } catch {
@@ -70,7 +68,8 @@ export function useUpdateZIndexAndLabels(
         if (ds.hiddenBySelected === "1") return;
 
         // ✅ 1) 선택된 핀 라벨은 **아예 지도에서 제거**
-        if (selectedKey && idStr === selectedKey) {
+        const cleanIdStr = idStr.replace(/^__visit__/, "");
+        if (selectedKey && (idStr === selectedKey || cleanIdStr === selectedKey)) {
           ds.hiddenBySelected = "1";
 
           try {
@@ -85,25 +84,46 @@ export function useUpdateZIndexAndLabels(
         // ✅ 주소 임시 라벨은 배지 안 붙임
         if (ds.labelType === "address") return;
 
-        if (!ds.rawLabel || ds.rawLabel.trim() === "") {
-          ds.rawLabel = el.textContent ?? "";
+        if (!ds.rawTitle || ds.rawTitle.trim() === "") {
+          // 최초 생성 시 rawTitle이 없을 때만 텍스트로 보정. 
+          // (주의: 이미 배지가 있는 상태에서 이걸 읽으면 배지 숫자까지 들어감, 
+          // 이를 방지하기 위해 useRebuildScene에서 생성 시 바로 rawTitle을 박아줘야 함)
+          const titleNode = el.querySelector('[data-role="label-title"]');
+          ds.rawTitle = titleNode ? titleNode.textContent : (el.textContent ?? "");
         }
-        const raw = ds.rawLabel ?? "";
+        const raw = ds.rawTitle ?? "";
 
-        const order = reservationOrderMap?.[idStr];
-        const desiredOrder = typeof order === "number" ? order : null;
-        const currentText = el.textContent ?? "";
-        const desiredText =
-          (typeof desiredOrder === "number" ? String(desiredOrder + 1) : "") +
-          raw;
+        const isDraft = idStr.startsWith("__visit__");
+        let order: number | undefined = undefined;
+        if (isDraft) {
+          const cleanId = idStr.replace(/^__visit__/, "");
+          order = reservationOrderMap?.[cleanId];
+        }
 
-        if (currentText === desiredText) return;
+        // ⭐️ 비동기 통신 찰나에 order가 undefined로 떨어져서 뱃지가 사라지는 현상 방지
+        let safeOrder = order;
+        if (safeOrder === undefined && ds.order && ds.order !== "") {
+          const parsed = Number(ds.order);
+          if (Number.isFinite(parsed)) safeOrder = parsed;
+        }
 
-        el.textContent = "";
+        const desiredOrder = typeof safeOrder === "number" ? safeOrder : null;
+        
+        // 현재 렌더링된 배지 번호 추출
+        const badgeNode = el.querySelector('[data-role="order-badge"]');
+        const currentBadgeText = badgeNode ? badgeNode.textContent : null;
+        const desiredBadgeText = typeof desiredOrder === "number" ? String(desiredOrder + 1) : null;
+
+        // 배지 번호나 타이틀이 다르면 새로 그린다
+        const titleNode = el.querySelector('[data-role="label-title"]');
+        const currentTitleText = titleNode ? titleNode.textContent : el.textContent;
+
+        if (currentBadgeText === desiredBadgeText && currentTitleText === raw) return;
+
         applyOrderBadgeToLabel(el, raw, desiredOrder);
       });
     } catch {
       // ignore
     }
-  }, [isReady, reservationOrderMap, selectedKey]);
+  }, [isReady, reservationOrderMap, reservationOrderByPosKey, selectedKey]);
 }

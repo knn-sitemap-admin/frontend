@@ -88,6 +88,8 @@ export type MapHomeUIProps = {
   prefillAddress?: string;
   draftPin: LatLng | null;
   setDraftPin: (pin: LatLng | null) => void;
+  clearDraftState?: () => void;
+
   selectedPos: LatLng | null;
 
   // ✅ 상세보기 닫기 콜백도 옵션

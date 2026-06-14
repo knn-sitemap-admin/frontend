@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { MapMarker } from "@/features/map/shared/types/mapMarker.type";
 import type { PinKind } from "@/features/pins/types";
 
@@ -71,6 +71,9 @@ export function useRebuildScene(args: Args) {
 
   const sceneKey = useMemo(() => buildSceneKey(markers), [markers]);
 
+  // 🔥 [핵심 추가] DOM 파괴/재생성 시에도 예약 순서를 잃어버리지 않도록 React 메모리에 백업
+  const lastValidOrderRef = useRef<Record<string, number>>({});
+
   useEffect(() => {
     if (!isReady) return;
 
@@ -79,20 +82,20 @@ export function useRebuildScene(args: Args) {
 
     // [V4 최적화] 지역 클러스터링 모드(forceHideAll)일 때 개별 마커 루프를 스킵하여 성능 확보
     if (forceHideAll) {
-       clustererRef.current?.clear?.();
-       Object.keys(markerObjsRef.current).forEach((key) => {
-         const mk = markerObjsRef.current[key];
-         const handler = markerClickHandlersRef.current[key];
-         if (mk && handler) kakao.maps.event.removeListener(mk, "click", handler);
-         mk?.setMap(null);
-         labelOvRef.current[key]?.setMap(null);
-         hitboxOvRef.current[key]?.setMap(null);
-       });
-       markerObjsRef.current = {};
-       markerClickHandlersRef.current = {};
-       labelOvRef.current = {};
-       hitboxOvRef.current = {};
-       return; // 루프를 더 이상 돌지 않고 조기 종료
+      clustererRef.current?.clear?.();
+      Object.keys(markerObjsRef.current).forEach((key) => {
+        const mk = markerObjsRef.current[key];
+        const handler = markerClickHandlersRef.current[key];
+        if (mk && handler) kakao.maps.event.removeListener(mk, "click", handler);
+        mk?.setMap(null);
+        labelOvRef.current[key]?.setMap(null);
+        hitboxOvRef.current[key]?.setMap(null);
+      });
+      markerObjsRef.current = {};
+      markerClickHandlersRef.current = {};
+      labelOvRef.current = {};
+      hitboxOvRef.current = {};
+      return; // 루프를 더 이상 돌지 않고 조기 종료
     }
 
     // ── Diffing 로직 시작 ──────────────────────────────────────
@@ -110,6 +113,12 @@ export function useRebuildScene(args: Args) {
     const ordered = enriched.sort((a, b) =>
       a.isPlan === b.isPlan ? 0 : a.isPlan ? 1 : -1
     );
+
+    // 우선순위가 높은(isPlan이 true이거나 나중에 나온) 마커를 해당 posKey의 대표 라벨로 설정
+    ordered.forEach(({ key, isPlan, posKey }) => {
+      if (!posKey) return;
+      labelByPos[posKey] = { key, isPlan };
+    });
 
     // 거리 계산 유틸
     const distM = (lat1: number, lng1: number, lat2: number, lng2: number) => {
@@ -160,7 +169,6 @@ export function useRebuildScene(args: Args) {
         // ── marker 처리 ──
         let mk = markerObjsRef.current[key];
         if (mk) {
-          // 기존 마커 존재 시 위치 및 아이콘 업데이트
           mk.setPosition(pos);
           updateMarkerIcon(kakao, mk, {
             isDraft,
@@ -171,7 +179,6 @@ export function useRebuildScene(args: Args) {
             isCompleted: m.isCompleted,
           });
         } else {
-          // 신규 마커 생성
           mk = createMarker(kakao, pos, {
             isDraft,
             key,
@@ -193,10 +200,33 @@ export function useRebuildScene(args: Args) {
 
         // ── label/hitbox 처리 ──
         if (isAddressOnly) {
-           // 주소 전용은 라벨 생략 (필요시 히트박스만)
+          // 주소 전용은 라벨 생략 (필요시 히트박스만)
         } else {
-          const isReserved = (typeof order === "number" && Number.isFinite(order)) || m.draftState === "SCHEDULED";
-          let lb = labelOvRef.current[key];
+          const isRepresentativeLabel = posKey ? labelByPos[posKey]?.key === key : true;
+
+          if (!isRepresentativeLabel) {
+            let lb = labelOvRef.current[key];
+            if (lb) {
+              lb.setMap(null);
+              delete labelOvRef.current[key];
+            }
+          } else {
+            let lb = labelOvRef.current[key];
+
+          // 1️⃣ [완벽 수정] DOM dataset 대신 React Ref를 사용하여 상태 유지
+          let safeOrder = order;
+          if (typeof safeOrder === "number" && Number.isFinite(safeOrder)) {
+            // 정상적인 순서가 들어오면 Ref에 안전하게 백업
+            lastValidOrderRef.current[key] = safeOrder;
+          } else if (lastValidOrderRef.current[key] !== undefined) {
+            // 통신 찰나나 DOM 재생성 시 값이 비어있다면 백업본에서 복구
+            safeOrder = lastValidOrderRef.current[key];
+          }
+
+          const isReserved =
+            (typeof safeOrder === "number" && Number.isFinite(safeOrder)) ||
+            m.draftState === "SCHEDULED";
+
           if (lb) {
             lb.setPosition(pos);
             const el = lb.getContent?.() as HTMLDivElement | null;
@@ -204,29 +234,44 @@ export function useRebuildScene(args: Args) {
               const currentOrder = el.dataset.order;
               const currentText = el.dataset.rawTitle;
               const currentSalesStopped = el.dataset.salesStopped;
-              const newOrder = String(order ?? "");
+              const currentReserved = el.dataset.reserved;
+
+              const newOrder = String(safeOrder ?? "");
               const newSalesStopped = String(isSalesStopped);
-              
-              if (currentOrder !== newOrder || currentText !== String(labelText ?? "") || currentSalesStopped !== newSalesStopped) {
+              const newReserved = String(isReserved);
+
+              if (
+                currentOrder !== newOrder ||
+                currentText !== String(labelText ?? "") ||
+                currentSalesStopped !== newSalesStopped ||
+                currentReserved !== newReserved
+              ) {
                 let bgColor: string | undefined;
                 if (isSalesStopped) bgColor = "#111827";
                 else if (isReserved) bgColor = "#EF4444";
                 else bgColor = "#3B82F6";
+
                 el.style.background = bgColor;
-                applyOrderBadgeToLabel(el, labelText, order);
+                applyOrderBadgeToLabel(el, labelText, safeOrder);
                 el.dataset.order = newOrder;
                 el.dataset.rawTitle = String(labelText ?? "");
                 el.dataset.salesStopped = newSalesStopped;
+                el.dataset.reserved = newReserved;
               }
             }
           } else {
-             lb = createLabelOverlay(kakao, pos, labelText, labelGapPx, order, isReserved, isSalesStopped);
-             const el = lb.getContent?.() as HTMLDivElement | null;
-             if (el) el.dataset.salesStopped = String(isSalesStopped);
-             labelOvRef.current[key] = lb;
+            lb = createLabelOverlay(kakao, pos, labelText, labelGapPx, safeOrder, isReserved, isSalesStopped);
+            const el = lb.getContent?.() as HTMLDivElement | null;
+            if (el) {
+              el.dataset.salesStopped = String(isSalesStopped);
+              el.dataset.reserved = String(isReserved);
+              el.dataset.order = String(safeOrder ?? "");
+              el.dataset.rawTitle = String(labelText ?? "");
+            }
+            labelOvRef.current[key] = lb;
           }
         }
-
+      }
         let hb = hitboxOvRef.current[key];
         if (hb) {
           hb.setPosition(pos);
@@ -243,7 +288,7 @@ export function useRebuildScene(args: Args) {
         const mk = markerObjsRef.current[key];
         const handler = markerClickHandlersRef.current[key];
         if (mk && handler) kakao.maps.event.removeListener(mk, "click", handler);
-        
+
         mk?.setMap(null);
         labelOvRef.current[key]?.setMap(null);
         hitboxOvRef.current[key]?.setMap(null);
@@ -257,17 +302,20 @@ export function useRebuildScene(args: Args) {
 
     // ⑤ 가시성 업데이트
     if (level <= safeLabelMax) {
-       clustererRef.current?.clear?.();
-       Object.values(markerObjsRef.current).forEach(m => m.setMap(map));
-       Object.entries(labelOvRef.current).forEach(([k, l]) => l.setMap(k === selectedKey ? null : map));
-       Object.values(hitboxOvRef.current).forEach(h => h.setMap(map));
+      clustererRef.current?.clear?.();
+      Object.values(markerObjsRef.current).forEach(m => m.setMap(map));
+      Object.entries(labelOvRef.current).forEach(([k, l]) => {
+        const cleanK = k.replace(/^__visit__/, "");
+        l.setMap(k === selectedKey || cleanK === selectedKey ? null : map);
+      });
+      Object.values(hitboxOvRef.current).forEach(h => h.setMap(map));
     } else if (level >= clusterMinLevel) {
       mountClusterMode({ kakao, map }, { markerObjsRef, markerClickHandlersRef, labelOvRef, hitboxOvRef, clustererRef, onMarkerClickRef }, selectedKey);
     } else {
-       Object.values(labelOvRef.current).forEach(l => l.setMap(null));
-       clustererRef.current?.clear?.();
-       Object.values(markerObjsRef.current).forEach(m => m.setMap(map));
-       Object.values(hitboxOvRef.current).forEach(h => h.setMap(map));
+      Object.values(labelOvRef.current).forEach(l => l.setMap(null));
+      clustererRef.current?.clear?.();
+      Object.values(markerObjsRef.current).forEach(m => m.setMap(map));
+      Object.values(hitboxOvRef.current).forEach(h => h.setMap(map));
     }
 
     return () => {

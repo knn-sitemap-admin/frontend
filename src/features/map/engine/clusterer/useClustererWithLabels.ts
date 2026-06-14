@@ -196,6 +196,7 @@ export function useClustererWithLabels(
   useUpdateZIndexAndLabels(
     isReady,
     reservationOrderMap,
+    reservationOrderByPosKey,
     selectedKey,
     markerObjsRef,
     labelOvRef

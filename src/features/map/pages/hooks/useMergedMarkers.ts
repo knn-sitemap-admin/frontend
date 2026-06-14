@@ -198,6 +198,7 @@ export function useMergedMarkers(params: {
         address: (p as any).addressLine ?? p.address ?? undefined, // 🔹 지역 클러스터링을 위해 주소 추가
         badge: p.badge,
         isCompleted: p.isCompleted,
+        draftState: (p as any).draftState,
       };
     });
 
@@ -220,6 +221,7 @@ export function useMergedMarkers(params: {
         badge: d.badge,
         isCompleted: d.isCompleted,
         isSalesStopped: d.isSalesStopped,
+        draftState: d.draftState,
       };
     });
 

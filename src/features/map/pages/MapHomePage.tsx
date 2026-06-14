@@ -352,6 +352,7 @@ export default function MapHomePage() {
       prefillAddress: s.prefillAddress,
       draftPin: s.draftPin,
       setDraftPin: s.setDraftPin,
+      clearDraftState: s.clearDraftState,
       selectedPos: s.selectedPos,
       closeEdit: s.closeEdit,
       closeCreate: s.closeCreate,

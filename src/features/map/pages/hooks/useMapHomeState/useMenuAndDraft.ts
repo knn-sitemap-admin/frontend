@@ -391,5 +391,6 @@ export function useMenuAndDraft({
     closeMenu,
     onPlanFromMenu,
     onOpenMenu,
+    clearDraftState,
   } as const;
 }

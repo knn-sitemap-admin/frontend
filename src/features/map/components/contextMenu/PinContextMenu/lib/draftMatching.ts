@@ -7,15 +7,23 @@ export function posKey(lat: number, lng: number) {
 
 /** draftId 우선 추출 */
 export function extractDraftIdFromPin(pin: any): number | undefined {
-  const raw =
-    pin?.pinDraftId ??
-    pin?.draftId ??
-    pin?.draft?.id ??
-    (typeof pin?.id === "number" ? pin.id : undefined);
+  const explicitDraftId = pin?.pinDraftId ?? pin?.draftId ?? pin?.draft?.id;
+  if (explicitDraftId != null) {
+    const n = Number(explicitDraftId);
+    if (Number.isFinite(n)) return n;
+  }
 
-  if (raw == null) return undefined;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : undefined;
+  // __visit__ prefix가 있으면 draftId로 파싱 (임시핀)
+  if (typeof pin?.id === "string" && pin.id.startsWith("__visit__")) {
+    const n = Number(pin.id.replace(/^__visit__/, ""));
+    if (Number.isFinite(n)) return n;
+  } else if (pin?.source === "draft") {
+    // source가 draft로 명시되어 있으면 id 자체를 반환
+    const n = Number(pin?.id);
+    if (Number.isFinite(n)) return n;
+  }
+
+  return undefined;
 }
 
 /** before 목록에서 좌표/주소로 draft 찾기 */
@@ -27,11 +35,16 @@ export function findDraftIdByHeuristics(args: {
   jibunAddress?: string | null;
 }): number | undefined {
   const { before, lat, lng, roadAddress, jibunAddress } = args;
+  
+  // 1) 정확한 DB 좌표 기반 (우선)
+  const byExactPos = before.find((d) => Number(d.lat) === lat && Number(d.lng) === lng);
+  if (byExactPos) return Number(byExactPos.id);
+
   const targetKey = posKey(lat, lng);
 
-  // 1) posKey 기반
+  // 2) posKey 기반
   const byPos = before.find(
-    (d) => `${d.lat.toFixed(5)},${d.lng.toFixed(5)}` === targetKey
+    (d) => `${Number(d.lat).toFixed(5)},${Number(d.lng).toFixed(5)}` === targetKey
   );
   if (byPos) return Number(byPos.id);
 

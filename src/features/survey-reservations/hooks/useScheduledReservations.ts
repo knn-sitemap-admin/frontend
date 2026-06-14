@@ -271,6 +271,17 @@ export function useScheduledReservations() {
     return m;
   }, [snapshot.items, snapshot.version]);
 
+  const reservationOrderByExactPos = useMemo(() => {
+    const m: Record<string, number> = {};
+    const visibleItems = snapshot.items.filter((r) => r.isMine === true);
+    visibleItems.forEach((r, idx) => {
+      if (r.lat != null && r.lng != null) {
+        m[`${r.lat},${r.lng}`] = idx;
+      }
+    });
+    return m;
+  }, [snapshot.items, snapshot.version]);
+
   const getOrderIndex = useCallback(
     (marker: {
       source?: "draft" | "point";
@@ -318,6 +329,7 @@ export function useScheduledReservations() {
     setItems: doSetItems,
     reservationOrderMap,
     reservationOrderByPosKey,
+    reservationOrderByExactPos,
     getOrderIndex,
     insertOptimistic: doInsertOptimistic,
     reconcileOptimistic: doReconcileOptimistic,

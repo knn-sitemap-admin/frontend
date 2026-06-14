@@ -127,6 +127,7 @@ export function useMapHomeState() {
     closeMenu,
     onPlanFromMenu,
     onOpenMenu,
+    clearDraftState,
   } = useMenuAndDraft({
     kakaoSDK,
     mapInstance,
@@ -351,6 +352,7 @@ export function useMapHomeState() {
     onCreateFromMenu,
     onOpenMenu,
     onPlanFromMenu,
+    clearDraftState,
 
     // draft
     draftPin,

@@ -7,6 +7,7 @@ const SidebarCtx = createContext<
   | (ReturnType<typeof useSidebarState> & {
       reservationOrderMap: Record<string, number>;
       reservationOrderByPosKey: Record<string, number>;
+      reservationOrderByExactPos: Record<string, number>;
     })
   | null
 >(null);
@@ -16,6 +17,7 @@ export function SideBarProvider({ children }: { children: React.ReactNode }) {
   const {
     reservationOrderMap = {},
     reservationOrderByPosKey = {},
+    reservationOrderByExactPos = {},
   } = useScheduledReservations();
 
   const value = useMemo(
@@ -23,8 +25,9 @@ export function SideBarProvider({ children }: { children: React.ReactNode }) {
       ...state,
       reservationOrderMap,
       reservationOrderByPosKey,
+      reservationOrderByExactPos,
     }),
-    [state, reservationOrderMap, reservationOrderByPosKey]
+    [state, reservationOrderMap, reservationOrderByPosKey, reservationOrderByExactPos]
   );
 
   return <SidebarCtx.Provider value={value}>{children}</SidebarCtx.Provider>;

@@ -56,6 +56,10 @@ export function useMarkersForMapHome({
       return state === "BEFORE";
     });
 
+    const scheduledDrafts = visibleDraftsRaw.filter(
+      (d: any) => d.draftState === "SCHEDULED" && d.lat != null && d.lng != null
+    );
+
     // 4) 매물핀 마커 변환
     const pointMarkers: MapMarkerWithFav[] = visiblePoints.map((p: any) => {
       // 🔹 서버에서 내려준 badge/ageType 기준으로 kind 계산
@@ -63,7 +67,7 @@ export function useMarkersForMapHome({
       const displayKind = getDisplayPinKind(baseKind, p.ageType ?? null);
       const kind: PinKind = (displayKind ?? baseKind ?? "1room") as PinKind;
 
-      // 🔹 매물명 우선 표시: name → propertyName → data.propertyName → data.name → badge
+      // 📌 매물명 우선 표시: name ?? propertyName ?? data.propertyName ?? data.name ?? badge
       const name =
         (p.name ?? "").trim() ||
         (p.propertyName ?? "").trim() ||
@@ -71,6 +75,18 @@ export function useMarkersForMapHome({
         (p.data?.name ?? "").trim() ||
         "";
       const displayTitle = name || (p.badge ?? "");
+
+      let isDraftScheduled = false;
+      if (p.lat != null && p.lng != null) {
+        const pLat = Number(p.lat);
+        const pLng = Number(p.lng);
+        isDraftScheduled = scheduledDrafts.some((d: any) => {
+          return (
+            Math.abs(Number(d.lat) - pLat) < 0.00005 &&
+            Math.abs(Number(d.lng) - pLng) < 0.00005
+          );
+        });
+      }
 
       return {
         id: String(p.id),
@@ -82,6 +98,7 @@ export function useMarkersForMapHome({
         badge: p.badge,
         isCompleted: p.isCompleted,
         isFav: false,
+        draftState: isDraftScheduled ? "SCHEDULED" : undefined,
       };
     });
 
