@@ -213,14 +213,10 @@ export function useRebuildScene(args: Args) {
           } else {
             let lb = labelOvRef.current[key];
 
-          // 1️⃣ [완벽 수정] DOM dataset 대신 React Ref를 사용하여 상태 유지
           let safeOrder = order;
           if (typeof safeOrder === "number" && Number.isFinite(safeOrder)) {
-            // 정상적인 순서가 들어오면 Ref에 안전하게 백업
+            // 정상적인 순서가 들어오면 Ref에 안전하게 백업 (다른 로직에서 참조할 수 있도록 유지)
             lastValidOrderRef.current[key] = safeOrder;
-          } else if (lastValidOrderRef.current[key] !== undefined) {
-            // 통신 찰나나 DOM 재생성 시 값이 비어있다면 백업본에서 복구
-            safeOrder = lastValidOrderRef.current[key];
           }
 
           const isReserved =
