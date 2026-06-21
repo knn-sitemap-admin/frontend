@@ -886,7 +886,7 @@ function AccountEditFormModalBody({
                   )}
                 />
                 {/* staff 직급일 때만 팀 선택 표시 (선택사항) */}
-                {form.watch("positionRank") !== "TEAM_LEADER" && (
+              {form.watch("positionRank") !== "TEAM_LEADER" && (
                   <>
                     <FormField
                       control={form.control}
