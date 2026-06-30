@@ -79,6 +79,7 @@ export function useSalesContractModal(
             positionRank: item.positionRank,
             phone: item.phone,
             teamRole: (item.teamRole as any) || "staff",
+            role: item.role,
           }));
         } catch (e) { return []; }
       }
@@ -160,7 +161,7 @@ export function useSalesContractModal(
           return {
             ...staff,
             positionRank: (member as any).positionRank ?? staff.positionRank,
-            isTeamLeader: (member as any).teamRole === "manager" || (member as any).teamRole === "admin",
+            isTeamLeader: (member as any).role === "admin" || (member as any).role === "manager" || (member as any).teamRole === "manager" || (member as any).teamRole === "admin",
           };
         }),
       };
