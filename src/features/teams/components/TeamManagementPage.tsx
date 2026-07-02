@@ -143,7 +143,7 @@ export default function TeamManagementPage() {
           <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">팀이 없습니다</h3>
           <p className="text-muted-foreground mb-4">
-            팀장 직급으로 계정을 생성하면 팀이 자동으로 생성됩니다.
+            우측 상단의 '새 팀 생성' 버튼을 눌러 새로운 팀을 만들어보세요.
           </p>
         </div>
       )}
