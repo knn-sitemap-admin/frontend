@@ -31,6 +31,8 @@ interface StaffAllocationSectionProps {
     name: string | null;
     positionRank?: string | null;
     teamRole?: string | null;
+    role?: string | null;
+    isMyTeam?: boolean;
   }>;
   userRole?: "admin" | "manager" | "staff";
   readOnly?: boolean;
@@ -163,9 +165,14 @@ export function StaffAllocationSection({
       .filter((s) => s.type === "employee")
       .findIndex((s) => s.id === staffId);
 
-    // 담당자 2(index 1)이고, 일반사원(staff)으로 로그인한 경우 해당 팀의 팀장만 선택 가능
-    if (employeeIndex === 1 && userRole?.toLowerCase() === "staff") {
-      return teamMembers.filter((m) => m.teamRole === "manager");
+    // 담당자 2(index 1이상)이고, 일반사원(staff)으로 로그인한 경우 모든 팀장급 선택 가능
+    if (employeeIndex >= 1 && userRole?.toLowerCase() === "staff") {
+      return teamMembers.filter((m) => m.teamRole === "manager" || m.role === "manager" || m.role === "admin");
+    }
+
+    // 담당자 1(index 0)의 경우, 일반사원(staff)이면 내 팀 멤버만 선택 가능
+    if (employeeIndex === 0 && userRole?.toLowerCase() === "staff") {
+      return teamMembers.filter((m) => m.isMyTeam !== false);
     }
 
     return teamMembers;

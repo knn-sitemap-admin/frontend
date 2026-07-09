@@ -88,14 +88,33 @@ export function useSalesContractModal(
         if (!accountId) return [];
         const teamsRes = await api.get("/dashboard/accounts/teams");
         const teams = teamsRes.data.data ?? [];
+        
+        const uniqueMembers = new Map();
+        let myTeamMembersList: any[] = [];
+        
         for (const team of teams) {
           const teamDetailResponse = await api.get(`/dashboard/accounts/teams/${team.id}`);
-          const members = teamDetailResponse.data.data.members;
-          if (members.some((m: any) => String(m.accountId) === String(accountId))) {
-            return members;
+          const members = teamDetailResponse.data.data.members || [];
+          
+          const isMyTeam = members.some((m: any) => String(m.accountId) === String(accountId));
+          if (isMyTeam) {
+            myTeamMembersList = members;
           }
+          
+          // 모든 팀장급(manager/admin) 추출
+          members.forEach((m: any) => {
+            if (m.teamRole === "manager" || m.role === "manager" || m.role === "admin") {
+              uniqueMembers.set(String(m.accountId), { ...m, isMyTeam: isMyTeam });
+            }
+          });
         }
-        return [];
+        
+        // 내 팀원 추가 (isMyTeam = true)
+        myTeamMembersList.forEach((m: any) => {
+          uniqueMembers.set(String(m.accountId), { ...m, isMyTeam: true });
+        });
+        
+        return Array.from(uniqueMembers.values());
       } catch (error) { return []; }
     },
     enabled: !!profile && isOpen,
