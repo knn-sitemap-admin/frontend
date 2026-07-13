@@ -34,10 +34,10 @@ export function mapPinKindToBadge(pinKind: PinKind): string | null {
       return "TOWNHOUSE";
 
     case "question":
-      return "SURVEY_SCHEDULED";
+      return null;
 
     case "completed":
-      return "MOVE_IN_COMPLETE";
+      return null;
 
     default:
       return null;

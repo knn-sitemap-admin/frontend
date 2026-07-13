@@ -37,6 +37,7 @@ interface ContractListProps {
       status?: string;
       year?: string;
       month?: string;
+      dateType?: "contractDate" | "balanceDate";
     },
   ) =>
     | Promise<{ items: ContractData[]; total: number }>;
@@ -58,6 +59,7 @@ export function ContractList({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [dateType, setDateType] = useState<"contractDate" | "balanceDate">("contractDate");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [contracts, setContracts] = useState<ContractData[]>([]);
@@ -82,12 +84,13 @@ export function ContractList({
   // 필터나 검색어가 변경되면 1페이지로 이동
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedYear, selectedMonth, selectedStatus, searchTerm]);
+  }, [selectedYear, selectedMonth, selectedStatus, searchTerm, dateType]);
 
   // 필터 초기화 핸들러
   const handleResetFilters = () => {
     setSelectedYear("all");
     setSelectedMonth("all");
+    setDateType("contractDate");
     setSelectedStatus("all");
     setSearchTerm("");
     // currentPage는 useEffect에 의해 자동으로 1로 재설정됩니다.
@@ -130,6 +133,7 @@ export function ContractList({
         status: selectedStatus,
         year: selectedYear,
         month: selectedMonth,
+        dateType,
       });
 
       if (result && typeof result === "object" && "items" in result) {
@@ -160,6 +164,7 @@ export function ContractList({
     selectedStatus,
     selectedYear,
     selectedMonth,
+    dateType,
     toast,
   ]);
 
@@ -245,6 +250,19 @@ export function ContractList({
                     {year === "all" ? "전체 년도" : `${year}년`}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={dateType}
+              onValueChange={(value) => setDateType(value as "contractDate" | "balanceDate")}
+            >
+              <SelectTrigger className="w-full sm:w-[110px]">
+                <SelectValue placeholder="날짜 기준" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="contractDate">계약일</SelectItem>
+                <SelectItem value="balanceDate">잔금일</SelectItem>
               </SelectContent>
             </Select>
 

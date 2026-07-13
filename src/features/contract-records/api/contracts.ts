@@ -85,6 +85,8 @@ export type ListContractsRequest = {
   status?: "ongoing" | "done" | "canceled" | "rejected"; // 상태
   dateFrom?: string; // YYYY-MM-DD
   dateTo?: string; // YYYY-MM-DD
+  paymentDateFrom?: string; // YYYY-MM-DD
+  paymentDateTo?: string; // YYYY-MM-DD
   orderBy?: "contract_date" | "created_at"; // 정렬 기준
   orderDir?: "ASC" | "DESC"; // 정렬 방향
 };

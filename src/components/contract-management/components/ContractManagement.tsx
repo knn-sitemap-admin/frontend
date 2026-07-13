@@ -16,6 +16,7 @@ export function ContractManagement() {
         status?: string;
         year?: string;
         month?: string;
+        dateType?: "contractDate" | "balanceDate";
       },
     ): Promise<{
       items: ContractData[];
@@ -44,14 +45,22 @@ export function ContractManagement() {
         ? (filters.status as any) 
         : undefined;
 
-      const contractData = await getContracts({
+      const apiFilters: any = {
         page,
         size: paginationConfig.listsPerPage,
         q: filters.searchTerm,
         status: apiStatus,
-        dateFrom,
-        dateTo,
-      });
+      };
+
+      if (filters.dateType === "balanceDate") {
+        apiFilters.paymentDateFrom = dateFrom;
+        apiFilters.paymentDateTo = dateTo;
+      } else {
+        apiFilters.dateFrom = dateFrom;
+        apiFilters.dateTo = dateTo;
+      }
+
+      const contractData = await getContracts(apiFilters);
 
       return {
         items: contractData.items.map(transformContractListItemToContractData),
