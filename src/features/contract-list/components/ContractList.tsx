@@ -112,11 +112,15 @@ export function ContractList({
   // 가용 월 리스트 (선택된 연도 기준)
   const monthOptions = useMemo(() => {
     if (selectedYear === "all") {
-      return ["all", ...Array.from({ length: 12 }, (_, i) => (i + 1).toString())];
+      const allMonths = new Set<string>();
+      Object.values(activeYearMonthMap).forEach((months) => {
+        months.forEach((m) => allMonths.add(m));
+      });
+      return ["all", ...Array.from(allMonths).sort((a, b) => Number(a) - Number(b))];
     }
     const availableMonths = activeYearMonthMap[selectedYear] || [];
     // 데이터가 있는 월들만 정렬하여 반환
-    return ["all", ...availableMonths.sort((a, b) => Number(a) - Number(b))];
+    return ["all", ...[...availableMonths].sort((a, b) => Number(a) - Number(b))];
   }, [activeYearMonthMap, selectedYear]);
 
   // 연도 변경 시 선택된 월이 유효한지 체크
