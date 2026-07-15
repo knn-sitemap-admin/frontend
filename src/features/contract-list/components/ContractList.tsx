@@ -68,15 +68,16 @@ export function ContractList({
   const [selectedContract, setSelectedContract] =
     useState<SalesContractData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [yearMonthMap, setYearMonthMap] = useState<Record<string, string[]>>({});
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [filterMaps, setFilterMaps] = useState<{
+    contractDate: Record<string, string[]>;
+    balanceDate: Record<string, string[]>;
+  }>({ contractDate: {}, balanceDate: {} });
 
   // 가용 필터 옵션 로드
   useEffect(() => {
     const fetchFilterOptions = async () => {
       const data = await getContractFilterOptions();
-      setYearMonthMap(data);
+      setFilterMaps(data);
     };
     fetchFilterOptions();
   }, []);
@@ -96,33 +97,35 @@ export function ContractList({
     // currentPage는 useEffect에 의해 자동으로 1로 재설정됩니다.
   };
 
+  const activeYearMonthMap = filterMaps[dateType] || {};
+
   // 가용 연도 리스트
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear().toString();
-    const dbYears = Object.keys(yearMonthMap);
+    const dbYears = Object.keys(activeYearMonthMap);
     const years = Array.from(new Set([currentYear, ...dbYears])).sort((a, b) => b.localeCompare(a));
     return ["all", ...years];
-  }, [yearMonthMap]);
+  }, [activeYearMonthMap]);
 
   // 가용 월 리스트 (선택된 연도 기준)
   const monthOptions = useMemo(() => {
     if (selectedYear === "all") {
       return ["all", ...Array.from({ length: 12 }, (_, i) => (i + 1).toString())];
     }
-    const availableMonths = yearMonthMap[selectedYear] || [];
+    const availableMonths = activeYearMonthMap[selectedYear] || [];
     // 데이터가 있는 월들만 정렬하여 반환
     return ["all", ...availableMonths.sort((a, b) => Number(a) - Number(b))];
-  }, [yearMonthMap, selectedYear]);
+  }, [activeYearMonthMap, selectedYear]);
 
   // 연도 변경 시 선택된 월이 유효한지 체크
   useEffect(() => {
     if (selectedYear !== "all" && selectedMonth !== "all") {
-      const availableMonths = yearMonthMap[selectedYear] || [];
+      const availableMonths = activeYearMonthMap[selectedYear] || [];
       if (!availableMonths.includes(selectedMonth)) {
         setSelectedMonth("all");
       }
     }
-  }, [selectedYear, monthOptions]);
+  }, [selectedYear, monthOptions, activeYearMonthMap]);
 
   // 계약 목록 로드
   const loadContracts = React.useCallback(async () => {

@@ -130,18 +130,23 @@ export type ContractListResponse = {
   total: number;
 };
 
+export type FilterOptionsResponse = {
+  contractDate: Record<string, string[]>;
+  balanceDate: Record<string, string[]>;
+};
+
 /**
  * 계약 필터 옵션 조회 (가용 연도 및 월 맵)
  */
-export async function getContractFilterOptions(): Promise<Record<string, string[]>> {
+export async function getContractFilterOptions(): Promise<FilterOptionsResponse> {
   try {
     const response = await api.get<{
-      data: Record<string, string[]>;
+      data: FilterOptionsResponse;
     }>("/contracts/filter-options");
     return response.data.data;
   } catch (error: any) {
     console.error("계약 필터 옵션 API 호출 실패:", error);
-    return {};
+    return { contractDate: {}, balanceDate: {} };
   }
 }
 
